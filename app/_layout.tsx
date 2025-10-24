@@ -58,6 +58,27 @@ function RootLayoutNav() {
           animation: "slide_from_right",
         }}
       />
+      <Stack.Screen
+        name="emergency-contacts-list"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="emergency-contact-detail"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="place-detail"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
     </Stack>
   );
 }
