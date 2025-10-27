@@ -27,6 +27,7 @@ function RootLayoutNav() {
       screenOptions={{
         headerBackTitle: "Back",
         animation: "fade",
+        animationDuration: 400,
       }}
     >
       <Stack.Screen
@@ -34,6 +35,7 @@ function RootLayoutNav() {
         options={{
           headerShown: false,
           animation: "fade",
+          animationDuration: 600,
         }}
       />
       <Stack.Screen
