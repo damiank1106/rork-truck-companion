@@ -2,10 +2,15 @@ import { Tabs } from "expo-router";
 import { Home, Truck, MapPin, Image, Settings } from "lucide-react-native";
 import React from "react";
 import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const isIOS = Platform.OS === "ios";
+  const bottomPadding = Math.max(insets.bottom, isIOS ? 24 : 16);
+
   return (
     <Tabs
       screenOptions={{
@@ -15,8 +20,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: Colors.white,
           borderTopWidth: 0,
-          height: Platform.OS === 'ios' ? 95 : 75,
-          paddingBottom: Platform.OS === 'ios' ? 32 : 16,
+          height: (isIOS ? 64 : 60) + bottomPadding,
+          paddingBottom: bottomPadding,
           paddingTop: 8,
           shadowColor: Colors.black,
           shadowOffset: { width: 0, height: -4 },

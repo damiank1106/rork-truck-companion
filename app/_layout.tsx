@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { View, ActivityIndicator, Platform } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { DriverIDContext } from "@/contexts/DriverIDContext";
 import { EmergencyContactsContext } from "@/contexts/EmergencyContactsContext";
@@ -114,7 +115,9 @@ export default function RootLayout() {
                 <HealthInsuranceProvider>
                   <DriverIDContext>
                     <GestureHandlerRootView style={{ flex: 1 }}>
-                      <RootLayoutNav />
+                      <SafeAreaProvider>
+                        <RootLayoutNav />
+                      </SafeAreaProvider>
                     </GestureHandlerRootView>
                   </DriverIDContext>
                 </HealthInsuranceProvider>
