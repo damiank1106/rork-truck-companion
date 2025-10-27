@@ -304,10 +304,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Track driver ID and registration details{"\n"}
               • Manage trailer information{"\n"}
               • Insurance and inspection tracking{"\n"}
-              • Quick-edit truck and trailer numbers from home{"\n"}
-              • Load management with trip details{"\n"}
-              • Track pick-up numbers, PO numbers, and stops{"\n"}
-              • Manage shipping routes and destinations{"\n\n"}
+              • Quick-edit truck and trailer numbers from home{"\n\n"}
               
               <Text style={styles.modalBoldText}>📍 Places & Locations</Text>{"\n"}
               • Save visited locations with photos{"\n"}
@@ -351,16 +348,6 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
 
             <Text style={styles.modalSectionTitle}>How to Use the App</Text>
             <Text style={styles.modalText}>
-              <Text style={styles.modalBoldText}>📦 Load Management</Text>{"\n"}
-              • Navigate to My Truck tab and select "Load"{"\n"}
-              • Enter Trip Number to track your current load{"\n"}
-              • Add Pick Up Number and PO Number for documentation{"\n"}
-              • Specify Ship From location{"\n"}
-              • Use "Add Stop" to add multiple delivery stops{"\n"}
-              • Enter final Destination{"\n"}
-              • Trip Number syncs with Trailer container on home screen{"\n"}
-              • All fields are optional and saved automatically{"\n\n"}
-              
               <Text style={styles.modalBoldText}>🌡️ Weather Widget</Text>{"\n"}
               • Tap the location icon to update your current location{"\n"}
               • Tap the temperature to toggle between °C and °F{"\n"}
@@ -422,16 +409,11 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               <Text style={styles.modalBoldText}>v1.0.0 - October 6, 2025</Text>{"\n"}
               • Initial release{"\n"}
               • Complete truck profile system{"\n"}
-              • Load management tab with trip tracking{"\n"}
-              • Pick-up and PO number tracking{"\n"}
-              • Multiple stop locations support{"\n"}
-              • Shipping route management{"\n"}
               • Places tracking with photo support{"\n"}
               • Photo gallery with categorization{"\n"}
               • Weather widget with C/F toggle{"\n"}
               • Real-time speed tracking with mph/km/h toggle{"\n"}
               • Trailer information management{"\n"}
-              • Trip number in Trailer container on home{"\n"}
               • Emergency contacts with custom photo IDs{"\n"}
               • Health insurance card storage{"\n"}
               • Driver ID card storage{"\n"}
@@ -529,13 +511,8 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
             <Text style={styles.modalSectionTitle}>Information Stored</Text>
             <Text style={styles.modalText}>
               • Truck specifications and details{"\n"}
-              • Load information (trip numbers, pick-up numbers, PO numbers){"\n"}
-              • Shipping routes and stop locations{"\n"}
-              • Trailer information{"\n"}
               • Location information for places you visit{"\n"}
               • Photos you add to the gallery{"\n"}
-              • Emergency contacts and health information{"\n"}
-              • Driver ID information{"\n"}
               • App preferences and settings
             </Text>
 

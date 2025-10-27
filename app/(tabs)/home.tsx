@@ -52,9 +52,9 @@ export default function HomeScreen() {
   const [cachedLocation, setCachedLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
   const [isTrailerModalVisible, setIsTrailerModalVisible] = useState<boolean>(false);
   const [trailerNumberInput, setTrailerNumberInput] = useState<string>("");
-  const [trailerTripNumberInput, setTrailerTripNumberInput] = useState<string>("");
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
+  const [tripNumberInput, setTripNumberInput] = useState<string>("");
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
 
@@ -402,11 +402,13 @@ export default function HomeScreen() {
             title="My Truck"
             value={truckProfile.truckNumber ? `Truck #${truckProfile.truckNumber}` : "Not set"}
             subtitle={truckProfile.driverId ? `Driver ID: ${truckProfile.driverId}` : undefined}
+            thirdLine={truckProfile.tripNumber ? `Trip #${truckProfile.tripNumber}` : undefined}
             color={Colors.primaryLight}
             onPress={() => router.push("/(tabs)/truck")}
             showPlusIcon
             onPlusPress={() => {
               setTruckNumberInput(truckProfile.truckNumber || "");
+              setTripNumberInput(truckProfile.tripNumber || "");
               setIsTruckModalVisible(true);
             }}
           />
@@ -415,13 +417,11 @@ export default function HomeScreen() {
             title="Trailer"
             value={truckProfile.trailerNumber ? `#${truckProfile.trailerNumber}` : "Not set"}
             subtitle={truckProfile.trailerNumber ? truckProfile.trailerType : "Add trailer info"}
-            thirdLine={truckProfile.loadTripNumber ? `Trip #${truckProfile.loadTripNumber}` : undefined}
             color={Colors.secondary}
             onPress={() => router.push("/(tabs)/truck")}
             showPlusIcon
             onPlusPress={() => {
               setTrailerNumberInput(truckProfile.trailerNumber || "");
-              setTrailerTripNumberInput(truckProfile.loadTripNumber || "");
               setIsTrailerModalVisible(true);
             }}
           />
@@ -507,22 +507,14 @@ export default function HomeScreen() {
       >
         <View style={styles.trailerModalOverlay}>
           <View style={styles.trailerModalContent}>
-            <Text style={styles.trailerModalTitle}>Update Trailer Info</Text>
-            <Text style={styles.modalFieldLabel}>Trailer Number</Text>
+            <Text style={styles.trailerModalTitle}>Update Trailer Number</Text>
             <RNTextInput
               style={styles.trailerModalInput}
               placeholder="Enter trailer number"
               placeholderTextColor={Colors.textLight}
               value={trailerNumberInput}
               onChangeText={setTrailerNumberInput}
-            />
-            <Text style={styles.modalFieldLabel}>Trip Number</Text>
-            <RNTextInput
-              style={styles.trailerModalInput}
-              placeholder="Enter trip number (optional)"
-              placeholderTextColor={Colors.textLight}
-              value={trailerTripNumberInput}
-              onChangeText={setTrailerTripNumberInput}
+              autoFocus
             />
             <View style={styles.trailerModalButtons}>
               <TouchableOpacity
@@ -534,10 +526,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.trailerModalConfirmButton}
                 onPress={async () => {
-                  await updateTruckProfile({ 
-                    trailerNumber: trailerNumberInput,
-                    loadTripNumber: trailerTripNumberInput
-                  });
+                  await updateTruckProfile({ trailerNumber: trailerNumberInput });
                   setIsTrailerModalVisible(false);
                 }}
               >
@@ -556,14 +545,22 @@ export default function HomeScreen() {
       >
         <View style={styles.trailerModalOverlay}>
           <View style={styles.trailerModalContent}>
-            <Text style={styles.trailerModalTitle}>Update Truck Number</Text>
+            <Text style={styles.trailerModalTitle}>Update Truck Info</Text>
+            <Text style={styles.modalFieldLabel}>Truck Number</Text>
             <RNTextInput
               style={styles.trailerModalInput}
               placeholder="Enter truck number"
               placeholderTextColor={Colors.textLight}
               value={truckNumberInput}
               onChangeText={setTruckNumberInput}
-              autoFocus
+            />
+            <Text style={styles.modalFieldLabel}>Trip Number</Text>
+            <RNTextInput
+              style={styles.trailerModalInput}
+              placeholder="Enter trip number (optional)"
+              placeholderTextColor={Colors.textLight}
+              value={tripNumberInput}
+              onChangeText={setTripNumberInput}
             />
             <View style={styles.trailerModalButtons}>
               <TouchableOpacity
@@ -576,7 +573,8 @@ export default function HomeScreen() {
                 style={styles.trailerModalConfirmButton}
                 onPress={async () => {
                   await updateTruckProfile({ 
-                    truckNumber: truckNumberInput
+                    truckNumber: truckNumberInput,
+                    tripNumber: tripNumberInput 
                   });
                   setIsTruckModalVisible(false);
                 }}

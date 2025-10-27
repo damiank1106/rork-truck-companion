@@ -1,8 +1,3 @@
-export interface LoadStop {
-  id: string;
-  location: string;
-}
-
 export interface TruckProfile {
   id: string;
   companyName: string;
@@ -43,12 +38,6 @@ export interface TruckProfile {
   steeringTreadDepth: string;
   driverTreadDepth: string;
   trailerTreadDepth: string;
-  loadTripNumber: string;
-  loadPickUpNumber: string;
-  loadPONumber: string;
-  loadShipFrom: string;
-  loadDestination: string;
-  loadStops: LoadStop[];
 }
 
 export interface Place {

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { TruckProfile, LoadStop } from '@/types';
+import { TruckProfile } from '@/types';
 
 const TRUCK_STORAGE_KEY = '@trucker_app:truck_profile';
 
@@ -46,12 +46,6 @@ const defaultTruckProfile: TruckProfile = {
   steeringTreadDepth: '',
   driverTreadDepth: '',
   trailerTreadDepth: '',
-  loadTripNumber: '',
-  loadPickUpNumber: '',
-  loadPONumber: '',
-  loadShipFrom: '',
-  loadDestination: '',
-  loadStops: [],
 };
 
 export const [TruckProvider, useTruck] = createContextHook(() => {

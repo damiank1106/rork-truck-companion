@@ -1,4 +1,4 @@
-import { Edit3, Save, X, Plus as PlusIcon, Trash2 } from "lucide-react-native";
+import { Edit3, Save, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   Alert,
@@ -17,9 +17,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { useTruck } from "@/contexts/TruckContext";
-import { TruckProfile, LoadStop } from "@/types";
+import { TruckProfile } from "@/types";
 
-type TabType = "main" | "truck" | "trailer" | "weight" | "tire" | "load";
+type TabType = "main" | "truck" | "trailer" | "weight" | "tire";
 
 export default function TruckScreen() {
   const insets = useSafeAreaInsets();
@@ -105,11 +105,6 @@ export default function TruckScreen() {
           label="Tires"
           isActive={activeTab === "tire"}
           onPress={() => setActiveTab("tire")}
-        />
-        <TabButton
-          label="Load"
-          isActive={activeTab === "load"}
-          onPress={() => setActiveTab("load")}
         />
       </View>
 
@@ -378,134 +373,8 @@ export default function TruckScreen() {
             />
           </View>
         )}
-
-        {activeTab === "load" && (
-          <LoadTab
-            profile={profile}
-            isEditing={isEditing}
-            onUpdate={setEditedProfile}
-          />
-        )}
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-interface LoadTabProps {
-  profile: TruckProfile;
-  isEditing: boolean;
-  onUpdate: (profile: TruckProfile) => void;
-}
-
-function LoadTab({ profile, isEditing, onUpdate }: LoadTabProps) {
-  const handleAddStop = () => {
-    const newStop: LoadStop = {
-      id: Date.now().toString(),
-      location: '',
-    };
-    onUpdate({
-      ...profile,
-      loadStops: [...profile.loadStops, newStop],
-    });
-  };
-
-  const handleRemoveStop = (stopId: string) => {
-    onUpdate({
-      ...profile,
-      loadStops: profile.loadStops.filter((stop) => stop.id !== stopId),
-    });
-  };
-
-  const handleUpdateStop = (stopId: string, location: string) => {
-    onUpdate({
-      ...profile,
-      loadStops: profile.loadStops.map((stop) =>
-        stop.id === stopId ? { ...stop, location } : stop
-      ),
-    });
-  };
-
-  const handleFieldUpdate = (field: keyof TruckProfile, value: string) => {
-    onUpdate({ ...profile, [field]: value });
-  };
-
-  return (
-    <View style={styles.section}>
-      <InputField
-        label="Trip Number"
-        value={profile.loadTripNumber}
-        onChangeText={(text) => handleFieldUpdate("loadTripNumber", text)}
-        editable={isEditing}
-        placeholder="Enter Trip Number"
-      />
-      <InputField
-        label="Pick Up Number"
-        value={profile.loadPickUpNumber}
-        onChangeText={(text) => handleFieldUpdate("loadPickUpNumber", text)}
-        editable={isEditing}
-        placeholder="Enter Pick Up Number"
-      />
-      <InputField
-        label="PO Number"
-        value={profile.loadPONumber}
-        onChangeText={(text) => handleFieldUpdate("loadPONumber", text)}
-        editable={isEditing}
-        placeholder="Enter PO Number"
-      />
-      <InputField
-        label="Ship From"
-        value={profile.loadShipFrom}
-        onChangeText={(text) => handleFieldUpdate("loadShipFrom", text)}
-        editable={isEditing}
-        placeholder="Enter Ship From Location"
-      />
-      
-      <View style={styles.stopsSection}>
-        <View style={styles.stopsSectionHeader}>
-          <Text style={styles.stopsLabel}>Stops</Text>
-          {isEditing && (
-            <TouchableOpacity
-              style={styles.addStopButton}
-              onPress={handleAddStop}
-            >
-              <PlusIcon color={Colors.white} size={16} />
-              <Text style={styles.addStopText}>Add Stop</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        {profile.loadStops.map((stop, index) => (
-          <View key={stop.id} style={styles.stopRow}>
-            <View style={styles.stopInputContainer}>
-              <Text style={styles.stopNumber}>Stop {index + 1}</Text>
-              <TextInput
-                style={[styles.input, !isEditing && styles.inputDisabled]}
-                value={stop.location}
-                onChangeText={(text) => handleUpdateStop(stop.id, text)}
-                editable={isEditing}
-                placeholder="Enter stop location"
-                placeholderTextColor={Colors.textLight}
-              />
-            </View>
-            {isEditing && (
-              <TouchableOpacity
-                style={styles.removeStopButton}
-                onPress={() => handleRemoveStop(stop.id)}
-              >
-                <Trash2 color={Colors.error} size={18} />
-              </TouchableOpacity>
-            )}
-          </View>
-        ))}
-      </View>
-
-      <InputField
-        label="Destination"
-        value={profile.loadDestination}
-        onChangeText={(text) => handleFieldUpdate("loadDestination", text)}
-        editable={isEditing}
-        placeholder="Enter Destination"
-      />
-    </View>
   );
 }
 
@@ -742,53 +611,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     color: "#000000",
     opacity: 0.6,
-  },
-  stopsSection: {
-    marginBottom: 16,
-  },
-  stopsSectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  stopsLabel: {
-    fontSize: 14,
-    fontWeight: "600" as const,
-    color: "#000000",
-    opacity: 0.7,
-  },
-  addStopButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
-  },
-  addStopText: {
-    color: Colors.white,
-    fontSize: 12,
-    fontWeight: "600" as const,
-  },
-  stopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-    gap: 8,
-  },
-  stopInputContainer: {
-    flex: 1,
-  },
-  stopNumber: {
-    fontSize: 12,
-    fontWeight: "600" as const,
-    color: "#000000",
-    opacity: 0.6,
-    marginBottom: 4,
-  },
-  removeStopButton: {
-    padding: 8,
   },
 });
