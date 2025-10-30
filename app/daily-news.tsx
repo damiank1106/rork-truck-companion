@@ -14,8 +14,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 
 const NEWS_ENDPOINT =
-  "https://script.google.com/macros/s/AKfycbwXT7kvkkj_8vIbtHnqCYlS1GKTWyi9obmRKRl1BPLXR0sYmorNenPXYPBYpJ1B3pk/exec";
+  "https://script.google.com/macros/s/AKfycbxLwMaJ2UVxbEIFN6C3UAdZBiTkUcjKpqjnKQFWPsb1cFtgK9JGhbgRYTryvgeogCuy/exec";
 const DAILY_NEWS_SHEET_NAME = "Daily News";
+const SHEET_NAME_CANDIDATES = Array.from(
+  new Set([DAILY_NEWS_SHEET_NAME, "DailyNews", "Daily_News", "Sheet1", "News"])
+);
 
 interface NewsItem {
   title: string;
@@ -55,17 +58,51 @@ interface GvizTable {
   rows?: GvizTableRow[] | null;
 }
 
-const REQUEST_VARIANTS: RequestVariant[] = [
-  { label: "default", params: {} },
-  { label: "sheet", params: { sheet: DAILY_NEWS_SHEET_NAME } },
-  { label: "sheetName", params: { sheetName: DAILY_NEWS_SHEET_NAME } },
-  { label: "tab", params: { tab: DAILY_NEWS_SHEET_NAME } },
-  { label: "worksheet", params: { worksheet: DAILY_NEWS_SHEET_NAME } },
-  { label: "alt-json", params: { alt: "json" } },
-  { label: "sheet-alt-json", params: { sheet: DAILY_NEWS_SHEET_NAME, alt: "json" } },
-  { label: "tqx-json", params: { tqx: "out:json" } },
-  { label: "tqx-sheet", params: { sheet: DAILY_NEWS_SHEET_NAME, tqx: "out:json" } },
-];
+const REQUEST_VARIANTS: RequestVariant[] = (() => {
+  const variants: RequestVariant[] = [
+    { label: "default", params: {} },
+    { label: "alt-json", params: { alt: "json" } },
+    { label: "tqx-json", params: { tqx: "out:json" } },
+  ];
+
+  const sheetParamKeys = ["sheet", "sheetName", "tab", "worksheet"];
+  const sheetExtras: Array<{ suffix: string; extras: Record<string, string> }> = [
+    { suffix: "", extras: {} },
+    { suffix: "-alt-json", extras: { alt: "json" } },
+    { suffix: "-tqx-json", extras: { tqx: "out:json" } },
+  ];
+
+  for (const key of sheetParamKeys) {
+    for (const name of SHEET_NAME_CANDIDATES) {
+      const labelSafeName = name.replace(/\s+/g, "_");
+      for (const { suffix, extras: extrasMap } of sheetExtras) {
+        const params: Record<string, string> = { ...extrasMap, [key]: name };
+        variants.push({
+          label: `${key}:${labelSafeName}${suffix}`,
+          params,
+        });
+      }
+    }
+  }
+
+  const gidExtras: Array<{ suffix: string; extras: Record<string, string> }> = [
+    { suffix: "", extras: {} },
+    { suffix: "-alt-json", extras: { alt: "json" } },
+    { suffix: "-tqx-json", extras: { tqx: "out:json" } },
+  ];
+
+  for (const gid of ["0", "1"]) {
+    for (const { suffix, extras: extrasMap } of gidExtras) {
+      const params: Record<string, string> = { ...extrasMap, gid };
+      variants.push({
+        label: `gid:${gid}${suffix}`,
+        params,
+      });
+    }
+  }
+
+  return variants;
+})();
 
 function buildRequestUrl(base: string, params: Record<string, string>) {
   try {
