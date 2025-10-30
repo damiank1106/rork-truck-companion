@@ -1,416 +1,37 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Linking,
-  RefreshControl,
-  ScrollView,
+  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ArrowLeft, RefreshCw, X, ExternalLink } from "lucide-react-native";
 
+import AnimatedBackground from "@/components/AnimatedBackground";
 import Colors from "@/constants/colors";
+import {
+  PublishedNewsItem,
+  autoFetchNewsOnAppStart,
+  refreshNewsNow,
+} from "@/lib/newsFetcher";
 
-const NEWS_ENDPOINT =
-  "https://script.google.com/macros/s/AKfycbxLwMaJ2UVxbEIFN6C3UAdZBiTkUcjKpqjnKQFWPsb1cFtgK9JGhbgRYTryvgeogCuy/exec";
-const DAILY_NEWS_SHEET_NAME = "Daily News";
-const SHEET_NAME_CANDIDATES = Array.from(
-  new Set([DAILY_NEWS_SHEET_NAME, "DailyNews", "Daily_News", "Sheet1", "News"])
-);
-
-interface NewsItem {
-  title: string;
-  description?: string;
-  link?: string;
-  publishedAt?: string;
-}
-
-interface FetchNewsResult {
-  items: NewsItem[];
-  updatedAt: string | null;
-}
-
-type ConnectionStatus = "idle" | "checking" | "connected" | "failed";
-
-type RequestVariant = {
-  label: string;
-  params: Record<string, string>;
-};
-
-interface GvizTableColumn {
-  id?: string | null;
-  label?: string | null;
-}
-
-interface GvizTableRowValue {
-  v?: unknown;
-  f?: unknown;
-}
-
-interface GvizTableRow {
-  c?: GvizTableRowValue[] | null;
-}
-
-interface GvizTable {
-  cols?: GvizTableColumn[] | null;
-  rows?: GvizTableRow[] | null;
-}
-
-const REQUEST_VARIANTS: RequestVariant[] = (() => {
-  const variants: RequestVariant[] = [
-    { label: "default", params: {} },
-    { label: "alt-json", params: { alt: "json" } },
-    { label: "tqx-json", params: { tqx: "out:json" } },
-  ];
-
-  const sheetParamKeys = ["sheet", "sheetName", "tab", "worksheet"];
-  const sheetExtras: Array<{ suffix: string; extras: Record<string, string> }> = [
-    { suffix: "", extras: {} },
-    { suffix: "-alt-json", extras: { alt: "json" } },
-    { suffix: "-tqx-json", extras: { tqx: "out:json" } },
-  ];
-
-  for (const key of sheetParamKeys) {
-    for (const name of SHEET_NAME_CANDIDATES) {
-      const labelSafeName = name.replace(/\s+/g, "_");
-      for (const { suffix, extras: extrasMap } of sheetExtras) {
-        const params: Record<string, string> = { ...extrasMap, [key]: name };
-        variants.push({
-          label: `${key}:${labelSafeName}${suffix}`,
-          params,
-        });
-      }
-    }
-  }
-
-  const gidExtras: Array<{ suffix: string; extras: Record<string, string> }> = [
-    { suffix: "", extras: {} },
-    { suffix: "-alt-json", extras: { alt: "json" } },
-    { suffix: "-tqx-json", extras: { tqx: "out:json" } },
-  ];
-
-  for (const gid of ["0", "1"]) {
-    for (const { suffix, extras: extrasMap } of gidExtras) {
-      const params: Record<string, string> = { ...extrasMap, gid };
-      variants.push({
-        label: `gid:${gid}${suffix}`,
-        params,
-      });
-    }
-  }
-
-  return variants;
-})();
-
-function buildRequestUrl(base: string, params: Record<string, string>) {
-  try {
-    const url = new URL(base);
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.set(key, value);
-      }
-    });
-    url.searchParams.set("ts", Date.now().toString());
-    return url.toString();
-  } catch (error) {
-    console.warn("Failed to construct Daily News request URL", error);
-    return base;
-  }
-}
-
-function stripJsonSafeguards(rawBody: string) {
-  return rawBody
-    .replace(/^\)\]\}'/, "")
-    .replace(/^while\s*\(true\);?/i, "")
-    .replace(/^\/\/.*$/gm, "")
-    .trim();
-}
-
-function parseResponseText(rawBody: string): unknown {
-  const trimmed = stripJsonSafeguards(rawBody);
-
-  if (!trimmed) {
-    return [];
-  }
-
-  if (/load\s+failed/i.test(trimmed)) {
-    throw new Error(
-      "The Google Sheets web app reported \"Load Failed\". Ensure the deployment is accessible to anyone with the link."
-    );
-  }
-
-  if (/^<(!doctype|html)/i.test(trimmed)) {
-    throw new Error(
-      "The news feed returned HTML instead of JSON. Publish the sheet as JSON or update the Apps Script deployment."
-    );
-  }
-
-  const gvizMatch = trimmed.match(/google\.visualization\.Query\.setResponse\((.*)\);?$/s);
-  if (gvizMatch && gvizMatch[1]) {
-    try {
-      return JSON.parse(gvizMatch[1]);
-    } catch (error) {
-      console.warn("Unable to parse Google Visualization response", error);
-      throw new Error("We couldn't parse the Google Sheets response. Check that the sheet is published as JSON.");
-    }
-  }
-
-  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-    try {
-      return JSON.parse(trimmed);
-    } catch (error) {
-      console.warn("Failed to parse JSON response", error, { rawBody: trimmed.slice(0, 200) });
-      throw new Error("We couldn't parse the news feed response as JSON.");
-    }
-  }
-
-  const firstBrace = trimmed.indexOf("{");
-  const lastBrace = trimmed.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
-    const probableJson = trimmed.slice(firstBrace, lastBrace + 1);
-    try {
-      return JSON.parse(probableJson);
-    } catch (error) {
-      console.warn("Failed to parse embedded JSON response", error, { rawBody: trimmed.slice(0, 200) });
-    }
-  }
-
-  throw new Error("We received an unexpected response from the news feed. Please verify the Google Sheets script.");
-}
-
-function resolveColumnIndex(columns: string[], matcher: RegExp, fallback: number) {
-  const index = columns.findIndex((label) => matcher.test(label));
-  return index >= 0 ? index : fallback;
-}
-
-function parseGvizTable(table: GvizTable): FetchNewsResult {
-  const columns = (table.cols ?? [])
-    .map((column) => (column?.label ?? column?.id ?? "").toString().trim().toLowerCase())
-    .map((label) => label.replace(/\s+/g, " "));
-
-  const titleIndex = resolveColumnIndex(columns, /title|headline|subject/, 0);
-  const descriptionIndex = resolveColumnIndex(columns, /description|summary|body/, 1);
-  const linkIndex = resolveColumnIndex(columns, /link|url/, 2);
-  const publishedAtIndex = resolveColumnIndex(columns, /date|published|updated/, 3);
-
-  const rows = table.rows ?? [];
-  const items: NewsItem[] = rows
-    .map((row, rowIndex) => {
-      const cells = row?.c ?? [];
-
-      const resolveCell = (index: number) => {
-        if (index < 0 || index >= cells.length) {
-          return undefined;
-        }
-        const cell = cells[index];
-        const value = cell?.v ?? cell?.f;
-        return typeof value === "string" ? value : value != null ? String(value) : undefined;
-      };
-
-      const title = resolveCell(titleIndex) ?? `Update ${rowIndex + 1}`;
-      const description = resolveCell(descriptionIndex);
-      const link = resolveCell(linkIndex);
-      const publishedAt = resolveCell(publishedAtIndex);
-
-      return {
-        title: title.trim(),
-        description: description?.trim() || undefined,
-        link: link?.trim() || undefined,
-        publishedAt: publishedAt?.trim() || undefined,
-      };
-    })
-    .filter((item) => item.title.length > 0);
-
-  let updatedAt: string | null = null;
-  const mostRecent = items
-    .map((item) => (item.publishedAt ? Date.parse(item.publishedAt) : Number.NaN))
-    .filter((timestamp) => Number.isFinite(timestamp))
-    .sort((a, b) => b - a)[0];
-
-  if (Number.isFinite(mostRecent)) {
-    updatedAt = new Date(mostRecent).toISOString();
-  }
-
-  return { items, updatedAt };
-}
-
-function parseNewsEntries(payload: unknown): NewsItem[] {
-  let sourceArray: unknown[] = [];
-
-  if (Array.isArray(payload)) {
-    sourceArray = payload;
-  } else if (payload && typeof payload === "object") {
-    const record = payload as Record<string, unknown>;
-    if (Array.isArray(record.news)) {
-      sourceArray = record.news as unknown[];
-    } else if (Array.isArray(record.items)) {
-      sourceArray = record.items as unknown[];
-    } else if (Array.isArray(record.data)) {
-      sourceArray = record.data as unknown[];
-    } else if (Array.isArray(record.rows)) {
-      sourceArray = record.rows as unknown[];
-    } else if (Array.isArray(record.entries)) {
-      sourceArray = record.entries as unknown[];
-    }
-  }
-
-  return sourceArray
-    .map((entry, index) => {
-      if (Array.isArray(entry)) {
-        const [title, description, link, publishedAt] = entry as unknown[];
-        return {
-          title: typeof title === "string" && title.trim() ? title.trim() : `Update ${index + 1}`,
-          description: typeof description === "string" ? description.trim() : undefined,
-          link: typeof link === "string" ? link.trim() : undefined,
-          publishedAt: typeof publishedAt === "string" ? publishedAt.trim() : undefined,
-        };
-      }
-
-      if (entry && typeof entry === "object") {
-        const record = entry as Record<string, unknown>;
-        const title = record.title ?? record.headline ?? record.subject ?? `Update ${index + 1}`;
-        const description = record.description ?? record.summary ?? record.body;
-        const link = record.link ?? record.url ?? record.href;
-        const publishedAt = record.publishedAt ?? record.date ?? record.updatedAt ?? record.timestamp;
-
-        const resolvedTitle =
-          typeof title === "string" && title.trim().length > 0 ? title.trim() : String(title ?? `Update ${index + 1}`);
-
-        return {
-          title: resolvedTitle || `Update ${index + 1}`,
-          description: typeof description === "string" ? description.trim() : undefined,
-          link: typeof link === "string" ? link.trim() : undefined,
-          publishedAt: typeof publishedAt === "string" ? publishedAt.trim() : undefined,
-        };
-      }
-
-      return {
-        title: typeof entry === "string" && entry.trim() ? entry.trim() : `Update ${index + 1}`,
-      };
-    })
-    .filter((item) => item.title.trim().length > 0);
-}
-
-function normalizeNewsPayload(payload: unknown): FetchNewsResult {
-  if (payload && typeof payload === "object") {
-    const record = payload as Record<string, unknown>;
-
-    if (typeof record.status === "string" && record.status.toLowerCase() === "error") {
-      const message =
-        typeof record.message === "string"
-          ? record.message
-          : "The news feed reported an error. Check the Google Sheets deployment.";
-      throw new Error(message);
-    }
-
-    if (record.table && typeof record.table === "object") {
-      return parseGvizTable(record.table as GvizTable);
-    }
-
-    const candidate =
-      record.news ??
-      record.items ??
-      record.data ??
-      record.records ??
-      record.entries ??
-      record.feed ??
-      record.rows;
-
-    const items = parseNewsEntries(candidate ?? payload);
-    const metadata = record.metadata;
-    let updatedAt: string | null = null;
-
-    if (typeof record.updatedAt === "string") {
-      updatedAt = record.updatedAt.trim();
-    } else if (typeof record.lastUpdated === "string") {
-      updatedAt = record.lastUpdated.trim();
-    } else if (typeof record.lastRefreshed === "string") {
-      updatedAt = record.lastRefreshed.trim();
-    } else if (metadata && typeof metadata === "object") {
-      const metadataRecord = metadata as Record<string, unknown>;
-      if (typeof metadataRecord.updatedAt === "string") {
-        updatedAt = metadataRecord.updatedAt.trim();
-      }
-    }
-
-    return { items, updatedAt: updatedAt && updatedAt.length > 0 ? updatedAt : null };
-  }
-
-  return {
-    items: parseNewsEntries(payload),
-    updatedAt: null,
-  };
-}
-
-async function fetchNewsFromGoogleSheets(): Promise<FetchNewsResult> {
-  const errors: string[] = [];
-  let lastSuccessfulResult: FetchNewsResult | null = null;
-
-  for (const variant of REQUEST_VARIANTS) {
-    const requestUrl = buildRequestUrl(NEWS_ENDPOINT, variant.params);
-
-    try {
-      const response = await fetch(requestUrl, {
-        headers: {
-          Accept: "application/json",
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
-      });
-
-      const rawBody = await response.text();
-
-      if (!response.ok) {
-        const snippet = rawBody.trim().slice(0, 120).replace(/\s+/g, " ");
-        throw new Error(
-          snippet.length > 0
-            ? `Request failed with status ${response.status}: ${snippet}`
-            : `Request failed with status ${response.status}`
-        );
-      }
-
-      const payload = parseResponseText(rawBody);
-      const result = normalizeNewsPayload(payload);
-
-      if (result.items.length > 0) {
-        return result;
-      }
-
-      if (!lastSuccessfulResult) {
-        lastSuccessfulResult = result;
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unexpected error while fetching the news feed.";
-      errors.push(`${variant.label}: ${message}`);
-      console.warn(`Failed Daily News fetch attempt (${variant.label})`, error);
-    }
-  }
-
-  if (lastSuccessfulResult) {
-    return lastSuccessfulResult;
-  }
-
-  throw new Error(
-    errors.length > 0
-      ? `Unable to load the Daily News feed.\n${errors.join("\n")}`
-      : "Unable to load the Daily News feed from Google Sheets."
-  );
-}
-
-function formatPublishedDate(rawDate?: string) {
-  if (!rawDate) {
+function formatDateLabel(value?: string) {
+  if (!value) {
     return undefined;
   }
 
-  const parsedDate = new Date(rawDate);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return rawDate;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
   }
 
-  return parsedDate.toLocaleDateString(undefined, {
+  return parsed.toLocaleDateString(undefined, {
     weekday: "short",
     year: "numeric",
     month: "short",
@@ -418,207 +39,277 @@ function formatPublishedDate(rawDate?: string) {
   });
 }
 
-function formatCheckedTimestamp(rawDate?: string) {
-  if (!rawDate) {
-    return undefined;
+function extractLatestPublishedDate(items: PublishedNewsItem[]) {
+  const timestamps = items
+    .map((item) => (item.published_date ? Date.parse(item.published_date) : Number.NaN))
+    .filter((timestamp) => Number.isFinite(timestamp))
+    .sort((a, b) => b - a);
+
+  if (timestamps.length === 0) {
+    return null;
   }
 
-  const parsedDate = new Date(rawDate);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return rawDate;
-  }
-
-  return parsedDate.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date(timestamps[0]).toISOString();
 }
 
 export default function DailyNewsScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [newsItems, setNewsItems] = useState<PublishedNewsItem[]>([]);
+  const [selectedNews, setSelectedNews] = useState<PublishedNewsItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
-  const [connectionCheckedAt, setConnectionCheckedAt] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
 
-  const fetchNews = useCallback(
-    async (isRefresh = false) => {
-      if (!isRefresh) {
-        setIsLoading(true);
-      }
+  const updateItems = useCallback((items: PublishedNewsItem[]) => {
+    if (!isMountedRef.current) {
+      return;
+    }
+    setNewsItems(items);
+    const latest = extractLatestPublishedDate(items);
+    setLastUpdated(latest);
+  }, [isMountedRef]);
 
-      setConnectionStatus((prev) => (isRefresh && prev === "connected" ? prev : "checking"));
-
-      try {
+  const loadInitialNews = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const items = await autoFetchNewsOnAppStart();
+      updateItems(items);
+      if (isMountedRef.current) {
         setError(null);
-        const result = await fetchNewsFromGoogleSheets();
-        setNewsItems(result.items);
-        setLastUpdated(result.updatedAt ?? new Date().toISOString());
-        setConnectionStatus("connected");
-        setConnectionCheckedAt(new Date().toISOString());
-
-        if (result.items.length === 0) {
-          setError("No news items are available right now. Pull down to refresh.");
-        }
-      } catch (err) {
-        console.warn("Failed to load news", err);
-        setConnectionStatus("failed");
-        setConnectionCheckedAt(new Date().toISOString());
-        setError(
-          err instanceof Error
-            ? err.message || "We couldn't refresh the news. Pull to try again."
-            : "We couldn't refresh the news. Pull to try again."
-        );
-      } finally {
-        if (isRefresh) {
-          setRefreshing(false);
-        } else {
-          setIsLoading(false);
-        }
       }
+    } catch (err) {
+      console.warn("Failed to load daily news", err);
+      if (isMountedRef.current) {
+        setError("We couldn't load the latest news. Please try again.");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [isMountedRef, updateItems]);
+
+  const checkForScheduledUpdate = useCallback(async () => {
+    try {
+      const items = await autoFetchNewsOnAppStart();
+      updateItems(items);
+    } catch (err) {
+      console.warn("Scheduled Daily News check failed", err);
+    }
+  }, [updateItems]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [isMountedRef]);
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) {
+      return;
+    }
+
+    setIsRefreshing(true);
+    try {
+      const items = await refreshNewsNow();
+      updateItems(items);
+      if (isMountedRef.current) {
+        setError(null);
+      }
+    } catch (err) {
+      console.warn("Manual news refresh failed", err);
+      if (isMountedRef.current) {
+        setError("Refresh failed. Please check your connection and try again.");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsRefreshing(false);
+      }
+    }
+  }, [isMountedRef, isRefreshing, updateItems]);
+
+  useEffect(() => {
+    loadInitialNews().catch(() => {
+      // handled in loadInitialNews
+    });
+
+    const interval = setInterval(() => {
+      checkForScheduledUpdate().catch(() => {
+        // handled inside helper
+      });
+    }, 60 * 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [checkForScheduledUpdate, loadInitialNews]);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkForScheduledUpdate().catch(() => {
+        // handled inside helper
+      });
+    }, [checkForScheduledUpdate])
+  );
+
+  const headerUpdatedLabel = useMemo(() => {
+    if (!lastUpdated) {
+      return "";
+    }
+
+    const formatted = formatDateLabel(lastUpdated);
+    return formatted ? `Last updated ${formatted}` : "";
+  }, [lastUpdated]);
+
+  const openSourceLink = useCallback((url?: string) => {
+    if (!url) {
+      return;
+    }
+
+    Linking.canOpenURL(url)
+      .then((supported) => {
+        if (!supported) {
+          throw new Error("Unsupported URL");
+        }
+        return Linking.openURL(url);
+      })
+      .catch(() => {
+        setError("We couldn't open the source link. Please try again later.");
+      });
+  }, []);
+
+  const renderNewsItem = useCallback(
+    ({ item }: { item: PublishedNewsItem }) => {
+      const tagLabel = item.tag ? item.tag.trim() : undefined;
+      const publishedLabel = formatDateLabel(item.published_date);
+
+      return (
+        <TouchableOpacity
+          style={styles.newsCard}
+          onPress={() => setSelectedNews(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Read ${item.title}`}
+        >
+          <Text style={styles.newsTitle}>{item.title}</Text>
+          {tagLabel ? <Text style={styles.newsTag}>{tagLabel}</Text> : null}
+          {publishedLabel ? <Text style={styles.newsMeta}>{publishedLabel}</Text> : null}
+        </TouchableOpacity>
+      );
     },
     []
   );
 
-  useEffect(() => {
-    fetchNews(false);
-  }, [fetchNews]);
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchNews(true);
-  }, [fetchNews]);
-
-  const subtitle = useMemo(() => {
-    if (!lastUpdated) {
-      return "Your dispatch team's latest notes";
-    }
-
-    const formatted = formatPublishedDate(lastUpdated);
-    if (!formatted) {
-      return "Your dispatch team's latest notes";
-    }
-
-    return `Updated ${formatted}`;
-  }, [lastUpdated]);
-
-  const connectionMessage = useMemo(() => {
-    if (connectionStatus === "connected") {
-      const checked = formatCheckedTimestamp(connectionCheckedAt ?? undefined);
-      return checked ? `Connected to Google Sheets • Checked ${checked}` : "Connected to Google Sheets";
-    }
-
-    if (connectionStatus === "checking" || connectionStatus === "idle") {
-      return "Checking Google Sheets connection…";
-    }
-
-    const checked = formatCheckedTimestamp(connectionCheckedAt ?? undefined);
-    return checked
-      ? `Unable to reach Google Sheets • Last tried ${checked}`
-      : "Unable to reach Google Sheets";
-  }, [connectionCheckedAt, connectionStatus]);
-
-  const openLink = useCallback((link?: string) => {
-    if (!link) {
-      return;
-    }
-
-    Linking.canOpenURL(link)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(link);
-        }
-        throw new Error("Unsupported URL");
-      })
-      .catch(() => {
-        setError("We couldn't open that link. Please try again later.");
-      });
-  }, []);
+  const listContentStyle = useMemo(
+    () => ({
+      paddingHorizontal: 20,
+      paddingBottom: Math.max(insets.bottom, 32),
+      paddingTop: 24,
+    }),
+    [insets.bottom]
+  );
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingTop: 16,
-          paddingBottom: Math.max(insets.bottom, 24),
-        },
-      ]}
-    >
-      <Text style={styles.heading}>Daily News</Text>
-      <Text style={styles.subheading}>{subtitle}</Text>
-
-      {connectionStatus !== "idle" && (
-        <View style={styles.connectionRow}>
-          <View
-            style={[
-              styles.connectionIndicator,
-              connectionStatus === "connected" ? styles.connectionIndicatorConnected : null,
-              connectionStatus === "failed" ? styles.connectionIndicatorFailed : null,
-            ]}
-          />
-          <Text style={styles.connectionText}>{connectionMessage}</Text>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <AnimatedBackground />
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => router.replace("/(tabs)/home")}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to home"
+          >
+            <ArrowLeft color={Colors.text} size={20} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Daily News</Text>
+          <TouchableOpacity
+            style={[styles.headerButton, isRefreshing && styles.headerButtonDisabled]}
+            onPress={handleRefresh}
+            disabled={isRefreshing}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh news"
+          >
+            {isRefreshing ? (
+              <ActivityIndicator size="small" color={Colors.text} />
+            ) : (
+              <RefreshCw color={Colors.text} size={20} />
+            )}
+          </TouchableOpacity>
         </View>
-      )}
+      </View>
 
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primaryLight} />
-          <Text style={styles.loadingText}>Loading today's headlines...</Text>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            (newsItems.length === 0 && !error) || !!error ? styles.scrollContentStretch : null,
-          ]}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={Colors.primaryLight}
-              colors={[Colors.primaryLight]}
-            />
-          }
-          alwaysBounceVertical
-          bounces
-        >
-          {error && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
+      <View style={styles.content}>
+        {headerUpdatedLabel ? <Text style={styles.updatedText}>{headerUpdatedLabel}</Text> : null}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          {newsItems.length === 0 && !error ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateTitle}>No updates yet</Text>
-              <Text style={styles.emptyStateDescription}>
-                Check back soon for the latest announcements from your dispatch team.
-              </Text>
-            </View>
-          ) : (
-            newsItems.map((item, index) => (
-              <View key={`${item.title}-${index}`} style={styles.newsCard}>
-                <Text style={styles.newsTitle}>{item.title}</Text>
-                {item.publishedAt && <Text style={styles.newsMeta}>{formatPublishedDate(item.publishedAt)}</Text>}
-                {item.description && <Text style={styles.newsDescription}>{item.description}</Text>}
-                {item.link && (
-                  <TouchableOpacity onPress={() => openLink(item.link)}>
-                    <Text style={styles.newsLink}>Read more</Text>
-                  </TouchableOpacity>
-                )}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primaryLight} />
+            <Text style={styles.loadingText}>Loading headlines…</Text>
+          </View>
+        ) : (
+          <FlatList
+            style={styles.list}
+            data={newsItems}
+            keyExtractor={(item, index) => `${item.title}-${index}`}
+            renderItem={renderNewsItem}
+            contentContainerStyle={listContentStyle}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>No news yet</Text>
+                <Text style={styles.emptySubtitle}>
+                  Check back after 6:30am Central or tap refresh to load the latest updates.
+                </Text>
               </View>
-            ))
-          )}
-        </ScrollView>
-      )}
+            )}
+          />
+        )}
+      </View>
+
+      <Modal
+        visible={!!selectedNews}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedNews(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle} numberOfLines={2}>
+                {selectedNews?.title}
+              </Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setSelectedNews(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Close news details"
+              >
+                <X color={Colors.text} size={20} />
+              </TouchableOpacity>
+            </View>
+            {selectedNews?.summary ? (
+              <Text style={styles.modalSummary}>{selectedNews.summary}</Text>
+            ) : (
+              <Text style={styles.modalSummary}>No summary is available for this update.</Text>
+            )}
+            {selectedNews?.source_url ? (
+              <TouchableOpacity
+                style={styles.modalLinkButton}
+                onPress={() => openSourceLink(selectedNews.source_url)}
+                accessibilityRole="link"
+              >
+                <ExternalLink color={Colors.white} size={18} style={styles.modalLinkIcon} />
+                <Text style={styles.modalLinkText}>Open Source</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -627,130 +318,180 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    paddingHorizontal: 24,
   },
-  heading: {
-    fontSize: 28,
-    fontWeight: "700" as const,
-    color: Colors.text,
-    marginBottom: 4,
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderBottomColor: "rgba(15, 23, 42, 0.08)",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    position: "relative",
   },
-  subheading: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 8,
-  },
-  connectionRow: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
+    justifyContent: "space-between",
   },
-  connectionIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.warning,
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  connectionIndicatorConnected: {
-    backgroundColor: Colors.success,
+  headerButtonDisabled: {
+    opacity: 0.6,
   },
-  connectionIndicatorFailed: {
-    backgroundColor: Colors.error,
-  },
-  connectionText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: Colors.text,
+    textAlign: "center",
     flex: 1,
-    flexWrap: "wrap" as const,
+  },
+  content: {
+    flex: 1,
+  },
+  list: {
+    flex: 1,
+  },
+  updatedText: {
+    textAlign: "center",
+    color: Colors.textSecondary,
+    fontSize: 13,
+    marginTop: 16,
+  },
+  errorText: {
+    textAlign: "center",
+    color: Colors.error,
+    fontSize: 14,
+    marginTop: 8,
+    paddingHorizontal: 24,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
   },
   loadingText: {
+    marginTop: 12,
     fontSize: 16,
     color: Colors.textSecondary,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 32,
-    gap: 16,
-  },
-  scrollContentStretch: {
-    flexGrow: 1,
-    justifyContent: "center",
-  },
-  errorBanner: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderColor: Colors.error,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-  },
-  errorText: {
-    color: Colors.error,
-    fontSize: 14,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.08)",
-  },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: "600" as const,
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  emptyStateDescription: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: "center" as const,
-    lineHeight: 20,
+  separator: {
+    height: 12,
   },
   newsCard: {
     backgroundColor: Colors.cardBackground,
     borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.08)",
+    padding: 20,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    gap: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
   },
   newsTitle: {
     fontSize: 18,
-    fontWeight: "700" as const,
+    fontWeight: "700",
     color: Colors.text,
+    marginBottom: 6,
+  },
+  newsTag: {
+    fontSize: 13,
+    color: Colors.primaryLight,
+    fontWeight: "600",
+    marginBottom: 4,
+    textTransform: "uppercase",
   },
   newsMeta: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.textSecondary,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.6,
   },
-  newsDescription: {
-    fontSize: 14,
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
     color: Colors.text,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
     lineHeight: 20,
   },
-  newsLink: {
-    fontSize: 14,
-    fontWeight: "600" as const,
-    color: Colors.primaryLight,
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalContent: {
+    width: "100%",
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.text,
+    marginRight: 12,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalSummary: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  modalLinkButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.primaryLight,
+  },
+  modalLinkIcon: {
+    marginRight: 8,
+  },
+  modalLinkText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.white,
   },
 });
