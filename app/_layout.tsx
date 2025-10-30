@@ -48,6 +48,17 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="daily-news"
+        options={{
+          title: "Daily News",
+          headerTintColor: Colors.text,
+          headerStyle: {
+            backgroundColor: Colors.white,
+          },
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
         name="health-insurance"
         options={{
           headerShown: false,
