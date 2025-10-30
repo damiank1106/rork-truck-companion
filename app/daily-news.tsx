@@ -108,17 +108,47 @@ export default function DailyNewsScreen() {
 
     try {
       setError(null);
-      const response = await fetch(NEWS_ENDPOINT);
+      const url = `${NEWS_ENDPOINT}?ts=${Date.now()}`;
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
       if (!response.ok) {
         throw new Error(`Request failed with status ${response.status}`);
       }
 
-      const payload = await response.json();
+      const contentType = response.headers.get("content-type") ?? "";
+      let payload: unknown;
+
+      if (contentType.includes("application/json")) {
+        payload = await response.json();
+      } else {
+        const rawBody = await response.text();
+        try {
+          payload = JSON.parse(rawBody);
+        } catch (parseError) {
+          console.warn("Unexpected response from news endpoint", {
+            parseError,
+            rawBody,
+          });
+          throw new Error("We received an unexpected response from the news feed.");
+        }
+      }
+
       const parsedNews = parseNewsEntries(payload);
       setNewsItems(parsedNews);
 
       if (payload && typeof payload === "object" && payload !== null) {
-        const updated = (payload as Record<string, unknown>).updatedAt;
+        const record = payload as Record<string, unknown>;
+        const updated =
+          record.updatedAt ??
+          record.lastUpdated ??
+          (typeof record.metadata === "object" && record.metadata !== null
+            ? (record.metadata as Record<string, unknown>).updatedAt
+            : null);
         if (typeof updated === "string" && updated.trim()) {
           setLastUpdated(updated.trim());
         } else {
@@ -127,9 +157,17 @@ export default function DailyNewsScreen() {
       } else {
         setLastUpdated(new Date().toISOString());
       }
+
+      if (parsedNews.length === 0) {
+        setError("No news items are available right now. Pull down to refresh.");
+      }
     } catch (err) {
       console.warn("Failed to load news", err);
-      setError("We couldn't refresh the news. Pull to try again.");
+      setError(
+        err instanceof Error
+          ? err.message || "We couldn't refresh the news. Pull to try again."
+          : "We couldn't refresh the news. Pull to try again."
+      );
     } finally {
       if (isRefresh) {
         setRefreshing(false);
@@ -199,7 +237,10 @@ export default function DailyNewsScreen() {
       ) : (
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            (newsItems.length === 0 && !error) || !!error ? styles.scrollContentStretch : null,
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -208,6 +249,8 @@ export default function DailyNewsScreen() {
               colors={[Colors.primaryLight]}
             />
           }
+          alwaysBounceVertical
+          bounces
         >
           {error && (
             <View style={styles.errorBanner}>
@@ -273,8 +316,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingBottom: 32,
     gap: 16,
+  },
+  scrollContentStretch: {
+    flexGrow: 1,
+    justifyContent: "center",
   },
   errorBanner: {
     backgroundColor: "rgba(239, 68, 68, 0.1)",
