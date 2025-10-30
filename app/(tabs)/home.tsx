@@ -1,20 +1,6 @@
-import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu } from "lucide-react-native";
+import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
-import {
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Platform,
-  Alert,
-  Image,
-  ActivityIndicator,
-  TouchableWithoutFeedback,
-  Modal,
-  TextInput as RNTextInput,
-} from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -26,6 +12,7 @@ import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 import { useHealthInsurance } from "@/contexts/HealthInsuranceContext";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { useTruck } from "@/contexts/TruckContext";
+import { Modal, TextInput as RNTextInput } from "react-native";
 import { useTrailers } from "@/contexts/TrailerContext";
 
 interface WeatherData {
@@ -68,14 +55,8 @@ export default function HomeScreen() {
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
   const [tripNumberInput, setTripNumberInput] = useState<string>("");
-  const [isMenuVisible, setIsMenuVisible] = useState<boolean>(false);
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
-
-  const handleNavigateToDailyNews = () => {
-    setIsMenuVisible(false);
-    router.push("/daily-news");
-  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -347,48 +328,11 @@ export default function HomeScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <AnimatedBackground />
-        <TouchableOpacity
-          accessibilityLabel="Open menu"
-          accessibilityRole="button"
-          activeOpacity={0.8}
-          onPress={() => setIsMenuVisible(true)}
-          style={styles.menuButton}
-        >
-          <Menu color={Colors.black} size={20} />
-        </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Trucker Companion</Text>
           <Text style={styles.headerSubtitle}>Your journey, organized</Text>
         </View>
       </View>
-
-      <Modal
-        visible={isMenuVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsMenuVisible(false)}
-        statusBarTranslucent
-      >
-        <TouchableWithoutFeedback onPress={() => setIsMenuVisible(false)}>
-          <View style={styles.menuModalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.menuModalContent, { paddingTop: insets.top + 70 }]}>
-                <View style={styles.menuCard}>
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={handleNavigateToDailyNews}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open the Daily News page"
-                  >
-                    <Text style={styles.menuItemText}>Daily News</Text>
-                    <Text style={styles.menuItemDescription}>View the latest updates from dispatch</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
 
       <ScrollView
         style={styles.scrollView}
@@ -748,61 +692,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0, 0, 0, 0.08)",
     overflow: "hidden",
-    position: "relative" as const,
   },
   headerContent: {
     position: "relative" as const,
     zIndex: 1,
-  },
-  menuButton: {
-    position: "absolute" as const,
-    top: 16,
-    right: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  menuModalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-  },
-  menuModalContent: {
-    flex: 1,
-    alignItems: "flex-end",
-    paddingHorizontal: 20,
-  },
-  menuCard: {
-    width: 220,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  menuItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  menuItemText: {
-    fontSize: 16,
-    fontWeight: "600" as const,
-    color: Colors.text,
-  },
-  menuItemDescription: {
-    marginTop: 4,
-    fontSize: 13,
-    color: Colors.textSecondary,
   },
   headerTitle: {
     fontSize: 24,
