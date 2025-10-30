@@ -1,6 +1,6 @@
-import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard } from "lucide-react-native";
+import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -55,6 +55,17 @@ export default function HomeScreen() {
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
   const [tripNumberInput, setTripNumberInput] = useState<string>("");
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  const menuItems = [
+    {
+      label: "Daily News",
+      onPress: () => {
+        setIsMenuOpen(false);
+        router.push("/daily-news");
+      },
+    },
+  ];
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
 
@@ -326,11 +337,39 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {isMenuOpen && (
+        <Pressable style={styles.menuOverlay} onPress={() => setIsMenuOpen(false)} />
+      )}
       <View style={styles.header}>
         <AnimatedBackground />
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Trucker Companion</Text>
           <Text style={styles.headerSubtitle}>Your journey, organized</Text>
+        </View>
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => setIsMenuOpen(!isMenuOpen)}
+            accessibilityRole="button"
+            accessibilityLabel="Open menu"
+            accessibilityHint="Shows navigation shortcuts"
+          >
+            <Menu color={Colors.white} size={22} />
+            <Text style={styles.menuButtonText}>Menu</Text>
+          </TouchableOpacity>
+          {isMenuOpen && (
+            <View style={styles.menuDropdown}>
+              {menuItems.map((item) => (
+                <TouchableOpacity
+                  key={item.label}
+                  style={styles.menuItem}
+                  onPress={item.onPress}
+                >
+                  <Text style={styles.menuItemText}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       </View>
 
@@ -338,6 +377,7 @@ export default function HomeScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => isMenuOpen && setIsMenuOpen(false)}
       >
         <View style={styles.topRow}>
           <View style={styles.dateTimeSection} testID="date-time-card">
@@ -692,6 +732,67 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0, 0, 0, 0.08)",
     overflow: "hidden",
+  },
+  menuOverlay: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "transparent",
+    zIndex: 10,
+  },
+  menuContainer: {
+    position: "absolute" as const,
+    top: 16,
+    right: 20,
+    zIndex: 20,
+    alignItems: "flex-end" as const,
+  },
+  menuButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(15, 23, 42, 0.55)",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.35)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  menuButtonText: {
+    color: Colors.white,
+    fontWeight: "700" as const,
+    letterSpacing: 0.5,
+  },
+  menuDropdown: {
+    marginTop: 8,
+    backgroundColor: "rgba(15, 23, 42, 0.92)",
+    borderRadius: 12,
+    paddingVertical: 8,
+    width: 160,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  menuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  menuItemText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: "600" as const,
+    letterSpacing: 0.3,
   },
   headerContent: {
     position: "relative" as const,
