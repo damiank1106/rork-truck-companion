@@ -13,13 +13,190 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
 
-const NEWS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwXT7kvkkj_8vIbtHnqCYlS1GKTWyi9obmRKRl1BPLXR0sYmorNenPXYPBYpJ1B3pk/exec";
+const NEWS_ENDPOINT =
+  "https://script.google.com/macros/s/AKfycbwXT7kvkkj_8vIbtHnqCYlS1GKTWyi9obmRKRl1BPLXR0sYmorNenPXYPBYpJ1B3pk/exec";
+const DAILY_NEWS_SHEET_NAME = "Daily News";
 
 interface NewsItem {
   title: string;
   description?: string;
   link?: string;
   publishedAt?: string;
+}
+
+interface FetchNewsResult {
+  items: NewsItem[];
+  updatedAt: string | null;
+}
+
+type ConnectionStatus = "idle" | "checking" | "connected" | "failed";
+
+type RequestVariant = {
+  label: string;
+  params: Record<string, string>;
+};
+
+interface GvizTableColumn {
+  id?: string | null;
+  label?: string | null;
+}
+
+interface GvizTableRowValue {
+  v?: unknown;
+  f?: unknown;
+}
+
+interface GvizTableRow {
+  c?: GvizTableRowValue[] | null;
+}
+
+interface GvizTable {
+  cols?: GvizTableColumn[] | null;
+  rows?: GvizTableRow[] | null;
+}
+
+const REQUEST_VARIANTS: RequestVariant[] = [
+  { label: "default", params: {} },
+  { label: "sheet", params: { sheet: DAILY_NEWS_SHEET_NAME } },
+  { label: "sheetName", params: { sheetName: DAILY_NEWS_SHEET_NAME } },
+  { label: "tab", params: { tab: DAILY_NEWS_SHEET_NAME } },
+  { label: "worksheet", params: { worksheet: DAILY_NEWS_SHEET_NAME } },
+  { label: "alt-json", params: { alt: "json" } },
+  { label: "sheet-alt-json", params: { sheet: DAILY_NEWS_SHEET_NAME, alt: "json" } },
+  { label: "tqx-json", params: { tqx: "out:json" } },
+  { label: "tqx-sheet", params: { sheet: DAILY_NEWS_SHEET_NAME, tqx: "out:json" } },
+];
+
+function buildRequestUrl(base: string, params: Record<string, string>) {
+  try {
+    const url = new URL(base);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        url.searchParams.set(key, value);
+      }
+    });
+    url.searchParams.set("ts", Date.now().toString());
+    return url.toString();
+  } catch (error) {
+    console.warn("Failed to construct Daily News request URL", error);
+    return base;
+  }
+}
+
+function stripJsonSafeguards(rawBody: string) {
+  return rawBody
+    .replace(/^\)\]\}'/, "")
+    .replace(/^while\s*\(true\);?/i, "")
+    .replace(/^\/\/.*$/gm, "")
+    .trim();
+}
+
+function parseResponseText(rawBody: string): unknown {
+  const trimmed = stripJsonSafeguards(rawBody);
+
+  if (!trimmed) {
+    return [];
+  }
+
+  if (/load\s+failed/i.test(trimmed)) {
+    throw new Error(
+      "The Google Sheets web app reported \"Load Failed\". Ensure the deployment is accessible to anyone with the link."
+    );
+  }
+
+  if (/^<(!doctype|html)/i.test(trimmed)) {
+    throw new Error(
+      "The news feed returned HTML instead of JSON. Publish the sheet as JSON or update the Apps Script deployment."
+    );
+  }
+
+  const gvizMatch = trimmed.match(/google\.visualization\.Query\.setResponse\((.*)\);?$/s);
+  if (gvizMatch && gvizMatch[1]) {
+    try {
+      return JSON.parse(gvizMatch[1]);
+    } catch (error) {
+      console.warn("Unable to parse Google Visualization response", error);
+      throw new Error("We couldn't parse the Google Sheets response. Check that the sheet is published as JSON.");
+    }
+  }
+
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      return JSON.parse(trimmed);
+    } catch (error) {
+      console.warn("Failed to parse JSON response", error, { rawBody: trimmed.slice(0, 200) });
+      throw new Error("We couldn't parse the news feed response as JSON.");
+    }
+  }
+
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
+    const probableJson = trimmed.slice(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(probableJson);
+    } catch (error) {
+      console.warn("Failed to parse embedded JSON response", error, { rawBody: trimmed.slice(0, 200) });
+    }
+  }
+
+  throw new Error("We received an unexpected response from the news feed. Please verify the Google Sheets script.");
+}
+
+function resolveColumnIndex(columns: string[], matcher: RegExp, fallback: number) {
+  const index = columns.findIndex((label) => matcher.test(label));
+  return index >= 0 ? index : fallback;
+}
+
+function parseGvizTable(table: GvizTable): FetchNewsResult {
+  const columns = (table.cols ?? [])
+    .map((column) => (column?.label ?? column?.id ?? "").toString().trim().toLowerCase())
+    .map((label) => label.replace(/\s+/g, " "));
+
+  const titleIndex = resolveColumnIndex(columns, /title|headline|subject/, 0);
+  const descriptionIndex = resolveColumnIndex(columns, /description|summary|body/, 1);
+  const linkIndex = resolveColumnIndex(columns, /link|url/, 2);
+  const publishedAtIndex = resolveColumnIndex(columns, /date|published|updated/, 3);
+
+  const rows = table.rows ?? [];
+  const items: NewsItem[] = rows
+    .map((row, rowIndex) => {
+      const cells = row?.c ?? [];
+
+      const resolveCell = (index: number) => {
+        if (index < 0 || index >= cells.length) {
+          return undefined;
+        }
+        const cell = cells[index];
+        const value = cell?.v ?? cell?.f;
+        return typeof value === "string" ? value : value != null ? String(value) : undefined;
+      };
+
+      const title = resolveCell(titleIndex) ?? `Update ${rowIndex + 1}`;
+      const description = resolveCell(descriptionIndex);
+      const link = resolveCell(linkIndex);
+      const publishedAt = resolveCell(publishedAtIndex);
+
+      return {
+        title: title.trim(),
+        description: description?.trim() || undefined,
+        link: link?.trim() || undefined,
+        publishedAt: publishedAt?.trim() || undefined,
+      };
+    })
+    .filter((item) => item.title.length > 0);
+
+  let updatedAt: string | null = null;
+  const mostRecent = items
+    .map((item) => (item.publishedAt ? Date.parse(item.publishedAt) : Number.NaN))
+    .filter((timestamp) => Number.isFinite(timestamp))
+    .sort((a, b) => b - a)[0];
+
+  if (Number.isFinite(mostRecent)) {
+    updatedAt = new Date(mostRecent).toISOString();
+  }
+
+  return { items, updatedAt };
 }
 
 function parseNewsEntries(payload: unknown): NewsItem[] {
@@ -35,6 +212,10 @@ function parseNewsEntries(payload: unknown): NewsItem[] {
       sourceArray = record.items as unknown[];
     } else if (Array.isArray(record.data)) {
       sourceArray = record.data as unknown[];
+    } else if (Array.isArray(record.rows)) {
+      sourceArray = record.rows as unknown[];
+    } else if (Array.isArray(record.entries)) {
+      sourceArray = record.entries as unknown[];
     }
   }
 
@@ -54,8 +235,8 @@ function parseNewsEntries(payload: unknown): NewsItem[] {
         const record = entry as Record<string, unknown>;
         const title = record.title ?? record.headline ?? record.subject ?? `Update ${index + 1}`;
         const description = record.description ?? record.summary ?? record.body;
-        const link = record.link ?? record.url;
-        const publishedAt = record.publishedAt ?? record.date ?? record.updatedAt;
+        const link = record.link ?? record.url ?? record.href;
+        const publishedAt = record.publishedAt ?? record.date ?? record.updatedAt ?? record.timestamp;
 
         const resolvedTitle =
           typeof title === "string" && title.trim().length > 0 ? title.trim() : String(title ?? `Update ${index + 1}`);
@@ -73,6 +254,113 @@ function parseNewsEntries(payload: unknown): NewsItem[] {
       };
     })
     .filter((item) => item.title.trim().length > 0);
+}
+
+function normalizeNewsPayload(payload: unknown): FetchNewsResult {
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+
+    if (typeof record.status === "string" && record.status.toLowerCase() === "error") {
+      const message =
+        typeof record.message === "string"
+          ? record.message
+          : "The news feed reported an error. Check the Google Sheets deployment.";
+      throw new Error(message);
+    }
+
+    if (record.table && typeof record.table === "object") {
+      return parseGvizTable(record.table as GvizTable);
+    }
+
+    const candidate =
+      record.news ??
+      record.items ??
+      record.data ??
+      record.records ??
+      record.entries ??
+      record.feed ??
+      record.rows;
+
+    const items = parseNewsEntries(candidate ?? payload);
+    const metadata = record.metadata;
+    let updatedAt: string | null = null;
+
+    if (typeof record.updatedAt === "string") {
+      updatedAt = record.updatedAt.trim();
+    } else if (typeof record.lastUpdated === "string") {
+      updatedAt = record.lastUpdated.trim();
+    } else if (typeof record.lastRefreshed === "string") {
+      updatedAt = record.lastRefreshed.trim();
+    } else if (metadata && typeof metadata === "object") {
+      const metadataRecord = metadata as Record<string, unknown>;
+      if (typeof metadataRecord.updatedAt === "string") {
+        updatedAt = metadataRecord.updatedAt.trim();
+      }
+    }
+
+    return { items, updatedAt: updatedAt && updatedAt.length > 0 ? updatedAt : null };
+  }
+
+  return {
+    items: parseNewsEntries(payload),
+    updatedAt: null,
+  };
+}
+
+async function fetchNewsFromGoogleSheets(): Promise<FetchNewsResult> {
+  const errors: string[] = [];
+  let lastSuccessfulResult: FetchNewsResult | null = null;
+
+  for (const variant of REQUEST_VARIANTS) {
+    const requestUrl = buildRequestUrl(NEWS_ENDPOINT, variant.params);
+
+    try {
+      const response = await fetch(requestUrl, {
+        headers: {
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
+      const rawBody = await response.text();
+
+      if (!response.ok) {
+        const snippet = rawBody.trim().slice(0, 120).replace(/\s+/g, " ");
+        throw new Error(
+          snippet.length > 0
+            ? `Request failed with status ${response.status}: ${snippet}`
+            : `Request failed with status ${response.status}`
+        );
+      }
+
+      const payload = parseResponseText(rawBody);
+      const result = normalizeNewsPayload(payload);
+
+      if (result.items.length > 0) {
+        return result;
+      }
+
+      if (!lastSuccessfulResult) {
+        lastSuccessfulResult = result;
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unexpected error while fetching the news feed.";
+      errors.push(`${variant.label}: ${message}`);
+      console.warn(`Failed Daily News fetch attempt (${variant.label})`, error);
+    }
+  }
+
+  if (lastSuccessfulResult) {
+    return lastSuccessfulResult;
+  }
+
+  throw new Error(
+    errors.length > 0
+      ? `Unable to load the Daily News feed.\n${errors.join("\n")}`
+      : "Unable to load the Daily News feed from Google Sheets."
+  );
 }
 
 function formatPublishedDate(rawDate?: string) {
@@ -93,6 +381,25 @@ function formatPublishedDate(rawDate?: string) {
   });
 }
 
+function formatCheckedTimestamp(rawDate?: string) {
+  if (!rawDate) {
+    return undefined;
+  }
+
+  const parsedDate = new Date(rawDate);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return rawDate;
+  }
+
+  return parsedDate.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function DailyNewsScreen() {
   const insets = useSafeAreaInsets();
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
@@ -100,82 +407,47 @@ export default function DailyNewsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
+  const [connectionCheckedAt, setConnectionCheckedAt] = useState<string | null>(null);
 
-  const fetchNews = useCallback(async (isRefresh = false) => {
-    if (!isRefresh) {
-      setIsLoading(true);
-    }
-
-    try {
-      setError(null);
-      const url = `${NEWS_ENDPOINT}?ts=${Date.now()}`;
-      const response = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
+  const fetchNews = useCallback(
+    async (isRefresh = false) => {
+      if (!isRefresh) {
+        setIsLoading(true);
       }
 
-      const contentType = response.headers.get("content-type") ?? "";
-      let payload: unknown;
+      setConnectionStatus((prev) => (isRefresh && prev === "connected" ? prev : "checking"));
 
-      if (contentType.includes("application/json")) {
-        payload = await response.json();
-      } else {
-        const rawBody = await response.text();
-        try {
-          payload = JSON.parse(rawBody);
-        } catch (parseError) {
-          console.warn("Unexpected response from news endpoint", {
-            parseError,
-            rawBody,
-          });
-          throw new Error("We received an unexpected response from the news feed.");
+      try {
+        setError(null);
+        const result = await fetchNewsFromGoogleSheets();
+        setNewsItems(result.items);
+        setLastUpdated(result.updatedAt ?? new Date().toISOString());
+        setConnectionStatus("connected");
+        setConnectionCheckedAt(new Date().toISOString());
+
+        if (result.items.length === 0) {
+          setError("No news items are available right now. Pull down to refresh.");
         }
-      }
-
-      const parsedNews = parseNewsEntries(payload);
-      setNewsItems(parsedNews);
-
-      if (payload && typeof payload === "object" && payload !== null) {
-        const record = payload as Record<string, unknown>;
-        const updated =
-          record.updatedAt ??
-          record.lastUpdated ??
-          (typeof record.metadata === "object" && record.metadata !== null
-            ? (record.metadata as Record<string, unknown>).updatedAt
-            : null);
-        if (typeof updated === "string" && updated.trim()) {
-          setLastUpdated(updated.trim());
+      } catch (err) {
+        console.warn("Failed to load news", err);
+        setConnectionStatus("failed");
+        setConnectionCheckedAt(new Date().toISOString());
+        setError(
+          err instanceof Error
+            ? err.message || "We couldn't refresh the news. Pull to try again."
+            : "We couldn't refresh the news. Pull to try again."
+        );
+      } finally {
+        if (isRefresh) {
+          setRefreshing(false);
         } else {
-          setLastUpdated(new Date().toISOString());
+          setIsLoading(false);
         }
-      } else {
-        setLastUpdated(new Date().toISOString());
       }
-
-      if (parsedNews.length === 0) {
-        setError("No news items are available right now. Pull down to refresh.");
-      }
-    } catch (err) {
-      console.warn("Failed to load news", err);
-      setError(
-        err instanceof Error
-          ? err.message || "We couldn't refresh the news. Pull to try again."
-          : "We couldn't refresh the news. Pull to try again."
-      );
-    } finally {
-      if (isRefresh) {
-        setRefreshing(false);
-      } else {
-        setIsLoading(false);
-      }
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     fetchNews(false);
@@ -198,6 +470,22 @@ export default function DailyNewsScreen() {
 
     return `Updated ${formatted}`;
   }, [lastUpdated]);
+
+  const connectionMessage = useMemo(() => {
+    if (connectionStatus === "connected") {
+      const checked = formatCheckedTimestamp(connectionCheckedAt ?? undefined);
+      return checked ? `Connected to Google Sheets • Checked ${checked}` : "Connected to Google Sheets";
+    }
+
+    if (connectionStatus === "checking" || connectionStatus === "idle") {
+      return "Checking Google Sheets connection…";
+    }
+
+    const checked = formatCheckedTimestamp(connectionCheckedAt ?? undefined);
+    return checked
+      ? `Unable to reach Google Sheets • Last tried ${checked}`
+      : "Unable to reach Google Sheets";
+  }, [connectionCheckedAt, connectionStatus]);
 
   const openLink = useCallback((link?: string) => {
     if (!link) {
@@ -228,6 +516,19 @@ export default function DailyNewsScreen() {
     >
       <Text style={styles.heading}>Daily News</Text>
       <Text style={styles.subheading}>{subtitle}</Text>
+
+      {connectionStatus !== "idle" && (
+        <View style={styles.connectionRow}>
+          <View
+            style={[
+              styles.connectionIndicator,
+              connectionStatus === "connected" ? styles.connectionIndicatorConnected : null,
+              connectionStatus === "failed" ? styles.connectionIndicatorFailed : null,
+            ]}
+          />
+          <Text style={styles.connectionText}>{connectionMessage}</Text>
+        </View>
+      )}
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -300,7 +601,31 @@ const styles = StyleSheet.create({
   subheading: {
     fontSize: 14,
     color: Colors.textSecondary,
+    marginBottom: 8,
+  },
+  connectionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     marginBottom: 16,
+  },
+  connectionIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.warning,
+  },
+  connectionIndicatorConnected: {
+    backgroundColor: Colors.success,
+  },
+  connectionIndicatorFailed: {
+    backgroundColor: Colors.error,
+  },
+  connectionText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    flex: 1,
+    flexWrap: "wrap" as const,
   },
   loadingContainer: {
     flex: 1,
@@ -354,7 +679,7 @@ const styles = StyleSheet.create({
   emptyStateDescription: {
     fontSize: 14,
     color: Colors.textSecondary,
-    textAlign: "center",
+    textAlign: "center" as const,
     lineHeight: 20,
   },
   newsCard: {
