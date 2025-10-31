@@ -38,16 +38,22 @@ export interface TruckProfile {
   steeringTreadDepth: string;
   driverTreadDepth: string;
   trailerTreadDepth: string;
+  puNumber: string;
+  bol: string;
+  loadWeight: string;
+  freight: string;
 }
 
 export interface Place {
   id: string;
   companyName: string;
+  userName?: string;
   city: string;
   state: string;
   address: string;
   contactNumber: string;
   dispatchInfo: string;
+  category?: string;
   hasRestroom: boolean;
   parkingAvailability: 'yes' | 'no' | 'limited';
   overnightParking: boolean;

@@ -61,6 +61,30 @@ function RootLayoutNav() {
           animation: "slide_from_right",
         }}
       />
+      <Stack.Screen
+        name="daily-news"
+        options={{
+          headerShown: false,
+          animation: "fade",
+          animationDuration: 450,
+        }}
+      />
+      <Stack.Screen
+        name="safety-information"
+        options={{
+          headerShown: false,
+          animation: "fade",
+          animationDuration: 450,
+        }}
+      />
+      <Stack.Screen
+        name="donations"
+        options={{
+          headerShown: false,
+          animation: "fade",
+          animationDuration: 450,
+        }}
+      />
     </Stack>
   );
 }

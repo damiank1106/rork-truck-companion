@@ -46,6 +46,10 @@ const defaultTruckProfile: TruckProfile = {
   steeringTreadDepth: '',
   driverTreadDepth: '',
   trailerTreadDepth: '',
+  puNumber: '',
+  bol: '',
+  loadWeight: '',
+  freight: '',
 };
 
 export const [TruckProvider, useTruck] = createContextHook(() => {
