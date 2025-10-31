@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   },
   modalSummary: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: Colors.black,
     lineHeight: 22,
     marginBottom: 20,
   },
