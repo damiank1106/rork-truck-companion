@@ -19,7 +19,7 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import { useTruck } from "@/contexts/TruckContext";
 import { TruckProfile } from "@/types";
 
-type TabType = "main" | "truck" | "trailer" | "weight" | "tire";
+type TabType = "main" | "truck" | "trailer" | "load" | "weight" | "tire";
 
 export default function TruckScreen() {
   const insets = useSafeAreaInsets();
@@ -95,6 +95,11 @@ export default function TruckScreen() {
           label="Trailer"
           isActive={activeTab === "trailer"}
           onPress={() => setActiveTab("trailer")}
+        />
+        <TabButton
+          label="Load"
+          isActive={activeTab === "load"}
+          onPress={() => setActiveTab("load")}
         />
         <TabButton
           label="Weight"
@@ -259,6 +264,41 @@ export default function TruckScreen() {
               onChangeText={(text) => updateField("trailerHeight", text)}
               editable={isEditing}
               placeholder="e.g., 13'6&quot;"
+            />
+          </View>
+        )}
+
+        {activeTab === "load" && (
+          <View style={styles.section}>
+            <InputField
+              label="PU Number"
+              value={profile.puNumber}
+              onChangeText={(text) => updateField("puNumber", text)}
+              editable={isEditing}
+              placeholder="Enter pickup number"
+            />
+            <InputField
+              label="BOL Number"
+              value={profile.bolNumber}
+              onChangeText={(text) => updateField("bolNumber", text)}
+              editable={isEditing}
+              placeholder="Enter bill of lading number"
+            />
+            <InputField
+              label="Weight"
+              value={profile.loadWeight}
+              onChangeText={(text) => updateField("loadWeight", text)}
+              editable={isEditing}
+              placeholder="Enter load weight"
+            />
+            <InputField
+              label="Additional Info"
+              value={profile.loadNotes}
+              onChangeText={(text) => updateField("loadNotes", text)}
+              editable={isEditing}
+              placeholder="Notes about this load"
+              multiline
+              numberOfLines={4}
             />
           </View>
         )}
@@ -433,6 +473,8 @@ interface InputFieldProps {
   editable: boolean;
   placeholder?: string;
   keyboardType?: "default" | "numeric";
+  multiline?: boolean;
+  numberOfLines?: number;
 }
 
 function InputField({
@@ -442,18 +484,27 @@ function InputField({
   editable,
   placeholder,
   keyboardType = "default",
+  multiline = false,
+  numberOfLines,
 }: InputFieldProps) {
   return (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
       <TextInput
-        style={[styles.input, !editable && styles.inputDisabled]}
+        style={[
+          styles.input,
+          multiline && styles.inputMultiline,
+          !editable && styles.inputDisabled,
+        ]}
         value={value}
         onChangeText={onChangeText}
         editable={editable}
         placeholder={placeholder}
         placeholderTextColor={Colors.textLight}
         keyboardType={keyboardType}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        textAlignVertical={multiline ? "top" : "center"}
       />
     </View>
   );
@@ -606,6 +657,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     color: "#000000",
+  },
+  inputMultiline: {
+    minHeight: 120,
+    paddingTop: 12,
   },
   inputDisabled: {
     backgroundColor: Colors.background,
