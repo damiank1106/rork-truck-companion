@@ -21,12 +21,49 @@ import { TruckProfile } from "@/types";
 
 type TabType = "main" | "truck" | "trailer" | "load" | "weight" | "tire";
 
+const TAB_HORIZONTAL_PADDING = 12;
+
 export default function TruckScreen() {
   const insets = useSafeAreaInsets();
   const { truckProfile, updateTruckProfile } = useTruck();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editedProfile, setEditedProfile] = useState<TruckProfile>(truckProfile);
   const [activeTab, setActiveTab] = useState<TabType>("main");
+  const [tabsLayoutWidth, setTabsLayoutWidth] = useState(0);
+  const [tabsContentWidth, setTabsContentWidth] = useState(0);
+  const scrollX = React.useRef(new Animated.Value(0)).current;
+
+  const indicatorTrackWidth = React.useMemo(
+    () => Math.max(tabsLayoutWidth - TAB_HORIZONTAL_PADDING * 2, 0),
+    [tabsLayoutWidth]
+  );
+
+  const indicatorWidth = React.useMemo(() => {
+    if (
+      !indicatorTrackWidth ||
+      !tabsLayoutWidth ||
+      tabsContentWidth <= tabsLayoutWidth
+    ) {
+      return 0;
+    }
+
+    const visibleRatio = tabsLayoutWidth / tabsContentWidth;
+    return indicatorTrackWidth * visibleRatio;
+  }, [indicatorTrackWidth, tabsContentWidth, tabsLayoutWidth]);
+
+  const indicatorTranslateX =
+    tabsContentWidth > tabsLayoutWidth &&
+    indicatorTrackWidth > 0 &&
+    indicatorWidth > 0
+      ? scrollX.interpolate({
+          inputRange: [0, tabsContentWidth - tabsLayoutWidth],
+          outputRange: [
+            0,
+            Math.max(indicatorTrackWidth - indicatorWidth, 0),
+          ],
+          extrapolate: "clamp",
+        })
+      : 0;
 
   const handleEdit = () => {
     setEditedProfile(truckProfile);
@@ -81,10 +118,17 @@ export default function TruckScreen() {
       </View>
 
       <View style={styles.tabsWrapper}>
-        <ScrollView
+        <Animated.ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsContainer}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: false }
+          )}
+          onLayout={({ nativeEvent }) => setTabsLayoutWidth(nativeEvent.layout.width)}
+          onContentSizeChange={(contentWidth) => setTabsContentWidth(contentWidth)}
+          scrollEventThrottle={16}
         >
           <TabButton
             label="Main"
@@ -116,7 +160,27 @@ export default function TruckScreen() {
             isActive={activeTab === "tire"}
             onPress={() => setActiveTab("tire")}
           />
-        </ScrollView>
+        </Animated.ScrollView>
+        {indicatorWidth > 0 && indicatorTrackWidth > 0 && (
+          <View style={styles.tabsIndicatorWrapper}>
+            <View
+              style={[
+                styles.tabsIndicatorTrack,
+                { width: indicatorTrackWidth },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.tabsIndicatorThumb,
+                  {
+                    width: indicatorWidth,
+                    transform: [{ translateX: indicatorTranslateX }],
+                  },
+                ]}
+              />
+            </View>
+          </View>
+        )}
       </View>
 
       <ScrollView
@@ -584,12 +648,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    paddingBottom: 8,
   },
   tabsContainer: {
     flexDirection: "row",
-    paddingHorizontal: 12,
+    paddingHorizontal: TAB_HORIZONTAL_PADDING,
     paddingVertical: 12,
     gap: 8,
+  },
+  tabsIndicatorWrapper: {
+    paddingHorizontal: TAB_HORIZONTAL_PADDING,
+  },
+  tabsIndicatorTrack: {
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: Colors.background,
+    overflow: "hidden",
+  },
+  tabsIndicatorThumb: {
+    height: "100%",
+    backgroundColor: Colors.primary,
+    borderRadius: 999,
   },
   tabButton: {
     minWidth: 96,
