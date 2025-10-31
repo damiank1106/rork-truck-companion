@@ -466,7 +466,6 @@ export default function HomeScreen() {
             title="My Truck"
             value={truckProfile.truckNumber ? `Truck #${truckProfile.truckNumber}` : "Not set"}
             subtitle={truckProfile.driverId ? `Driver ID: ${truckProfile.driverId}` : undefined}
-            thirdLine={truckProfile.tripNumber ? `Trip #${truckProfile.tripNumber}` : undefined}
             color={Colors.primaryLight}
             onPress={() => router.push("/(tabs)/truck")}
             showPlusIcon
