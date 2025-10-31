@@ -21,6 +21,29 @@ import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { Place } from "@/types";
+import {
+  CATEGORY_OPTIONS,
+  CategoryOption,
+  resetCategoryState,
+} from "@/constants/placeCategories";
+
+const DEFAULT_PLACE_FORM: Omit<Place, "id" | "createdAt"> = {
+  companyName: "",
+  userName: "",
+  city: "",
+  state: "",
+  address: "",
+  contactNumber: "",
+  dispatchInfo: "",
+  category: "",
+  hasRestroom: false,
+  parkingAvailability: "yes",
+  overnightParking: false,
+  notes: "",
+  photos: [],
+};
+
+const DEFAULT_CATEGORY_STATE = resetCategoryState(DEFAULT_PLACE_FORM);
 
 export default function PlacesScreen() {
   const insets = useSafeAreaInsets();
@@ -190,19 +213,42 @@ interface AddPlaceModalProps {
 }
 
 function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
-  const [formData, setFormData] = useState<Omit<Place, "id" | "createdAt">>({
-    companyName: "",
-    city: "",
-    state: "",
-    address: "",
-    contactNumber: "",
-    dispatchInfo: "",
-    hasRestroom: false,
-    parkingAvailability: "yes",
-    overnightParking: false,
-    notes: "",
-    photos: [],
-  });
+  const [formData, setFormData] = useState<Omit<Place, "id" | "createdAt">>(() => ({
+    ...DEFAULT_PLACE_FORM,
+  }));
+  const [categorySelection, setCategorySelection] = useState<CategoryOption | null>(
+    DEFAULT_CATEGORY_STATE.selection
+  );
+  const [customCategory, setCustomCategory] = useState<string>(DEFAULT_CATEGORY_STATE.custom);
+
+  const resetForm = () => {
+    setFormData({ ...DEFAULT_PLACE_FORM });
+    const { selection, custom } = resetCategoryState(DEFAULT_PLACE_FORM);
+    setCategorySelection(selection);
+    setCustomCategory(custom);
+  };
+
+  const handleCategorySelect = (option: CategoryOption) => {
+    setCategorySelection(option);
+    if (option === "Other") {
+      setFormData((prev) => ({
+        ...prev,
+        category: customCategory,
+      }));
+      return;
+    }
+
+    setCustomCategory("");
+    setFormData((prev) => ({
+      ...prev,
+      category: option,
+    }));
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const pickImage = async () => {
     if (formData.photos.length >= 5) {
@@ -272,19 +318,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
     }
     try {
       await onAdd(formData);
-      setFormData({
-        companyName: "",
-        city: "",
-        state: "",
-        address: "",
-        contactNumber: "",
-        dispatchInfo: "",
-        hasRestroom: false,
-        parkingAvailability: "yes",
-        overnightParking: false,
-        notes: "",
-        photos: [],
-      });
+      resetForm();
       onClose();
     } catch (error: any) {
       if (error?.message?.includes('quota') || error?.message?.includes('QuotaExceededError')) {
@@ -307,7 +341,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add New Place</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={handleClose}>
               <X color={Colors.text} size={24} />
             </TouchableOpacity>
           </View>
@@ -318,35 +352,72 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
               placeholder="Company Name *"
               placeholderTextColor={Colors.textLight}
               value={formData.companyName}
-              onChangeText={(text) => setFormData({ ...formData, companyName: text })}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  companyName: text,
+                }))
+              }
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="User Name"
+              placeholderTextColor={Colors.textLight}
+              value={formData.userName}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  userName: text,
+                }))
+              }
             />
             <TextInput
               style={styles.modalInput}
               placeholder="City *"
               placeholderTextColor={Colors.textLight}
               value={formData.city}
-              onChangeText={(text) => setFormData({ ...formData, city: text })}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  city: text,
+                }))
+              }
             />
             <TextInput
               style={styles.modalInput}
               placeholder="State *"
               placeholderTextColor={Colors.textLight}
               value={formData.state}
-              onChangeText={(text) => setFormData({ ...formData, state: text })}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  state: text,
+                }))
+              }
             />
             <TextInput
               style={styles.modalInput}
               placeholder="Address"
               placeholderTextColor={Colors.textLight}
               value={formData.address}
-              onChangeText={(text) => setFormData({ ...formData, address: text })}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  address: text,
+                }))
+              }
             />
             <TextInput
               style={styles.modalInput}
               placeholder="Contact Number"
               placeholderTextColor={Colors.textLight}
               value={formData.contactNumber}
-              onChangeText={(text) => setFormData({ ...formData, contactNumber: text })}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  contactNumber: text,
+                }))
+              }
               keyboardType="phone-pad"
             />
             <TextInput
@@ -354,14 +425,63 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
               placeholder="Dispatch Info"
               placeholderTextColor={Colors.textLight}
               value={formData.dispatchInfo}
-              onChangeText={(text) => setFormData({ ...formData, dispatchInfo: text })}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  dispatchInfo: text,
+                }))
+              }
             />
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>Category</Text>
+              <View style={styles.categoryOptionsRow}>
+                {CATEGORY_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.categoryOption,
+                      categorySelection === option && styles.categoryOptionSelected,
+                    ]}
+                    onPress={() => handleCategorySelect(option)}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryOptionText,
+                        categorySelection === option && styles.categoryOptionTextSelected,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {categorySelection === "Other" && (
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Enter category"
+                  placeholderTextColor={Colors.textLight}
+                  value={customCategory}
+                  onChangeText={(text) => {
+                    setCustomCategory(text);
+                    setFormData((prev) => ({
+                      ...prev,
+                      category: text,
+                    }));
+                  }}
+                />
+              )}
+            </View>
             <TextInput
               style={[styles.modalInput, styles.modalTextArea]}
               placeholder="Notes"
               placeholderTextColor={Colors.textLight}
               value={formData.notes}
-              onChangeText={(text) => setFormData({ ...formData, notes: text })}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  notes: text,
+                }))
+              }
               multiline
               numberOfLines={4}
             />
@@ -463,9 +583,11 @@ function PlaceDetailModal({ place, visible, onClose, onDelete }: PlaceDetailModa
 
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <DetailRow label="Location" value={`${place.city}, ${place.state}`} />
+              {place.userName && <DetailRow label="User Name" value={place.userName} />}
               {place.address && <DetailRow label="Address" value={place.address} />}
               {place.contactNumber && <DetailRow label="Contact" value={place.contactNumber} />}
               {place.dispatchInfo && <DetailRow label="Dispatch" value={place.dispatchInfo} />}
+              {place.category && <DetailRow label="Category" value={place.category} />}
               <DetailRow label="Restroom" value={place.hasRestroom ? "Yes" : "No"} />
               <DetailRow
                 label="Parking"
@@ -851,6 +973,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000000",
     marginBottom: 12,
+  },
+  modalSection: {
+    marginBottom: 16,
+  },
+  modalSectionLabel: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  categoryOptionsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 8,
+  },
+  categoryOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.background,
+  },
+  categoryOptionSelected: {
+    borderColor: Colors.primaryLight,
+    backgroundColor: "rgba(95, 119, 171, 0.12)",
+  },
+  categoryOptionText: {
+    fontSize: 14,
+    color: Colors.text,
+    fontWeight: "500" as const,
+  },
+  categoryOptionTextSelected: {
+    color: Colors.primaryLight,
+    fontWeight: "700" as const,
   },
   modalTextArea: {
     height: 100,

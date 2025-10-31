@@ -1,5 +1,5 @@
-import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X } from "lucide-react-native";
-import React, { useState } from "react";
+import { ArrowLeft, Camera, Image as ImageIcon, X } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -17,6 +17,7 @@ import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import Colors from "@/constants/colors";
+import { CATEGORY_OPTIONS, CategoryOption, resetCategoryState } from "@/constants/placeCategories";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { Place } from "@/types";
 
@@ -32,6 +33,24 @@ export default function PlaceDetailScreen() {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [fullScreenPhoto, setFullScreenPhoto] = useState<string | null>(null);
   const [editedPlace, setEditedPlace] = useState<Place | null>(place || null);
+  const [categorySelection, setCategorySelection] = useState<CategoryOption | null>(() =>
+    resetCategoryState(place).selection
+  );
+  const [customCategory, setCustomCategory] = useState<string>(() => resetCategoryState(place).custom);
+
+  useEffect(() => {
+    if (place) {
+      setEditedPlace(place);
+      const { selection, custom } = resetCategoryState(place);
+      setCategorySelection(selection);
+      setCustomCategory(custom);
+    } else {
+      setEditedPlace(null);
+      const { selection, custom } = resetCategoryState(null);
+      setCategorySelection(selection);
+      setCustomCategory(custom);
+    }
+  }, [place]);
 
   if (!place || !editedPlace) {
     return (
@@ -150,7 +169,28 @@ export default function PlaceDetailScreen() {
 
   const handleCancel = () => {
     setEditedPlace(place);
+    const { selection, custom } = resetCategoryState(place);
+    setCategorySelection(selection);
+    setCustomCategory(custom);
     setIsEditing(false);
+  };
+
+  const handleCategorySelect = (option: CategoryOption) => {
+    if (!editedPlace) {
+      return;
+    }
+
+    if (option === "Other") {
+      const { custom } = resetCategoryState(editedPlace);
+      setCategorySelection("Other");
+      setCustomCategory(custom);
+      setEditedPlace({ ...editedPlace, category: custom });
+      return;
+    }
+
+    setCategorySelection(option);
+    setCustomCategory("");
+    setEditedPlace({ ...editedPlace, category: option });
   };
 
   return (
@@ -241,6 +281,21 @@ export default function PlaceDetailScreen() {
             </View>
 
             <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>User Name</Text>
+              {isEditing ? (
+                <TextInput
+                  style={styles.fieldInput}
+                  value={editedPlace.userName || ""}
+                  onChangeText={(text) => setEditedPlace({ ...editedPlace, userName: text })}
+                  placeholder="User Name"
+                  placeholderTextColor={Colors.textLight}
+                />
+              ) : (
+                <Text style={styles.fieldValue}>{editedPlace.userName || "Not provided"}</Text>
+              )}
+            </View>
+
+            <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>City *</Text>
               {isEditing ? (
                 <TextInput
@@ -313,6 +368,51 @@ export default function PlaceDetailScreen() {
                 />
               ) : (
                 <Text style={styles.fieldValue}>{editedPlace.dispatchInfo || "Not provided"}</Text>
+              )}
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Category</Text>
+              {isEditing ? (
+                <View>
+                  <View style={styles.categoryOptionsRow}>
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <TouchableOpacity
+                        key={option}
+                        style={[
+                          styles.categoryOption,
+                          categorySelection === option && styles.categoryOptionSelected,
+                        ]}
+                        onPress={() => handleCategorySelect(option)}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryOptionText,
+                            categorySelection === option && styles.categoryOptionTextSelected,
+                          ]}
+                        >
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  {categorySelection === "Other" && (
+                    <TextInput
+                      style={styles.fieldInput}
+                      value={customCategory}
+                      onChangeText={(text) => {
+                        setCustomCategory(text);
+                        if (editedPlace) {
+                          setEditedPlace({ ...editedPlace, category: text });
+                        }
+                      }}
+                      placeholder="Enter category"
+                      placeholderTextColor={Colors.textLight}
+                    />
+                  )}
+                </View>
+              ) : (
+                <Text style={styles.fieldValue}>{editedPlace.category || "Not provided"}</Text>
               )}
             </View>
 
@@ -640,6 +740,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: "#000000",
+  },
+  categoryOptionsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  categoryOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.background,
+  },
+  categoryOptionSelected: {
+    borderColor: Colors.primaryLight,
+    backgroundColor: "rgba(95, 119, 171, 0.12)",
+  },
+  categoryOptionText: {
+    fontSize: 14,
+    color: Colors.text,
+    fontWeight: "500" as const,
+  },
+  categoryOptionTextSelected: {
+    color: Colors.primaryLight,
+    fontWeight: "700" as const,
   },
   fieldTextArea: {
     height: 100,
