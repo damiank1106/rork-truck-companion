@@ -18,6 +18,7 @@ import Colors from "@/constants/colors";
 import {
   PublishedNewsItem,
   autoFetchNewsOnAppStart,
+  getLastNewsFetchTimestamp,
   refreshNewsNow,
 } from "@/lib/newsFetcher";
 
@@ -31,11 +32,13 @@ function formatDateLabel(value?: string) {
     return undefined;
   }
 
-  return parsed.toLocaleDateString(undefined, {
+  return parsed.toLocaleString(undefined, {
     weekday: "short",
     year: "numeric",
     month: "short",
     day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
@@ -68,9 +71,10 @@ export default function DailyNewsScreen() {
       return;
     }
     setNewsItems(items);
+    const fetchTimestamp = getLastNewsFetchTimestamp();
     const latest = extractLatestPublishedDate(items);
-    setLastUpdated(latest);
-  }, [isMountedRef]);
+    setLastUpdated(fetchTimestamp ?? latest);
+  }, [getLastNewsFetchTimestamp, isMountedRef]);
 
   const loadInitialNews = useCallback(async () => {
     setIsLoading(true);
