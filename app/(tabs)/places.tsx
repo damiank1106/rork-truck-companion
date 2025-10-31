@@ -1,6 +1,15 @@
-import { MapPin, Plus, Search, X, Camera, Image as ImageIcon } from "lucide-react-native";
-import React, { useState } from "react";
 import {
+  MapPin,
+  Plus,
+  Search,
+  X,
+  Camera,
+  Image as ImageIcon,
+  ArrowUpDown,
+} from "lucide-react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Animated,
   FlatList,
   Modal,
   ScrollView,
@@ -12,6 +21,7 @@ import {
   Image,
   Alert,
   PanResponder,
+  Easing,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -45,6 +55,19 @@ const DEFAULT_PLACE_FORM: Omit<Place, "id" | "createdAt"> = {
 
 const DEFAULT_CATEGORY_STATE = resetCategoryState(DEFAULT_PLACE_FORM);
 
+type SortOption = "alphabetical" | "city" | "state" | "category";
+
+const SORT_OPTIONS: { label: string; value: SortOption }[] = [
+  { label: "Alphabetically", value: "alphabetical" },
+  { label: "By City", value: "city" },
+  { label: "By State", value: "state" },
+  { label: "By Category", value: "category" },
+];
+
+const CATEGORY_ORDER_MAP = new Map(
+  CATEGORY_OPTIONS.map((option, index) => [option.toLowerCase(), index])
+);
+
 export default function PlacesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -53,12 +76,107 @@ export default function PlacesScreen() {
   const [isAddModalVisible, setIsAddModalVisible] = useState<boolean>(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [fullScreenPhoto, setFullScreenPhoto] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<SortOption>("alphabetical");
+  const [isSortMenuVisible, setIsSortMenuVisible] = useState<boolean>(false);
+  const sortIconRotation = useRef(new Animated.Value(0)).current;
 
-  const filteredPlaces = places.filter(
-    (place) =>
-      place.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      place.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      place.state.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    Animated.timing(sortIconRotation, {
+      toValue: isSortMenuVisible ? 1 : 0,
+      duration: 200,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [isSortMenuVisible, sortIconRotation]);
+
+  const filteredPlaces = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (query.length === 0) {
+      return places;
+    }
+
+    return places.filter(
+      (place) =>
+        place.companyName.toLowerCase().includes(query) ||
+        place.city.toLowerCase().includes(query) ||
+        place.state.toLowerCase().includes(query)
+    );
+  }, [places, searchQuery]);
+
+  const sortedPlaces = useMemo(() => {
+    const sortByCategory = (a: Place, b: Place) => {
+      const getRank = (value?: string | null) => {
+        const normalized = value?.trim().toLowerCase() ?? "";
+        if (CATEGORY_ORDER_MAP.has(normalized)) {
+          return CATEGORY_ORDER_MAP.get(normalized) ?? CATEGORY_OPTIONS.length;
+        }
+        if (normalized.length === 0) {
+          return CATEGORY_OPTIONS.length + 1;
+        }
+        return CATEGORY_ORDER_MAP.get("other") ?? CATEGORY_OPTIONS.length;
+      };
+
+      const rankA = getRank(a.category);
+      const rankB = getRank(b.category);
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+      const categoryComparison = (a.category ?? "").localeCompare(
+        b.category ?? "",
+        undefined,
+        {
+          sensitivity: "base",
+        }
+      );
+      if (categoryComparison !== 0) {
+        return categoryComparison;
+      }
+      return a.companyName.localeCompare(b.companyName, undefined, {
+        sensitivity: "base",
+      });
+    };
+
+    const comparators: Record<SortOption, (a: Place, b: Place) => number> = {
+      alphabetical: (a, b) =>
+        a.companyName.localeCompare(b.companyName, undefined, {
+          sensitivity: "base",
+        }),
+      city: (a, b) => {
+        const comparison = a.city.localeCompare(b.city, undefined, { sensitivity: "base" });
+        if (comparison !== 0) {
+          return comparison;
+        }
+        return a.companyName.localeCompare(b.companyName, undefined, {
+          sensitivity: "base",
+        });
+      },
+      state: (a, b) => {
+        const comparison = a.state.localeCompare(b.state, undefined, { sensitivity: "base" });
+        if (comparison !== 0) {
+          return comparison;
+        }
+        return a.companyName.localeCompare(b.companyName, undefined, {
+          sensitivity: "base",
+        });
+      },
+      category: sortByCategory,
+    };
+
+    return [...filteredPlaces].sort(comparators[sortOption]);
+  }, [filteredPlaces, sortOption]);
+
+  const rotationStyle = useMemo(
+    () => ({
+      transform: [
+        {
+          rotate: sortIconRotation.interpolate({
+            inputRange: [0, 1],
+            outputRange: ["0deg", "180deg"],
+          }),
+        },
+      ],
+    }),
+    [sortIconRotation]
   );
 
   const handleAddPlace = () => {
@@ -83,9 +201,20 @@ export default function PlacesScreen() {
             <Text style={styles.headerTitle}>Places</Text>
             <Text style={styles.headerSubtitle}>{places.length} locations saved</Text>
           </View>
-          <TouchableOpacity style={styles.addButton} onPress={handleAddPlace}>
-            <Plus color={Colors.white} size={20} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.sortButton}
+              onPress={() => setIsSortMenuVisible((prev) => !prev)}
+              activeOpacity={0.8}
+            >
+              <Animated.View style={rotationStyle}>
+                <ArrowUpDown color={Colors.primary} size={20} />
+              </Animated.View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.addButton} onPress={handleAddPlace}>
+              <Plus color={Colors.white} size={20} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -100,7 +229,7 @@ export default function PlacesScreen() {
         />
       </View>
 
-      {filteredPlaces.length === 0 ? (
+      {sortedPlaces.length === 0 ? (
         <View style={styles.emptyState}>
           <MapPin color={Colors.textLight} size={64} />
           <Text style={styles.emptyStateTitle}>No places yet</Text>
@@ -113,7 +242,7 @@ export default function PlacesScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredPlaces}
+          data={sortedPlaces}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <PlaceCard place={item} onPress={() => handleViewPlace(item)} />
@@ -122,6 +251,39 @@ export default function PlacesScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      <Modal visible={isSortMenuVisible} animationType="fade" transparent>
+        <View style={[styles.sortModalOverlay, { paddingTop: insets.top + 90 }]}> 
+          <TouchableOpacity
+            style={styles.sortModalBackdrop}
+            activeOpacity={1}
+            onPress={() => setIsSortMenuVisible(false)}
+          />
+          <View style={styles.sortMenu}>
+            <Text style={styles.sortMenuTitle}>Sort Places</Text>
+            {SORT_OPTIONS.map((option) => {
+              const isActive = option.value === sortOption;
+              return (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.sortMenuOption, isActive && styles.sortMenuOptionActive]}
+                  onPress={() => {
+                    setSortOption(option.value);
+                    setIsSortMenuVisible(false);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[styles.sortMenuOptionText, isActive && styles.sortMenuOptionTextActive]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
 
       <AddPlaceModal
         visible={isAddModalVisible}
@@ -812,6 +974,26 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
     fontFamily: "System",
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  sortButton: {
+    backgroundColor: Colors.white,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.25)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
   addButton: {
     backgroundColor: Colors.primaryLight,
     width: 44,
@@ -885,6 +1067,50 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 16,
     fontWeight: "600" as const,
+  },
+  sortModalOverlay: {
+    flex: 1,
+    paddingHorizontal: 20,
+    alignItems: "flex-end",
+  },
+  sortModalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(15, 23, 42, 0.25)",
+  },
+  sortMenu: {
+    width: 220,
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  sortMenuTitle: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  sortMenuOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  sortMenuOptionActive: {
+    backgroundColor: `${Colors.primaryLight}15`,
+  },
+  sortMenuOptionText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontWeight: "500" as const,
+  },
+  sortMenuOptionTextActive: {
+    color: Colors.primary,
   },
   listContent: {
     padding: 20,
