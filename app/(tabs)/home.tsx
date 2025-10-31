@@ -1,6 +1,6 @@
 import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu, X, Newspaper, Shield, HeartHandshake } from "lucide-react-native";
-import React, { useState, useEffect } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -55,23 +55,91 @@ export default function HomeScreen() {
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
+  const [isMenuMounted, setIsMenuMounted] = useState<boolean>(false);
+  const menuAnimation = useRef(new Animated.Value(0)).current;
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
 
+  const openMenu = () => {
+    if (menuVisible) {
+      return;
+    }
+    setMenuVisible(true);
+    setIsMenuMounted(true);
+    menuAnimation.stopAnimation();
+    Animated.timing(menuAnimation, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = (onClosed?: () => void) => {
+    if (!menuVisible && !isMenuMounted) {
+      onClosed?.();
+      return;
+    }
+    menuAnimation.stopAnimation();
+    Animated.timing(menuAnimation, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.in(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => {
+      setMenuVisible(false);
+      setIsMenuMounted(false);
+      onClosed?.();
+    });
+  };
+
   const handleMenuToggle = () => {
-    setMenuVisible((prev) => !prev);
+    if (menuVisible) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
   };
 
   const handleMenuClose = () => {
-    setMenuVisible(false);
+    closeMenu();
   };
 
   const handleMenuNavigate = (path: string) => {
-    handleMenuClose();
-    router.push(path);
+    closeMenu(() => router.push(path));
   };
 
   const menuDropdownTop = insets.top + 16 + 44 + 12;
+
+  const menuIconOpacity = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+
+  const closeIconOpacity = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const menuIconScale = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.85],
+  });
+
+  const closeIconScale = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1],
+  });
+
+  const dropdownTranslateY = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-12, 0],
+  });
+
+  const dropdownScale = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.95, 1],
+  });
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -354,20 +422,56 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel={menuVisible ? "Close menu" : "Open menu"}
           >
-            {menuVisible ? <X color={Colors.white} size={20} /> : <Menu color={Colors.text} size={20} />}
+            <View style={styles.menuButtonIconContainer} pointerEvents="none">
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.menuIconWrapper,
+                  {
+                    opacity: menuIconOpacity,
+                    transform: [{ scale: menuIconScale }],
+                  },
+                ]}
+              >
+                <Menu color={Colors.text} size={20} />
+              </Animated.View>
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.menuIconWrapper,
+                  {
+                    opacity: closeIconOpacity,
+                    transform: [{ scale: closeIconScale }],
+                  },
+                ]}
+              >
+                <X color={Colors.white} size={20} />
+              </Animated.View>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
 
-      {menuVisible && (
-        <View style={styles.menuOverlay}>
+      {isMenuMounted && (
+        <Animated.View
+          style={[styles.menuOverlay, { opacity: menuAnimation }]}
+          pointerEvents={menuVisible ? "auto" : "none"}
+        >
           <Pressable
             style={styles.menuBackdrop}
             onPress={handleMenuClose}
             accessibilityRole="button"
             accessibilityLabel="Close menu"
           />
-          <View style={[styles.menuDropdown, { top: menuDropdownTop }]}>
+          <Animated.View
+            style={[
+              styles.menuDropdown,
+              {
+                top: menuDropdownTop,
+                transform: [{ translateY: dropdownTranslateY }, { scale: dropdownScale }],
+              },
+            ]}
+          >
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => handleMenuNavigate('/daily-news')}
@@ -394,8 +498,8 @@ export default function HomeScreen() {
               <HeartHandshake color={Colors.primary} size={18} style={styles.menuItemIcon} />
               <Text style={styles.menuItemText}>Donations</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
       )}
 
       <ScrollView
@@ -797,6 +901,17 @@ const styles = StyleSheet.create({
   },
   menuButtonActive: {
     backgroundColor: Colors.primaryLight,
+  },
+  menuButtonIconContainer: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuIconWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
   },
   menuOverlay: {
     ...StyleSheet.absoluteFillObject,
