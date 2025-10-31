@@ -54,7 +54,6 @@ export default function HomeScreen() {
   const [trailerNumberInput, setTrailerNumberInput] = useState<string>("");
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
-  const [tripNumberInput, setTripNumberInput] = useState<string>("");
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
@@ -467,13 +466,11 @@ export default function HomeScreen() {
             title="My Truck"
             value={truckProfile.truckNumber ? `Truck #${truckProfile.truckNumber}` : "Not set"}
             subtitle={truckProfile.driverId ? `Driver ID: ${truckProfile.driverId}` : undefined}
-            thirdLine={truckProfile.tripNumber ? `Trip #${truckProfile.tripNumber}` : undefined}
             color={Colors.primaryLight}
             onPress={() => router.push("/(tabs)/truck")}
             showPlusIcon
             onPlusPress={() => {
               setTruckNumberInput(truckProfile.truckNumber || "");
-              setTripNumberInput(truckProfile.tripNumber || "");
               setIsTruckModalVisible(true);
             }}
           />
@@ -619,14 +616,6 @@ export default function HomeScreen() {
               value={truckNumberInput}
               onChangeText={setTruckNumberInput}
             />
-            <Text style={styles.modalFieldLabel}>Trip Number</Text>
-            <RNTextInput
-              style={styles.trailerModalInput}
-              placeholder="Enter trip number (optional)"
-              placeholderTextColor={Colors.textLight}
-              value={tripNumberInput}
-              onChangeText={setTripNumberInput}
-            />
             <View style={styles.trailerModalButtons}>
               <TouchableOpacity
                 style={styles.trailerModalCancelButton}
@@ -637,9 +626,8 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.trailerModalConfirmButton}
                 onPress={async () => {
-                  await updateTruckProfile({ 
-                    truckNumber: truckNumberInput,
-                    tripNumber: tripNumberInput 
+                  await updateTruckProfile({
+                    truckNumber: truckNumberInput
                   });
                   setIsTruckModalVisible(false);
                 }}
