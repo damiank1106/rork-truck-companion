@@ -11,6 +11,9 @@ export const NEWS_JSON_URL =
 
 const LS_KEY_PAYLOAD = "news_payload_v1";
 const LS_KEY_LASTDATE_CHI = "news_last_fetch_date_chi_v1";
+const LS_KEY_LASTFETCH_ISO = "news_last_fetch_iso_v1";
+
+let lastFetchIso: string | null = null;
 
 const HEADER_KEY_MAP: Record<string, keyof PublishedNewsItem> = {
   title: "title",
@@ -213,11 +216,22 @@ function shouldAutoFetch(storage: Storage | null) {
   }
 }
 
+function getStoredLastFetchIso(storage: Storage | null) {
+  try {
+    return storage?.getItem(LS_KEY_LASTFETCH_ISO) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function cacheNews(storage: Storage | null, items: PublishedNewsItem[]) {
   try {
     const now = chicagoNowParts();
     storage?.setItem(LS_KEY_PAYLOAD, JSON.stringify(items));
     storage?.setItem(LS_KEY_LASTDATE_CHI, now.dateStr);
+    const iso = new Date().toISOString();
+    lastFetchIso = iso;
+    storage?.setItem(LS_KEY_LASTFETCH_ISO, iso);
   } catch {
     // ignore
   }
@@ -251,6 +265,9 @@ export async function loadNews({ force = false }: LoadNewsOptions = {}): Promise
   if (!force) {
     const cached = getCachedNews();
     if (!shouldAutoFetch(storage) && cached) {
+      if (!lastFetchIso) {
+        lastFetchIso = getStoredLastFetchIso(storage);
+      }
       return cached;
     }
   }
@@ -265,7 +282,12 @@ export async function loadNews({ force = false }: LoadNewsOptions = {}): Promise
   } catch (err) {
     // If network fails, return cache if available
     const cached = getCachedNews();
-    if (cached) return cached;
+    if (cached) {
+      if (!lastFetchIso) {
+        lastFetchIso = getStoredLastFetchIso(storage);
+      }
+      return cached;
+    }
     throw err;
   }
 }
@@ -287,4 +309,13 @@ export function autoFetchNewsOnAppStart() {
  */
 export function refreshNewsNow() {
   return loadNews({ force: true });
+}
+
+export function getLastNewsFetchTimestamp(): string | null {
+  if (lastFetchIso) {
+    return lastFetchIso;
+  }
+  const storage = getStorage();
+  lastFetchIso = getStoredLastFetchIso(storage);
+  return lastFetchIso;
 }
