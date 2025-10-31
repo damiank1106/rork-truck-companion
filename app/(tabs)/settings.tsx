@@ -542,7 +542,7 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
             </Text>
 
             <Text style={styles.modalFooter}>
-              Last updated: January 2025
+              Last updated: October 31, 2025
             </Text>
           </ScrollView>
         </Animated.View>
