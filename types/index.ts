@@ -6,6 +6,10 @@ export interface TruckProfile {
   year: string;
   truckNumber: string;
   tripNumber: string;
+  puNumber: string;
+  bolNumber: string;
+  loadWeight: string;
+  loadNotes: string;
   driverId: string;
   mcn: string;
   dotNumber: string;
