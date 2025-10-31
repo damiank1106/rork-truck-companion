@@ -312,8 +312,26 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
   };
 
   const handleSubmit = async () => {
-    if (!formData.companyName || !formData.city || !formData.state) {
-      Alert.alert("Required Fields", "Please fill in Company Name, City, and State.");
+    const textFields: string[] = [
+      formData.companyName,
+      formData.userName ?? "",
+      formData.city,
+      formData.state,
+      formData.address,
+      formData.contactNumber,
+      formData.dispatchInfo,
+      formData.category ?? "",
+      formData.notes,
+    ];
+
+    const hasTextInput = textFields.some((field) => field.trim().length > 0);
+    const hasCheckboxInput = formData.hasRestroom || formData.overnightParking;
+    const hasPhotos = formData.photos.length > 0;
+    const hasParkingSelection =
+      formData.parkingAvailability !== DEFAULT_PLACE_FORM.parkingAvailability;
+
+    if (!hasTextInput && !hasCheckboxInput && !hasPhotos && !hasParkingSelection) {
+      Alert.alert("Add Details", "Please fill in at least one field before adding a place.");
       return;
     }
     try {
@@ -349,7 +367,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
           <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
             <TextInput
               style={styles.modalInput}
-              placeholder="Company Name *"
+              placeholder="Company Name"
               placeholderTextColor={Colors.textLight}
               value={formData.companyName}
               onChangeText={(text) =>
@@ -373,7 +391,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
             />
             <TextInput
               style={styles.modalInput}
-              placeholder="City *"
+              placeholder="City"
               placeholderTextColor={Colors.textLight}
               value={formData.city}
               onChangeText={(text) =>
@@ -385,7 +403,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
             />
             <TextInput
               style={styles.modalInput}
-              placeholder="State *"
+              placeholder="State"
               placeholderTextColor={Colors.textLight}
               value={formData.state}
               onChangeText={(text) =>
