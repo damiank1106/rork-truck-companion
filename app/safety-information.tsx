@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   },
   introText: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: Colors.black,
     lineHeight: 22,
     marginBottom: 4,
   },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   },
   sectionParagraph: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: Colors.black,
     lineHeight: 22,
     marginBottom: 6,
   },
