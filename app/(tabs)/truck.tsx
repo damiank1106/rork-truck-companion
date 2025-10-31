@@ -80,37 +80,43 @@ export default function TruckScreen() {
         </View>
       </View>
 
-      <View style={styles.tabsContainer}>
-        <TabButton
-          label="Main"
-          isActive={activeTab === "main"}
-          onPress={() => setActiveTab("main")}
-        />
-        <TabButton
-          label="Truck"
-          isActive={activeTab === "truck"}
-          onPress={() => setActiveTab("truck")}
-        />
-        <TabButton
-          label="Trailer"
-          isActive={activeTab === "trailer"}
-          onPress={() => setActiveTab("trailer")}
-        />
-        <TabButton
-          label="Load"
-          isActive={activeTab === "load"}
-          onPress={() => setActiveTab("load")}
-        />
-        <TabButton
-          label="Weight"
-          isActive={activeTab === "weight"}
-          onPress={() => setActiveTab("weight")}
-        />
-        <TabButton
-          label="Tires"
-          isActive={activeTab === "tire"}
-          onPress={() => setActiveTab("tire")}
-        />
+      <View style={styles.tabsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsContainer}
+        >
+          <TabButton
+            label="Main"
+            isActive={activeTab === "main"}
+            onPress={() => setActiveTab("main")}
+          />
+          <TabButton
+            label="Truck"
+            isActive={activeTab === "truck"}
+            onPress={() => setActiveTab("truck")}
+          />
+          <TabButton
+            label="Trailer"
+            isActive={activeTab === "trailer"}
+            onPress={() => setActiveTab("trailer")}
+          />
+          <TabButton
+            label="Load"
+            isActive={activeTab === "load"}
+            onPress={() => setActiveTab("load")}
+          />
+          <TabButton
+            label="Weight"
+            isActive={activeTab === "weight"}
+            onPress={() => setActiveTab("weight")}
+          />
+          <TabButton
+            label="Tires"
+            isActive={activeTab === "tire"}
+            onPress={() => setActiveTab("tire")}
+          />
+        </ScrollView>
       </View>
 
       <ScrollView
@@ -571,20 +577,23 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
-  tabsContainer: {
-    flexDirection: "row",
+  tabsWrapper: {
     backgroundColor: Colors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 8,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
+  tabsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 8,
+  },
   tabButton: {
-    flex: 1,
+    minWidth: 96,
+    flexShrink: 0,
   },
   tabButtonInner: {
     paddingVertical: 10,
