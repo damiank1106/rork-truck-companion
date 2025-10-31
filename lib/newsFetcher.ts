@@ -7,10 +7,146 @@ export interface PublishedNewsItem {
 }
 
 export const NEWS_JSON_URL =
-  "https://drive.google.com/uc?export=download&id=1WBqRRedfPL0DlvEPzS-rSWTdEyrWYxtp";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTp4PBHAad1jcdBHLd8kxGQ99zDZ1LqcXksLdBtvgasmstqpjIX1sGXDmJUaL7m9KLJMDwGhWuFegI/pub?gid=2023555161&single=true&output=csv";
 
 const LS_KEY_PAYLOAD = "news_payload_v1";
 const LS_KEY_LASTDATE_CHI = "news_last_fetch_date_chi_v1";
+
+const HEADER_KEY_MAP: Record<string, keyof PublishedNewsItem> = {
+  title: "title",
+  headline: "title",
+  summary: "summary",
+  description: "summary",
+  details: "summary",
+  tag: "tag",
+  category: "tag",
+  label: "tag",
+  source: "source_url",
+  url: "source_url",
+  link: "source_url",
+  sourcelink: "source_url",
+  sourceurl: "source_url",
+  published: "published_date",
+  publishdate: "published_date",
+  publisheddate: "published_date",
+  date: "published_date",
+};
+
+function normaliseHeader(header: string) {
+  return header.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function parseCsv(text: string) {
+  const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  const rows: string[][] = [];
+  let currentField = "";
+  let currentRow: string[] = [];
+  let inQuotes = false;
+
+  for (let i = 0; i < source.length; i += 1) {
+    const char = source[i];
+
+    if (inQuotes) {
+      if (char === "\"") {
+        const nextChar = source[i + 1];
+        if (nextChar === "\"") {
+          currentField += "\"";
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        currentField += char;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inQuotes = true;
+      continue;
+    }
+
+    if (char === ",") {
+      currentRow.push(currentField);
+      currentField = "";
+      continue;
+    }
+
+    if (char === "\n") {
+      currentRow.push(currentField);
+      rows.push(currentRow);
+      currentRow = [];
+      currentField = "";
+      continue;
+    }
+
+    if (char !== "\r") {
+      currentField += char;
+    }
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField);
+    rows.push(currentRow);
+  }
+
+  return rows;
+}
+
+function normaliseDate(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return trimmed;
+  }
+  return parsed.toISOString();
+}
+
+export function parseNewsFeed(text: string): PublishedNewsItem[] {
+  const rows = parseCsv(text).filter((row) => row.some((cell) => cell.trim().length > 0));
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const [headerRow, ...dataRows] = rows;
+  const headerMap = headerRow.map((header) => HEADER_KEY_MAP[normaliseHeader(header)] ?? null);
+
+  const items: PublishedNewsItem[] = [];
+  dataRows.forEach((row) => {
+    const item: PublishedNewsItem = { title: "" };
+    row.forEach((value, index) => {
+      const mappedKey = headerMap[index];
+      if (!mappedKey) {
+        return;
+      }
+
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      if (mappedKey === "published_date") {
+        const normalised = normaliseDate(trimmed);
+        if (normalised) {
+          item[mappedKey] = normalised;
+        }
+        return;
+      }
+
+      (item as any)[mappedKey] = trimmed;
+    });
+
+    if (item.title.trim()) {
+      items.push(item);
+    }
+  });
+
+  return items;
+}
 
 type ChicagoTimeParts = {
   dateStr: string;
@@ -122,8 +258,8 @@ export async function loadNews({ force = false }: LoadNewsOptions = {}): Promise
   try {
     const res = await fetch(NEWS_JSON_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const items = (await res.json()) as PublishedNewsItem[];
-    if (!Array.isArray(items)) throw new Error("Feed is not an array");
+    const text = await res.text();
+    const items = parseNewsFeed(text);
     cacheNews(storage, items);
     return items;
   } catch (err) {
