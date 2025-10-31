@@ -56,7 +56,7 @@ export default function AnimatedBackground() {
   }, [bgAnim1, bgAnim2, bgAnim3]);
 
   return (
-    <View style={styles.backgroundContainer}>
+    <View style={styles.backgroundContainer} pointerEvents="none">
       <Animated.View
         style={[
           styles.bgCircle,

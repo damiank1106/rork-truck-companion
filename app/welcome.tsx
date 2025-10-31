@@ -122,7 +122,7 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.backgroundContainer}>
+      <View style={styles.backgroundContainer} pointerEvents="none">
         <Animated.View
           style={[
             styles.bgCircle,
