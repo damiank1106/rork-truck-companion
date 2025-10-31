@@ -5,8 +5,8 @@ import {
   Plus,
   ShieldPlus,
   CreditCard,
-  Menu as MenuIcon,
 } from "lucide-react-native";
+import MenuIcon from "lucide-react-native/dist/esm/icons/menu";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -871,6 +871,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     gap: 12,
+  },
+  menuButton: {
+    position: "absolute" as const,
+    top: 16,
+    right: 16,
+    zIndex: 2,
+  },
+  menuButtonInner: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   menuButton: {
     position: "absolute" as const,
