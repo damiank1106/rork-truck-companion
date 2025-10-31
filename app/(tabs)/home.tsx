@@ -1,27 +1,6 @@
-import {
-  Truck,
-  MapPinIcon,
-  Container,
-  Plus,
-  ShieldPlus,
-  CreditCard,
-  Menu as MenuIcon,
-} from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-  Platform,
-  Alert,
-  Image,
-  ActivityIndicator,
-} from "react-native";
+import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu, X, Newspaper, Shield, HeartHandshake } from "lucide-react-native";
+import React, { useState, useEffect } from "react";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -33,7 +12,7 @@ import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 import { useHealthInsurance } from "@/contexts/HealthInsuranceContext";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { useTruck } from "@/contexts/TruckContext";
-import { TextInput as RNTextInput } from "react-native";
+import { Modal, TextInput as RNTextInput } from "react-native";
 import { useTrailers } from "@/contexts/TrailerContext";
 
 interface WeatherData {
@@ -75,18 +54,8 @@ export default function HomeScreen() {
   const [trailerNumberInput, setTrailerNumberInput] = useState<string>("");
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
-  const [isMenuVisible, setIsMenuVisible] = useState<boolean>(false);
-  const menuAnimation = useRef(new Animated.Value(0)).current;
-
-  const menuButtonScale = menuAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.08],
-  });
-
-  const menuIconRotation = menuAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "90deg"],
-  });
+  const [tripNumberInput, setTripNumberInput] = useState<string>("");
+  const [menuVisible, setMenuVisible] = useState<boolean>(false);
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
 
@@ -371,75 +340,8 @@ export default function HomeScreen() {
     });
   };
 
-  const openMenu = () => {
-    menuAnimation.stopAnimation();
-    menuAnimation.setValue(0);
-    setIsMenuVisible(true);
-    Animated.spring(menuAnimation, {
-      toValue: 1,
-      friction: 6,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const closeMenu = (callback?: () => void) => {
-    if (!isMenuVisible) {
-      callback?.();
-      return;
-    }
-    menuAnimation.stopAnimation();
-    Animated.spring(menuAnimation, {
-      toValue: 0,
-      friction: 6,
-      tension: 40,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsMenuVisible(false);
-      callback?.();
-    });
-  };
-
-  const handleMenuNavigation = (path: string) => {
-    closeMenu(() => router.push(path));
-  };
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Modal
-        transparent
-        animationType="fade"
-        visible={isMenuVisible}
-        onRequestClose={() => closeMenu()}
-      >
-        <TouchableWithoutFeedback onPress={() => closeMenu()}>
-          <View style={styles.menuOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.menuCard}>
-                <Text style={styles.menuTitle}>Menu</Text>
-                <TouchableOpacity
-                  style={styles.menuOption}
-                  onPress={() => handleMenuNavigation("/daily-news")}
-                >
-                  <Text style={styles.menuOptionText}>Daily News</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.menuOption}
-                  onPress={() => handleMenuNavigation("/safety-tips")}
-                >
-                  <Text style={styles.menuOptionText}>Safety Tips</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.menuOption}
-                  onPress={() => handleMenuNavigation("/donations")}
-                >
-                  <Text style={styles.menuOptionText}>Donations</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
       <View style={styles.header}>
         <AnimatedBackground />
         <View style={styles.headerContent}>
@@ -456,22 +358,6 @@ export default function HomeScreen() {
             {menuVisible ? <X color={Colors.white} size={20} /> : <Menu color={Colors.text} size={20} />}
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={openMenu}
-          accessibilityLabel="Open menu"
-        >
-          <Animated.View
-            style={[
-              styles.menuButtonInner,
-              { transform: [{ scale: menuButtonScale }] },
-            ]}
-          >
-            <Animated.View style={{ transform: [{ rotate: menuIconRotation }] }}>
-              <MenuIcon color={Colors.black} size={20} />
-            </Animated.View>
-          </Animated.View>
-        </TouchableOpacity>
       </View>
 
       {menuVisible && (
@@ -581,11 +467,13 @@ export default function HomeScreen() {
             title="My Truck"
             value={truckProfile.truckNumber ? `Truck #${truckProfile.truckNumber}` : "Not set"}
             subtitle={truckProfile.driverId ? `Driver ID: ${truckProfile.driverId}` : undefined}
+            thirdLine={truckProfile.tripNumber ? `Trip #${truckProfile.tripNumber}` : undefined}
             color={Colors.primaryLight}
             onPress={() => router.push("/(tabs)/truck")}
             showPlusIcon
             onPlusPress={() => {
               setTruckNumberInput(truckProfile.truckNumber || "");
+              setTripNumberInput(truckProfile.tripNumber || "");
               setIsTruckModalVisible(true);
             }}
           />
@@ -731,6 +619,14 @@ export default function HomeScreen() {
               value={truckNumberInput}
               onChangeText={setTruckNumberInput}
             />
+            <Text style={styles.modalFieldLabel}>Trip Number</Text>
+            <RNTextInput
+              style={styles.trailerModalInput}
+              placeholder="Enter trip number (optional)"
+              placeholderTextColor={Colors.textLight}
+              value={tripNumberInput}
+              onChangeText={setTripNumberInput}
+            />
             <View style={styles.trailerModalButtons}>
               <TouchableOpacity
                 style={styles.trailerModalCancelButton}
@@ -741,8 +637,9 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.trailerModalConfirmButton}
                 onPress={async () => {
-                  await updateTruckProfile({
+                  await updateTruckProfile({ 
                     truckNumber: truckNumberInput,
+                    tripNumber: tripNumberInput 
                   });
                   setIsTruckModalVisible(false);
                 }}
@@ -872,24 +769,11 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 12,
   },
-  menuButton: {
-    position: "absolute" as const,
-    top: 16,
-    right: 16,
-    zIndex: 2,
+  headerTextGroup: {
+    flex: 1,
+    paddingRight: 12,
   },
-  menuButtonInner: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    padding: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
+
   headerTitle: {
     fontSize: 24,
     fontWeight: "700" as const,
@@ -973,42 +857,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
-  },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    justifyContent: "flex-start",
-    alignItems: "flex-end",
-    paddingTop: 80,
-    paddingHorizontal: 24,
-  },
-  menuCard: {
-    width: 220,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  menuTitle: {
-    fontSize: 16,
-    fontWeight: "600" as const,
-    color: Colors.black,
-    marginBottom: 12,
-  },
-  menuOption: {
-    paddingVertical: 10,
-  },
-  menuOptionText: {
-    fontSize: 15,
-    color: Colors.black,
-    fontWeight: "500" as const,
   },
   statsGrid: {
     flexDirection: "row",

@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
@@ -12,26 +12,31 @@ export default function DonationsScreen() {
   const router = useRouter();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <AnimatedBackground />
-        <View style={styles.headerContent}>
+        <View style={styles.headerRow}>
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => router.replace("/(tabs)/home")}
-            accessibilityLabel="Go back"
+            accessibilityRole="button"
+            accessibilityLabel="Go back to home"
           >
-            <ArrowLeft color={Colors.black} size={22} />
+            <ArrowLeft color={Colors.text} size={20} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Donations</Text>
-          <View style={styles.headerButton} />
+          <View style={styles.headerSpacer} />
         </View>
       </View>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.placeholderText}>
-          Our team deeply appreciates your support. Donation options will appear here soon.
-        </Text>
-      </ScrollView>
+
+      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 32) }]}>
+        <View style={styles.placeholderCard}>
+          <Text style={styles.placeholderTitle}>Thank you for your support!</Text>
+          <Text style={styles.placeholderSubtitle}>
+            We’re preparing a donations portal so you can help keep Trucker Companion running for everyone on the road.
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -42,45 +47,69 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
-    height: 120,
-    justifyContent: "flex-end",
     paddingHorizontal: 20,
     paddingBottom: 16,
     backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.08)",
+    borderBottomColor: "rgba(15, 23, 42, 0.08)",
+    borderBottomWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
+    position: "relative",
   },
-  headerContent: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    position: "relative" as const,
-    zIndex: 1,
   },
   headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255, 255, 255, 0.85)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerSpacer: {
+    width: 40,
+    height: 40,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700" as const,
-    color: Colors.black,
+    fontSize: 22,
+    fontWeight: "700",
+    color: Colors.text,
+    textAlign: "center",
+    flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
   },
-  placeholderText: {
-    fontSize: 16,
-    color: Colors.black,
+  placeholderCard: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 6,
+  },
+  placeholderTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 12,
     textAlign: "center",
-    opacity: 0.7,
+  },
+  placeholderSubtitle: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 22,
   },
 });
