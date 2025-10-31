@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Linking,
   Modal,
   ScrollView,
@@ -10,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, RefreshCcw, ExternalLink } from "lucide-react-native";
@@ -236,6 +238,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
+    marginTop: 12,
     fontSize: 16,
     color: Colors.black,
     opacity: 0.7,
