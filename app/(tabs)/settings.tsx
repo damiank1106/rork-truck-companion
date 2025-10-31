@@ -410,7 +410,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
 
             <Text style={styles.modalSectionTitle}>Update History</Text>
             <Text style={styles.modalText}>
-              <Text style={styles.modalBoldText}>v1.0.0 - October 6, 2025</Text>{"\n"}
+              <Text style={styles.modalBoldText}>v1.0.0 - October 15, 2025</Text>{"\n"}
               • Initial release{"\n"}
               • Complete truck profile system{"\n"}
               • Places tracking with photo support{"\n"}
