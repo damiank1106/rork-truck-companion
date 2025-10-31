@@ -75,7 +75,7 @@ export default function HomeScreen() {
   const [trailerNumberInput, setTrailerNumberInput] = useState<string>("");
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
-  const [isMenuVisible, setIsMenuVisible] = useState<boolean>(false);
+  const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const menuAnimation = useRef(new Animated.Value(0)).current;
 
   const menuButtonScale = menuAnimation.interpolate({
@@ -374,7 +374,7 @@ export default function HomeScreen() {
   const openMenu = () => {
     menuAnimation.stopAnimation();
     menuAnimation.setValue(0);
-    setIsMenuVisible(true);
+    setMenuVisible(true);
     Animated.spring(menuAnimation, {
       toValue: 1,
       friction: 6,
@@ -384,7 +384,7 @@ export default function HomeScreen() {
   };
 
   const closeMenu = (callback?: () => void) => {
-    if (!isMenuVisible) {
+    if (!menuVisible) {
       callback?.();
       return;
     }
@@ -395,7 +395,7 @@ export default function HomeScreen() {
       tension: 40,
       useNativeDriver: true,
     }).start(() => {
-      setIsMenuVisible(false);
+      setMenuVisible(false);
       callback?.();
     });
   };
@@ -409,7 +409,7 @@ export default function HomeScreen() {
       <Modal
         transparent
         animationType="fade"
-        visible={isMenuVisible}
+        visible={menuVisible}
         onRequestClose={() => closeMenu()}
       >
         <TouchableWithoutFeedback onPress={() => closeMenu()}>
@@ -871,6 +871,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     gap: 12,
+  },
+  menuButton: {
+    position: "absolute" as const,
+    top: 16,
+    right: 16,
+    zIndex: 2,
+  },
+  menuButtonInner: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   menuButton: {
     position: "absolute" as const,
