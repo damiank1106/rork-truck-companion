@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter as useExpoRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { ArrowLeft, RefreshCcw, ExternalLink } from "lucide-react-native";
 
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -24,7 +24,7 @@ type FetchStatus = "idle" | "loading" | "error" | "success";
 
 export default function DailyNewsScreen() {
   const insets = useSafeAreaInsets();
-  const router = useExpoRouter();
+  const router = useRouter();
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [status, setStatus] = useState<FetchStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
