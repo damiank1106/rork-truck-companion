@@ -1,314 +1,189 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Linking,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, RefreshCw, X, ExternalLink } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ArrowLeft, RefreshCcw, ExternalLink } from "lucide-react-native";
 
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Colors from "@/constants/colors";
-import {
-  PublishedNewsItem,
-  autoFetchNewsOnAppStart,
-  refreshNewsNow,
-} from "@/lib/newsFetcher";
+import { autoFetchNewsOnAppStart, refreshNewsNow, type NewsItem } from "@/lib/newsFetcher";
 
-function formatDateLabel(value?: string) {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return undefined;
-  }
-
-  return parsed.toLocaleDateString(undefined, {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function extractLatestPublishedDate(items: PublishedNewsItem[]) {
-  const timestamps = items
-    .map((item) => (item.published_date ? Date.parse(item.published_date) : Number.NaN))
-    .filter((timestamp) => Number.isFinite(timestamp))
-    .sort((a, b) => b - a);
-
-  if (timestamps.length === 0) {
-    return null;
-  }
-
-  return new Date(timestamps[0]).toISOString();
-}
+type FetchStatus = "idle" | "loading" | "error" | "success";
 
 export default function DailyNewsScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [newsItems, setNewsItems] = useState<PublishedNewsItem[]>([]);
-  const [selectedNews, setSelectedNews] = useState<PublishedNewsItem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [status, setStatus] = useState<FetchStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const isMountedRef = useRef(true);
-
-  const updateItems = useCallback((items: PublishedNewsItem[]) => {
-    if (!isMountedRef.current) {
-      return;
-    }
-    setNewsItems(items);
-    const latest = extractLatestPublishedDate(items);
-    setLastUpdated(latest);
-  }, [isMountedRef]);
-
-  const loadInitialNews = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const items = await autoFetchNewsOnAppStart();
-      updateItems(items);
-      if (isMountedRef.current) {
-        setError(null);
-      }
-    } catch (err) {
-      console.warn("Failed to load daily news", err);
-      if (isMountedRef.current) {
-        setError("We couldn't load the latest news. Please try again.");
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [isMountedRef, updateItems]);
-
-  const checkForScheduledUpdate = useCallback(async () => {
-    try {
-      const items = await autoFetchNewsOnAppStart();
-      updateItems(items);
-    } catch (err) {
-      console.warn("Scheduled Daily News check failed", err);
-    }
-  }, [updateItems]);
 
   useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [isMountedRef]);
-
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) {
-      return;
-    }
-
-    setIsRefreshing(true);
-    try {
-      const items = await refreshNewsNow();
-      updateItems(items);
-      if (isMountedRef.current) {
-        setError(null);
-      }
-    } catch (err) {
-      console.warn("Manual news refresh failed", err);
-      if (isMountedRef.current) {
-        setError("Refresh failed. Please check your connection and try again.");
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsRefreshing(false);
-      }
-    }
-  }, [isMountedRef, isRefreshing, updateItems]);
-
-  useEffect(() => {
-    loadInitialNews().catch(() => {
-      // handled in loadInitialNews
-    });
-
-    const interval = setInterval(() => {
-      checkForScheduledUpdate().catch(() => {
-        // handled inside helper
-      });
-    }, 60 * 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [checkForScheduledUpdate, loadInitialNews]);
-
-  useFocusEffect(
-    useCallback(() => {
-      checkForScheduledUpdate().catch(() => {
-        // handled inside helper
-      });
-    }, [checkForScheduledUpdate])
-  );
-
-  const headerUpdatedLabel = useMemo(() => {
-    if (!lastUpdated) {
-      return "";
-    }
-
-    const formatted = formatDateLabel(lastUpdated);
-    return formatted ? `Last updated ${formatted}` : "";
-  }, [lastUpdated]);
-
-  const openSourceLink = useCallback((url?: string) => {
-    if (!url) {
-      return;
-    }
-
-    Linking.canOpenURL(url)
-      .then((supported) => {
-        if (!supported) {
-          throw new Error("Unsupported URL");
-        }
-        return Linking.openURL(url);
+    setStatus("loading");
+    autoFetchNewsOnAppStart()
+      .then((items) => {
+        setNewsItems(items ?? []);
+        setStatus("success");
+        setErrorMessage(null);
       })
-      .catch(() => {
-        setError("We couldn't open the source link. Please try again later.");
+      .catch((error) => {
+        console.warn("Failed to auto fetch news", error);
+        setErrorMessage("We couldn't refresh the news. Try again in a moment.");
+        setStatus("error");
       });
   }, []);
 
-  const renderNewsItem = useCallback(
-    ({ item }: { item: PublishedNewsItem }) => {
-      const tagLabel = item.tag ? item.tag.trim() : undefined;
-      const publishedLabel = formatDateLabel(item.published_date);
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      const items = await refreshNewsNow();
+      setNewsItems(items ?? []);
+      setErrorMessage(null);
+      setStatus("success");
+    } catch (error) {
+      console.warn("Failed to refresh news", error);
+      setErrorMessage("We couldn't refresh the news. Try again in a moment.");
+      setStatus("error");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
+  const handleOpenSource = async (url?: string) => {
+    if (!url) return;
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      console.warn("Failed to open news link", error);
+    }
+  };
+
+  const renderContent = () => {
+    if (status === "loading" && newsItems.length === 0) {
       return (
-        <TouchableOpacity
-          style={styles.newsCard}
-          onPress={() => setSelectedNews(item)}
-          accessibilityRole="button"
-          accessibilityLabel={`Read ${item.title}`}
-        >
-          <Text style={styles.newsTitle}>{item.title}</Text>
-          {tagLabel ? <Text style={styles.newsTag}>{tagLabel}</Text> : null}
-          {publishedLabel ? <Text style={styles.newsMeta}>{publishedLabel}</Text> : null}
-        </TouchableOpacity>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.black} />
+          <Text style={styles.loadingText}>Loading the latest stories...</Text>
+        </View>
       );
-    },
-    []
-  );
+    }
 
-  const listContentStyle = useMemo(
-    () => ({
-      paddingHorizontal: 20,
-      paddingBottom: Math.max(insets.bottom, 32),
-      paddingTop: 24,
-    }),
-    [insets.bottom]
-  );
+    if (status === "error" && newsItems.length === 0) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>{errorMessage}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (newsItems.length === 0) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.emptyText}>No news has been published yet today.</Text>
+        </View>
+      );
+    }
+
+    return newsItems.map((item, index) => (
+      <TouchableOpacity
+        key={`${item.title}-${index}`}
+        style={styles.newsCard}
+        onPress={() => setSelectedNews(item)}
+        accessibilityRole="button"
+      >
+        <Text style={styles.newsTitle}>{item.title}</Text>
+        {item.published_date ? (
+          <Text style={styles.newsMeta}>{item.published_date}</Text>
+        ) : null}
+        {item.tag ? <Text style={styles.newsTag}>{item.tag}</Text> : null}
+      </TouchableOpacity>
+    ));
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
         <AnimatedBackground />
-        <View style={styles.headerRow}>
+        <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => router.replace("/(tabs)/home")}
-            accessibilityRole="button"
             accessibilityLabel="Go back to home"
           >
-            <ArrowLeft color={Colors.text} size={20} />
+            <ArrowLeft color={Colors.black} size={22} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Daily News</Text>
           <TouchableOpacity
-            style={[styles.headerButton, isRefreshing && styles.headerButtonDisabled]}
+            style={styles.headerButton}
             onPress={handleRefresh}
             disabled={isRefreshing}
-            accessibilityRole="button"
             accessibilityLabel="Refresh news"
           >
             {isRefreshing ? (
-              <ActivityIndicator size="small" color={Colors.text} />
+              <ActivityIndicator size="small" color={Colors.black} />
             ) : (
-              <RefreshCw color={Colors.text} size={20} />
+              <RefreshCcw color={Colors.black} size={20} />
             )}
           </TouchableOpacity>
         </View>
       </View>
-
-      <View style={styles.content}>
-        {headerUpdatedLabel ? <Text style={styles.updatedText}>{headerUpdatedLabel}</Text> : null}
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.primaryLight} />
-            <Text style={styles.loadingText}>Loading headlines…</Text>
-          </View>
-        ) : (
-          <FlatList
-            style={styles.list}
-            data={newsItems}
-            keyExtractor={(item, index) => `${item.title}-${index}`}
-            renderItem={renderNewsItem}
-            contentContainerStyle={listContentStyle}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            ListEmptyComponent={() => (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyTitle}>No news yet</Text>
-                <Text style={styles.emptySubtitle}>
-                  Check back after 6:30am Central or tap refresh to load the latest updates.
-                </Text>
-              </View>
-            )}
-          />
-        )}
-      </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {errorMessage && status !== "error" ? (
+          <Text style={styles.infoText}>{errorMessage}</Text>
+        ) : null}
+        {renderContent()}
+      </ScrollView>
 
       <Modal
-        visible={!!selectedNews}
         transparent
-        animationType="slide"
+        animationType="fade"
+        visible={!!selectedNews}
         onRequestClose={() => setSelectedNews(null)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} numberOfLines={2}>
-                {selectedNews?.title}
-              </Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => setSelectedNews(null)}
-                accessibilityRole="button"
-                accessibilityLabel="Close news details"
-              >
-                <X color={Colors.text} size={20} />
-              </TouchableOpacity>
-            </View>
-            {selectedNews?.summary ? (
-              <Text style={styles.modalSummary}>{selectedNews.summary}</Text>
-            ) : (
-              <Text style={styles.modalSummary}>No summary is available for this update.</Text>
-            )}
-            {selectedNews?.source_url ? (
-              <TouchableOpacity
-                style={styles.modalLinkButton}
-                onPress={() => openSourceLink(selectedNews.source_url)}
-                accessibilityRole="link"
-              >
-                <ExternalLink color={Colors.white} size={18} style={styles.modalLinkIcon} />
-                <Text style={styles.modalLinkText}>Open Source</Text>
-              </TouchableOpacity>
-            ) : null}
+        <TouchableWithoutFeedback onPress={() => setSelectedNews(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>{selectedNews?.title}</Text>
+                <ScrollView style={styles.modalBody}>
+                  <Text style={styles.modalSummary}>
+                    {selectedNews?.summary || "No summary is available for this story."}
+                  </Text>
+                </ScrollView>
+                <View style={styles.modalActions}>
+                  {selectedNews?.source_url ? (
+                    <TouchableOpacity
+                      style={styles.sourceButton}
+                      onPress={() => handleOpenSource(selectedNews?.source_url)}
+                    >
+                      <ExternalLink color={Colors.white} size={18} />
+                      <Text style={styles.sourceButtonText}>Open Source</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                  <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedNews(null)}>
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -320,178 +195,166 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
+    height: 120,
+    justifyContent: "flex-end",
     paddingHorizontal: 20,
     paddingBottom: 16,
     backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderBottomColor: "rgba(15, 23, 42, 0.08)",
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.08)",
     overflow: "hidden",
-    position: "relative",
   },
-  headerRow: {
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    position: "relative" as const,
+    zIndex: 1,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255, 255, 255, 0.85)",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  headerButtonDisabled: {
-    opacity: 0.6,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.1)",
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.text,
-    textAlign: "center",
-    flex: 1,
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: Colors.black,
   },
   content: {
-    flex: 1,
-  },
-  list: {
-    flex: 1,
-  },
-  updatedText: {
-    textAlign: "center",
-    color: Colors.textSecondary,
-    fontSize: 13,
-    marginTop: 16,
-  },
-  errorText: {
-    textAlign: "center",
-    color: Colors.error,
-    fontSize: 14,
-    marginTop: 8,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    gap: 16,
   },
   loadingContainer: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 40,
+    gap: 12,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: Colors.black,
+    opacity: 0.7,
   },
-  separator: {
-    height: 12,
+  errorText: {
+    fontSize: 16,
+    color: Colors.black,
+    textAlign: "center",
+  },
+  retryButton: {
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: Colors.black,
+  },
+  retryButtonText: {
+    color: Colors.white,
+    fontWeight: "600" as const,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: Colors.black,
+    textAlign: "center",
+    opacity: 0.8,
+  },
+  infoText: {
+    fontSize: 14,
+    color: Colors.black,
+    opacity: 0.6,
+    marginBottom: 8,
+    textAlign: "center",
   },
   newsCard: {
-    backgroundColor: Colors.cardBackground,
+    padding: 16,
     borderRadius: 16,
-    padding: 20,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
     shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 4,
+    gap: 6,
   },
   newsTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 6,
-  },
-  newsTag: {
-    fontSize: 13,
-    color: Colors.primaryLight,
-    fontWeight: "600",
-    marginBottom: 4,
-    textTransform: "uppercase",
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.black,
   },
   newsMeta: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: Colors.black,
+    opacity: 0.6,
   },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 60,
+  newsTag: {
+    fontSize: 12,
+    color: Colors.black,
+    opacity: 0.5,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  modalBackdrop: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.overlay,
-    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
     justifyContent: "center",
+    alignItems: "center",
     padding: 24,
   },
   modalContent: {
     width: "100%",
-    backgroundColor: Colors.cardBackground,
+    maxWidth: 480,
+    backgroundColor: Colors.white,
     borderRadius: 20,
-    padding: 24,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
+    padding: 20,
+    gap: 16,
   },
   modalTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.text,
-    marginRight: 12,
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: Colors.black,
   },
-  modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
+  modalBody: {
+    maxHeight: 240,
   },
   modalSummary: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontSize: 15,
+    color: Colors.black,
     lineHeight: 22,
-    marginBottom: 20,
   },
-  modalLinkButton: {
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  sourceButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: Colors.primaryLight,
+    gap: 8,
+    backgroundColor: Colors.black,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
   },
-  modalLinkIcon: {
-    marginRight: 8,
-  },
-  modalLinkText: {
-    fontSize: 16,
-    fontWeight: "700",
+  sourceButtonText: {
     color: Colors.white,
+    fontWeight: "600" as const,
+  },
+  closeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.15)",
+  },
+  closeButtonText: {
+    color: Colors.black,
+    fontWeight: "600" as const,
   },
 });

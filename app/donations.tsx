@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
@@ -12,31 +12,26 @@ export default function DonationsScreen() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
         <AnimatedBackground />
-        <View style={styles.headerRow}>
+        <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => router.replace("/(tabs)/home")}
-            accessibilityRole="button"
-            accessibilityLabel="Go back to home"
+            accessibilityLabel="Go back"
           >
-            <ArrowLeft color={Colors.text} size={20} />
+            <ArrowLeft color={Colors.black} size={22} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Donations</Text>
-          <View style={styles.headerSpacer} />
+          <View style={styles.headerButton} />
         </View>
       </View>
-
-      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 32) }]}>
-        <View style={styles.placeholderCard}>
-          <Text style={styles.placeholderTitle}>Thank you for your support!</Text>
-          <Text style={styles.placeholderSubtitle}>
-            We’re preparing a donations portal so you can help keep Trucker Companion running for everyone on the road.
-          </Text>
-        </View>
-      </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.placeholderText}>
+          Our team deeply appreciates your support. Donation options will appear here soon.
+        </Text>
+      </ScrollView>
     </View>
   );
 }
@@ -47,69 +42,45 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
+    height: 120,
+    justifyContent: "flex-end",
     paddingHorizontal: 20,
     paddingBottom: 16,
     backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderBottomColor: "rgba(15, 23, 42, 0.08)",
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.08)",
     overflow: "hidden",
-    position: "relative",
   },
-  headerRow: {
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    position: "relative" as const,
+    zIndex: 1,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255, 255, 255, 0.85)",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  headerSpacer: {
-    width: 40,
-    height: 40,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.1)",
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.text,
-    textAlign: "center",
-    flex: 1,
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: Colors.black,
   },
   content: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
   },
-  placeholderCard: {
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 6,
-  },
-  placeholderTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 12,
+  placeholderText: {
+    fontSize: 16,
+    color: Colors.black,
     textAlign: "center",
-  },
-  placeholderSubtitle: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 22,
+    opacity: 0.7,
   },
 });

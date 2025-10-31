@@ -1,11 +1,3 @@
-export interface PublishedNewsItem {
-  title: string;
-  summary?: string;
-  tag?: string;
-  source_url?: string;
-  published_date?: string;
-}
-
 export const NEWS_JSON_URL =
   "https://drive.google.com/uc?export=download&id=1WBqRRedfPL0DlvEPzS-rSWTdEyrWYxtp";
 
@@ -18,24 +10,14 @@ type ChicagoTimeParts = {
   minute: number;
 };
 
-function getStorage(): Storage | null {
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      return window.localStorage;
-    }
-    if ("localStorage" in globalThis && (globalThis as any).localStorage) {
-      return (globalThis as any).localStorage as Storage;
-    }
-  } catch {
-    // ignore
-  }
-  return null;
-}
+type NewsItem = {
+  title: string;
+  summary?: string;
+  tag?: string;
+  source_url?: string;
+  published_date?: string;
+};
 
-/**
- * Get the current date/time in America/Chicago, using Intl APIs.
- * Returns: { dateStr: 'YYYY-MM-DD', hour: number(0-23), minute: number(0-59) }
- */
 function chicagoNowParts(): ChicagoTimeParts {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Chicago",
@@ -65,56 +47,43 @@ function isAfter630Chicago({ hour, minute }: ChicagoTimeParts) {
   return hour > 6 || (hour === 6 && minute >= 30);
 }
 
-function shouldAutoFetch(storage: Storage | null) {
+function shouldAutoFetch() {
   try {
     const now = chicagoNowParts();
-    const last = storage?.getItem(LS_KEY_LASTDATE_CHI);
-    // Auto-fetch once per day AFTER 6:30am Central
+    const last = typeof localStorage !== "undefined" ? localStorage.getItem(LS_KEY_LASTDATE_CHI) : null;
     return isAfter630Chicago(now) && last !== now.dateStr;
   } catch {
-    // If localStorage not available, just fetch
     return true;
   }
 }
 
-function cacheNews(storage: Storage | null, items: PublishedNewsItem[]) {
+function cacheNews(items: NewsItem[]) {
   try {
     const now = chicagoNowParts();
-    storage?.setItem(LS_KEY_PAYLOAD, JSON.stringify(items));
-    storage?.setItem(LS_KEY_LASTDATE_CHI, now.dateStr);
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(LS_KEY_PAYLOAD, JSON.stringify(items));
+      localStorage.setItem(LS_KEY_LASTDATE_CHI, now.dateStr);
+    }
   } catch {
     // ignore
   }
 }
 
-export function getCachedNews(): PublishedNewsItem[] | null {
-  const storage = getStorage();
+export function getCachedNews(): NewsItem[] | null {
   try {
-    const raw = storage?.getItem(LS_KEY_PAYLOAD);
+    if (typeof localStorage === "undefined") return null;
+    const raw = localStorage.getItem(LS_KEY_PAYLOAD);
     if (!raw) return null;
-    return JSON.parse(raw) as PublishedNewsItem[];
+    return JSON.parse(raw) as NewsItem[];
   } catch {
     return null;
   }
 }
 
-interface LoadNewsOptions {
-  force?: boolean;
-}
-
-/**
- * Core fetcher. If force=true, always fetch.
- * Otherwise, it auto-fetches once/day after 6:30am Central OR
- * returns cached items if present.
- *
- * Returns: Promise<Array<{ title, summary, tag, source_url, published_date }>>
- */
-export async function loadNews({ force = false }: LoadNewsOptions = {}): Promise<PublishedNewsItem[]> {
-  const storage = getStorage();
-
+async function loadNews({ force = false }: { force?: boolean } = {}): Promise<NewsItem[]> {
   if (!force) {
     const cached = getCachedNews();
-    if (!shouldAutoFetch(storage) && cached) {
+    if (!shouldAutoFetch() && cached) {
       return cached;
     }
   }
@@ -122,33 +91,23 @@ export async function loadNews({ force = false }: LoadNewsOptions = {}): Promise
   try {
     const res = await fetch(NEWS_JSON_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const items = (await res.json()) as PublishedNewsItem[];
+    const items = (await res.json()) as NewsItem[];
     if (!Array.isArray(items)) throw new Error("Feed is not an array");
-    cacheNews(storage, items);
+    cacheNews(items);
     return items;
   } catch (err) {
-    // If network fails, return cache if available
     const cached = getCachedNews();
     if (cached) return cached;
     throw err;
   }
 }
 
-/**
- * Convenience helper you can call on app start.
- * Example (React):
- *   useEffect(() => { autoFetchNewsOnAppStart().then(setNews); }, []);
- */
 export function autoFetchNewsOnAppStart() {
   return loadNews({ force: false });
 }
 
-/**
- * Call this when the user pulls-to-refresh / taps a refresh button.
- * Example:
- *   const items = await refreshNewsNow();
- *   setNews(items);
- */
 export function refreshNewsNow() {
   return loadNews({ force: true });
 }
+
+export type { NewsItem };
