@@ -364,7 +364,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Changes update instantly on home and detail pages{"\n\n"}
               
               <Text style={styles.modalBoldText}>📇 Emergency Contacts</Text>{"\n"}
-              • Tap "View All" to see all contacts{"\n"}
+              • Tap “View All” to see all contacts{"\n"}
               • Use + button to add new contacts{"\n"}
               • Add custom photo ID (up to 4 letters){"\n"}
               • Upload contact photo for easy identification{"\n"}

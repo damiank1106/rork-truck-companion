@@ -90,6 +90,21 @@ export default function HomeScreen() {
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
 
+  const handleMenuToggle = () => {
+    setMenuVisible((prev) => !prev);
+  };
+
+  const handleMenuClose = () => {
+    setMenuVisible(false);
+  };
+
+  const handleMenuNavigate = (path: string) => {
+    handleMenuClose();
+    router.push(path);
+  };
+
+  const menuDropdownTop = insets.top + 16 + 44 + 12;
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -428,8 +443,18 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <AnimatedBackground />
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Trucker Companion</Text>
-          <Text style={styles.headerSubtitle}>Your journey, organized</Text>
+          <View style={styles.headerTextGroup}>
+            <Text style={styles.headerTitle}>Trucker Companion</Text>
+            <Text style={styles.headerSubtitle}>Your journey, organized</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.menuButton, menuVisible && styles.menuButtonActive]}
+            onPress={handleMenuToggle}
+            accessibilityRole="button"
+            accessibilityLabel={menuVisible ? "Close menu" : "Open menu"}
+          >
+            {menuVisible ? <X color={Colors.white} size={20} /> : <Menu color={Colors.text} size={20} />}
+          </TouchableOpacity>
         </View>
         <TouchableOpacity
           style={styles.menuButton}
@@ -448,6 +473,45 @@ export default function HomeScreen() {
           </Animated.View>
         </TouchableOpacity>
       </View>
+
+      {menuVisible && (
+        <View style={styles.menuOverlay}>
+          <Pressable
+            style={styles.menuBackdrop}
+            onPress={handleMenuClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close menu"
+          />
+          <View style={[styles.menuDropdown, { top: menuDropdownTop }]}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleMenuNavigate('/daily-news')}
+              accessibilityRole="button"
+            >
+              <Newspaper color={Colors.primaryLight} size={18} style={styles.menuItemIcon} />
+              <Text style={styles.menuItemText}>Daily News</Text>
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleMenuNavigate('/safety-information')}
+              accessibilityRole="button"
+            >
+              <Shield color={Colors.secondary} size={18} style={styles.menuItemIcon} />
+              <Text style={styles.menuItemText}>Safety Information</Text>
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleMenuNavigate('/donations')}
+              accessibilityRole="button"
+            >
+              <HeartHandshake color={Colors.primary} size={18} style={styles.menuItemIcon} />
+              <Text style={styles.menuItemText}>Donations</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       <ScrollView
         style={styles.scrollView}
@@ -796,10 +860,89 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0, 0, 0, 0.08)",
     overflow: "hidden",
+    position: "relative" as const,
+    zIndex: 2,
   },
   headerContent: {
     position: "relative" as const,
     zIndex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    gap: 12,
+  },
+  menuButton: {
+    position: "absolute" as const,
+    top: 16,
+    right: 16,
+    zIndex: 2,
+  },
+  menuButtonInner: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  menuButton: {
+    position: "absolute" as const,
+    top: 16,
+    right: 16,
+    zIndex: 2,
+  },
+  menuButtonInner: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  menuButton: {
+    position: "absolute" as const,
+    top: 16,
+    right: 16,
+    zIndex: 2,
+  },
+  menuButtonInner: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  menuButton: {
+    position: "absolute" as const,
+    top: 16,
+    right: 16,
+    zIndex: 2,
+  },
+  menuButtonInner: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   menuButton: {
     position: "absolute" as const,
@@ -838,6 +981,63 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
     fontFamily: "System",
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  menuButtonActive: {
+    backgroundColor: Colors.primaryLight,
+  },
+  menuOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 50,
+  },
+  menuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  menuDropdown: {
+    position: "absolute" as const,
+    right: 20,
+    width: 220,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 16,
+    paddingVertical: 12,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+    zIndex: 51,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  menuItemIcon: {
+    marginRight: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  menuDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.border,
+    marginVertical: 4,
+    marginHorizontal: 16,
   },
   scrollView: {
     flex: 1,
