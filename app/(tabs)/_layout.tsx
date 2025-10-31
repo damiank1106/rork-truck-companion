@@ -44,35 +44,35 @@ export default function TabLayout() {
         name="home"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Home color={color} size={20} />,
         }}
       />
       <Tabs.Screen
         name="truck"
         options={{
           title: "My Truck",
-          tabBarIcon: ({ color, size }) => <Truck color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Truck color={color} size={20} />,
         }}
       />
       <Tabs.Screen
         name="places"
         options={{
           title: "Places",
-          tabBarIcon: ({ color, size }) => <MapPin color={color} size={size} />,
+          tabBarIcon: ({ color }) => <MapPin color={color} size={20} />,
         }}
       />
       <Tabs.Screen
         name="gallery"
         options={{
           title: "Gallery",
-          tabBarIcon: ({ color, size }) => <Image color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Image color={color} size={20} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Settings color={color} size={20} />,
         }}
       />
       <Tabs.Screen
