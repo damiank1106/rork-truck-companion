@@ -293,8 +293,8 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
             <Text style={styles.modalSectionTitle}>App Information</Text>
             <Text style={styles.modalText}>
               <Text style={styles.modalBoldText}>Version:</Text> 1.0.0{"\n"}
-              <Text style={styles.modalBoldText}>Created:</Text> January 6, 2025{"\n"}
-              <Text style={styles.modalBoldText}>Last Updated:</Text> October 6, 2025
+              <Text style={styles.modalBoldText}>Created:</Text> October 15, 2025{"\n"}
+              <Text style={styles.modalBoldText}>Last Updated:</Text> October 31, 2025
             </Text>
 
             <Text style={styles.modalSectionTitle}>Core Features</Text>
@@ -362,7 +362,11 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Tap the + icon on truck or trailer containers{"\n"}
               • Enter the new number in the popup{"\n"}
               • Changes update instantly on home and detail pages{"\n\n"}
-              
+
+              <Text style={styles.modalBoldText}>📰 Daily News</Text>{"\n"}
+              • Fresh stories post every day at 6:30 AM Central Time{"\n"}
+              • Find the latest headlines on the Home dashboard{"\n\n"}
+
               <Text style={styles.modalBoldText}>📇 Emergency Contacts</Text>{"\n"}
               • Tap “View All” to see all contacts{"\n"}
               • Use + button to add new contacts{"\n"}
@@ -418,6 +422,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Health insurance card storage{"\n"}
               • Driver ID card storage{"\n"}
               • Settings and data management{"\n"}
+              • Added News and Safety Information{"\n"}
               • Full-screen photo viewing with glass overlay{"\n"}
               • Edit functionality for all photos{"\n"}
               • Keyboard-aware scrolling{"\n"}
