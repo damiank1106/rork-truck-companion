@@ -56,8 +56,14 @@ export default function AnimatedBackground() {
   }, [bgAnim1, bgAnim2, bgAnim3]);
 
   return (
-    <View style={styles.backgroundContainer} pointerEvents="none">
+    <View
+      style={styles.backgroundContainer}
+      pointerEvents="none"
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+    >
       <Animated.View
+        pointerEvents="none"
         style={[
           styles.bgCircle,
           styles.bgCircle1,
@@ -80,6 +86,7 @@ export default function AnimatedBackground() {
         ]}
       />
       <Animated.View
+        pointerEvents="none"
         style={[
           styles.bgCircle,
           styles.bgCircle2,
@@ -102,6 +109,7 @@ export default function AnimatedBackground() {
         ]}
       />
       <Animated.View
+        pointerEvents="none"
         style={[
           styles.bgCircle,
           styles.bgCircle3,
@@ -131,6 +139,7 @@ const styles = StyleSheet.create({
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
     overflow: "hidden",
+    zIndex: -1,
   },
   bgCircle: {
     position: "absolute" as const,
