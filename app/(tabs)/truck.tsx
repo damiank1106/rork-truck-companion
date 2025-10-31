@@ -19,7 +19,7 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import { useTruck } from "@/contexts/TruckContext";
 import { TruckProfile } from "@/types";
 
-type TabType = "main" | "truck" | "trailer" | "weight" | "tire";
+type TabType = "main" | "truck" | "trailer" | "load" | "weight" | "tire";
 
 export default function TruckScreen() {
   const insets = useSafeAreaInsets();
@@ -95,6 +95,11 @@ export default function TruckScreen() {
           label="Trailer"
           isActive={activeTab === "trailer"}
           onPress={() => setActiveTab("trailer")}
+        />
+        <TabButton
+          label="Load"
+          isActive={activeTab === "load"}
+          onPress={() => setActiveTab("load")}
         />
         <TabButton
           label="Weight"
@@ -259,6 +264,39 @@ export default function TruckScreen() {
               onChangeText={(text) => updateField("trailerHeight", text)}
               editable={isEditing}
               placeholder="e.g., 13'6&quot;"
+            />
+          </View>
+        )}
+
+        {activeTab === "load" && (
+          <View style={styles.section}>
+            <InputField
+              label="PU Number"
+              value={profile.puNumber}
+              onChangeText={(text) => updateField("puNumber", text)}
+              editable={isEditing}
+              placeholder="Enter PU Number"
+            />
+            <InputField
+              label="BOL"
+              value={profile.bol}
+              onChangeText={(text) => updateField("bol", text)}
+              editable={isEditing}
+              placeholder="Enter BOL"
+            />
+            <InputField
+              label="Weight"
+              value={profile.loadWeight}
+              onChangeText={(text) => updateField("loadWeight", text)}
+              editable={isEditing}
+              placeholder="e.g., 42,000 lbs"
+            />
+            <InputField
+              label="Freight"
+              value={profile.freight}
+              onChangeText={(text) => updateField("freight", text)}
+              editable={isEditing}
+              placeholder="Describe freight"
             />
           </View>
         )}
