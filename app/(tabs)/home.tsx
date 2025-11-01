@@ -1307,7 +1307,7 @@ const styles = StyleSheet.create({
   },
   currentWeatherSmall: {
     gap: 4,
-    minWidth: 120,
+    minWidth: 80,
   },
   weatherIcon: {
     fontSize: 30,
