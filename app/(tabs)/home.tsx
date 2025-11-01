@@ -1260,7 +1260,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tempUnitText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600" as const,
     color: "#000000",
   },
