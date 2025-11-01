@@ -1185,7 +1185,7 @@ const styles = StyleSheet.create({
   dateTimeContainer: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     marginBottom: 16,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
