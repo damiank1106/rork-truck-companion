@@ -533,8 +533,17 @@ export default function HomeScreen() {
           ]}
           testID="weather-widget"
         >
-          <WeatherAnimatedBackground condition={weather?.condition ?? forecast[0]?.condition} />
-          <View style={[styles.weatherHeader, isSmallDevice && styles.weatherHeaderSmall]}>
+          <View
+            style={[
+              styles.weatherContent,
+              isSmallDevice && styles.weatherContentSmall,
+            ]}
+          >
+            <WeatherAnimatedBackground
+              condition={weather?.condition ?? forecast[0]?.condition}
+              borderRadius={isSmallDevice ? 16 : 18}
+            />
+            <View style={[styles.weatherHeader, isSmallDevice && styles.weatherHeaderSmall]}>
             <View style={styles.locationRow}>
               <TouchableOpacity onPress={handleLocationPress} disabled={isLoadingLocation}>
                 <MapPinIcon color={Colors.primaryLight} size={20} />
@@ -614,6 +623,7 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+      </View>
 
         <View style={styles.statsGrid}>
           <StatCard
@@ -1290,12 +1300,7 @@ const styles = StyleSheet.create({
   weatherContainer: {
     backgroundColor: Colors.white,
     borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
     marginBottom: 18,
-    borderWidth: 0.5,
-    borderColor: "rgba(15, 23, 42, 0.08)",
-    overflow: "hidden",
     ...Platform.select({
       web: { boxShadow: "0 6px 16px -12px rgba(15,23,42,0.25)" },
     }),
@@ -1306,26 +1311,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 14,
     elevation: 8,
-    borderWidth: 0.5,
-    borderColor: "rgba(15, 23, 42, 0.08)",
     ...Platform.select({
       web: { boxShadow: "0 12px 24px -16px rgba(15,23,42,0.35)" },
     }),
   },
   weatherContainerSmall: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
     borderRadius: 16,
     shadowColor: "rgba(15, 23, 42, 0.3)",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
     elevation: 6,
-    borderWidth: 0.5,
-    borderColor: "rgba(15, 23, 42, 0.08)",
     ...Platform.select({
       web: { boxShadow: "0 10px 20px -14px rgba(15,23,42,0.3)" },
     }),
+  },
+  weatherContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderWidth: 0.5,
+    borderColor: "rgba(15, 23, 42, 0.08)",
+    overflow: "hidden",
+  },
+  weatherContentSmall: {
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   weatherHeader: {
     flexDirection: "row",
