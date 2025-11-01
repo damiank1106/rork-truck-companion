@@ -28,7 +28,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import MapView, { Marker } from "react-native-maps";
+import {
+  NativeMapView,
+  NativeMarker,
+  isNativeMapAvailable,
+} from "@/lib/mapComponents";
 
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -73,6 +77,9 @@ const SORT_OPTIONS: { label: string; value: SortOption }[] = [
 const CATEGORY_ORDER_MAP = new Map(
   CATEGORY_OPTIONS.map((option, index) => [option.toLowerCase(), index])
 );
+
+const MapViewComponent = NativeMapView;
+const MarkerComponent = NativeMarker;
 
 export default function PlacesScreen() {
   const insets = useSafeAreaInsets();
@@ -663,23 +670,32 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
               </TouchableOpacity>
               {typeof formData.latitude === "number" && typeof formData.longitude === "number" && (
                 <View style={styles.locationPreview}>
-                  <MapView
-                    style={styles.locationMap}
-                    pointerEvents="none"
-                    region={{
-                      latitude: formData.latitude,
-                      longitude: formData.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                  >
-                    <Marker
-                      coordinate={{
+                  {MapViewComponent && MarkerComponent && isNativeMapAvailable ? (
+                    <MapViewComponent
+                      style={styles.locationMap}
+                      pointerEvents="none"
+                      region={{
                         latitude: formData.latitude,
                         longitude: formData.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
                       }}
-                    />
-                  </MapView>
+                    >
+                      <MarkerComponent
+                        coordinate={{
+                          latitude: formData.latitude,
+                          longitude: formData.longitude,
+                        }}
+                      />
+                    </MapViewComponent>
+                  ) : (
+                    <View style={[styles.locationMap, styles.mapPlaceholder]}>
+                      <MapPin color={Colors.primaryLight} size={28} />
+                      <Text style={styles.mapPlaceholderText}>
+                        Map preview available on mobile devices
+                      </Text>
+                    </View>
+                  )}
                   <Text style={styles.locationCoordinates}>
                     {formData.latitude.toFixed(5)}, {formData.longitude.toFixed(5)}
                   </Text>
@@ -845,17 +861,32 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
             </View>
             <View style={styles.locationModalBody}>
               {pendingLocation ? (
-                <MapView
-                  style={styles.locationModalMap}
-                  region={{
-                    latitude: pendingLocation.latitude,
-                    longitude: pendingLocation.longitude,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                >
-                  <Marker coordinate={pendingLocation} />
-                </MapView>
+                MapViewComponent && MarkerComponent && isNativeMapAvailable ? (
+                  <MapViewComponent
+                    style={styles.locationModalMap}
+                    region={{
+                      latitude: pendingLocation.latitude,
+                      longitude: pendingLocation.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                  >
+                    <MarkerComponent coordinate={pendingLocation} />
+                  </MapViewComponent>
+                ) : (
+                  <View style={[styles.locationModalMap, styles.mapPlaceholder]}>
+                    <MapPin color={Colors.primaryLight} size={32} />
+                    <Text style={styles.mapPlaceholderText}>
+                      Latitude: {pendingLocation.latitude.toFixed(5)}
+                    </Text>
+                    <Text style={styles.mapPlaceholderText}>
+                      Longitude: {pendingLocation.longitude.toFixed(5)}
+                    </Text>
+                    <Text style={styles.mapPlaceholderText}>
+                      Map preview available on mobile devices
+                    </Text>
+                  </View>
+                )
               ) : (
                 <View style={styles.locationLoadingContainer}>
                   <ActivityIndicator size="large" color={Colors.primaryLight} />
@@ -932,18 +963,29 @@ function PlaceDetailModal({ place, visible, onClose, onDelete }: PlaceDetailModa
               {typeof place.latitude === "number" && typeof place.longitude === "number" && (
                 <View style={styles.detailLocationSection}>
                   <Text style={styles.detailPhotosTitle}>Location</Text>
-                  <MapView
-                    style={styles.detailLocationMap}
-                    pointerEvents="none"
-                    region={{
-                      latitude: place.latitude,
-                      longitude: place.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                  >
-                    <Marker coordinate={{ latitude: place.latitude, longitude: place.longitude }} />
-                  </MapView>
+                  {MapViewComponent && MarkerComponent && isNativeMapAvailable ? (
+                    <MapViewComponent
+                      style={styles.detailLocationMap}
+                      pointerEvents="none"
+                      region={{
+                        latitude: place.latitude,
+                        longitude: place.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
+                      }}
+                    >
+                      <MarkerComponent
+                        coordinate={{ latitude: place.latitude, longitude: place.longitude }}
+                      />
+                    </MapViewComponent>
+                  ) : (
+                    <View style={[styles.detailLocationMap, styles.mapPlaceholder]}>
+                      <MapPin color={Colors.primaryLight} size={28} />
+                      <Text style={styles.mapPlaceholderText}>
+                        Map preview available on mobile devices
+                      </Text>
+                    </View>
+                  )}
                   <Text style={styles.locationCoordinates}>
                     {place.latitude.toFixed(5)}, {place.longitude.toFixed(5)}
                   </Text>
@@ -1436,6 +1478,18 @@ const styles = StyleSheet.create({
   locationMap: {
     height: 180,
     width: "100%",
+  },
+  mapPlaceholder: {
+    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+  },
+  mapPlaceholderText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    textAlign: "center" as const,
   },
   locationCoordinates: {
     paddingVertical: 8,

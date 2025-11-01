@@ -15,13 +15,20 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import MapView, { Marker } from "react-native-maps";
+import {
+  NativeMapView,
+  NativeMarker,
+  isNativeMapAvailable,
+} from "@/lib/mapComponents";
 
 import Colors from "@/constants/colors";
 import { CATEGORY_OPTIONS, CategoryOption, resetCategoryState } from "@/constants/placeCategories";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { Place } from "@/types";
 import { presentNavigationOptions } from "@/lib/navigation";
+
+const MapViewComponent = NativeMapView;
+const MarkerComponent = NativeMarker;
 
 export default function PlaceDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -346,23 +353,32 @@ export default function PlaceDetailScreen() {
               <Text style={styles.fieldLabel}>Location</Text>
               {typeof editedPlace.latitude === "number" && typeof editedPlace.longitude === "number" ? (
                 <View style={styles.locationPreviewSection}>
-                  <MapView
-                    style={styles.detailMap}
-                    pointerEvents="none"
-                    region={{
-                      latitude: editedPlace.latitude,
-                      longitude: editedPlace.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                  >
-                    <Marker
-                      coordinate={{
+                  {MapViewComponent && MarkerComponent && isNativeMapAvailable ? (
+                    <MapViewComponent
+                      style={styles.detailMap}
+                      pointerEvents="none"
+                      region={{
                         latitude: editedPlace.latitude,
                         longitude: editedPlace.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
                       }}
-                    />
-                  </MapView>
+                    >
+                      <MarkerComponent
+                        coordinate={{
+                          latitude: editedPlace.latitude,
+                          longitude: editedPlace.longitude,
+                        }}
+                      />
+                    </MapViewComponent>
+                  ) : (
+                    <View style={[styles.detailMap, styles.mapPlaceholder]}>
+                      <MapPin color={Colors.primaryLight} size={28} />
+                      <Text style={styles.mapPlaceholderText}>
+                        Map preview available on mobile devices
+                      </Text>
+                    </View>
+                  )}
                   <View style={styles.locationMetaRow}>
                     <Text style={styles.locationCoordinates}>
                       {editedPlace.latitude.toFixed(5)}, {editedPlace.longitude.toFixed(5)}
@@ -800,6 +816,18 @@ const styles = StyleSheet.create({
     height: 220,
     width: "100%",
     borderRadius: 16,
+  },
+  mapPlaceholder: {
+    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+  },
+  mapPlaceholderText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    textAlign: "center" as const,
   },
   locationMetaRow: {
     flexDirection: "row",
