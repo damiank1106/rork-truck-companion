@@ -1143,7 +1143,7 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
   },
   dateTextSmall: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#000000",
     marginBottom: 4,
     fontWeight: "700" as const,
