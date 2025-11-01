@@ -9,12 +9,12 @@ type WeatherAnimatedBackgroundProps = {
 };
 
 const gradientColors: Record<WeatherCondition, string[]> = {
-  Clear: ["rgba(255, 222, 173, 0.55)", "rgba(255, 244, 214, 0.45)", "rgba(255, 255, 255, 0.3)"],
-  Cloudy: ["rgba(206, 217, 235, 0.6)", "rgba(232, 236, 244, 0.5)", "rgba(255, 255, 255, 0.35)"],
-  Rain: ["rgba(119, 167, 255, 0.55)", "rgba(71, 110, 190, 0.55)", "rgba(179, 198, 255, 0.35)"],
-  Snow: ["rgba(220, 236, 255, 0.6)", "rgba(240, 248, 255, 0.5)", "rgba(255, 255, 255, 0.4)"],
-  Storm: ["rgba(74, 84, 129, 0.65)", "rgba(34, 40, 73, 0.65)", "rgba(13, 17, 41, 0.55)"],
-  Unknown: ["rgba(210, 220, 235, 0.55)", "rgba(236, 240, 246, 0.5)", "rgba(255, 255, 255, 0.35)"],
+  Clear: ["rgba(147, 197, 253, 0.45)", "rgba(191, 219, 254, 0.35)", "rgba(224, 242, 254, 0.28)"],
+  Cloudy: ["rgba(148, 210, 255, 0.42)", "rgba(195, 226, 255, 0.32)", "rgba(232, 244, 255, 0.26)"],
+  Rain: ["rgba(118, 188, 255, 0.46)", "rgba(162, 210, 255, 0.34)", "rgba(213, 232, 255, 0.26)"],
+  Snow: ["rgba(168, 216, 255, 0.5)", "rgba(207, 232, 255, 0.34)", "rgba(235, 246, 255, 0.28)"],
+  Storm: ["rgba(97, 154, 235, 0.46)", "rgba(133, 187, 255, 0.34)", "rgba(193, 220, 255, 0.26)"],
+  Unknown: ["rgba(158, 212, 255, 0.44)", "rgba(202, 230, 255, 0.32)", "rgba(233, 244, 255, 0.26)"],
 };
 
 const DROP_COUNT = 8;
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   highlightOverlay: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: "rgba(173, 216, 255, 0.16)",
   },
   sparkle: {
     position: "absolute",
