@@ -9,6 +9,7 @@ import {
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   FlatList,
   Modal,
@@ -26,6 +27,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import MapView, { Marker } from "react-native-maps";
 
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -36,6 +39,7 @@ import {
   CategoryOption,
   resetCategoryState,
 } from "@/constants/placeCategories";
+import { presentNavigationOptions } from "@/lib/navigation";
 
 const DEFAULT_PLACE_FORM: Omit<Place, "id" | "createdAt"> = {
   companyName: "",
@@ -51,6 +55,8 @@ const DEFAULT_PLACE_FORM: Omit<Place, "id" | "createdAt"> = {
   overnightParking: false,
   notes: "",
   photos: [],
+  latitude: undefined,
+  longitude: undefined,
 };
 
 const DEFAULT_CATEGORY_STATE = resetCategoryState(DEFAULT_PLACE_FORM);
@@ -382,12 +388,20 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
     DEFAULT_CATEGORY_STATE.selection
   );
   const [customCategory, setCustomCategory] = useState<string>(DEFAULT_CATEGORY_STATE.custom);
+  const [isFetchingLocation, setIsFetchingLocation] = useState<boolean>(false);
+  const [isLocationModalVisible, setIsLocationModalVisible] = useState<boolean>(false);
+  const [pendingLocation, setPendingLocation] = useState<{ latitude: number; longitude: number } | null>(
+    null
+  );
 
   const resetForm = () => {
     setFormData({ ...DEFAULT_PLACE_FORM });
     const { selection, custom } = resetCategoryState(DEFAULT_PLACE_FORM);
     setCategorySelection(selection);
     setCustomCategory(custom);
+    setPendingLocation(null);
+    setIsLocationModalVisible(false);
+    setIsFetchingLocation(false);
   };
 
   const handleCategorySelect = (option: CategoryOption) => {
@@ -410,6 +424,54 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const handleUseCurrentLocation = async () => {
+    try {
+      setIsFetchingLocation(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission Required", "Please allow location access to use this feature.");
+        setIsFetchingLocation(false);
+        return;
+      }
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+      });
+
+      const coords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+
+      setPendingLocation(coords);
+      setIsLocationModalVisible(true);
+    } catch (error) {
+      console.error("Error fetching location", error);
+      Alert.alert("Error", "Unable to retrieve your current location. Please try again.");
+    } finally {
+      setIsFetchingLocation(false);
+    }
+  };
+
+  const confirmLocationSelection = () => {
+    if (!pendingLocation) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      latitude: pendingLocation.latitude,
+      longitude: pendingLocation.longitude,
+    }));
+    setIsLocationModalVisible(false);
+    setPendingLocation(null);
+  };
+
+  const cancelLocationSelection = () => {
+    setIsLocationModalVisible(false);
+    setPendingLocation(null);
   };
 
   const pickImage = async () => {
@@ -516,22 +578,23 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add New Place</Text>
-            <TouchableOpacity onPress={handleClose}>
-              <X color={Colors.text} size={24} />
-            </TouchableOpacity>
-          </View>
+    <>
+      <Modal visible={visible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add New Place</Text>
+              <TouchableOpacity onPress={handleClose}>
+                <X color={Colors.text} size={24} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Company Name"
-              placeholderTextColor={Colors.textLight}
-              value={formData.companyName}
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Company Name"
+                placeholderTextColor={Colors.textLight}
+                value={formData.companyName}
               onChangeText={(text) =>
                 setFormData((prev) => ({
                   ...prev,
@@ -587,6 +650,42 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 }))
               }
             />
+            <View style={styles.locationSection}>
+              <Text style={styles.modalSectionLabel}>Location</Text>
+              <TouchableOpacity
+                style={[styles.locationButton, isFetchingLocation && styles.locationButtonDisabled]}
+                onPress={handleUseCurrentLocation}
+                disabled={isFetchingLocation}
+              >
+                <MapPin color={Colors.white} size={20} />
+                <Text style={styles.locationButtonText}>Use My Current Location</Text>
+                {isFetchingLocation && <ActivityIndicator color={Colors.white} size="small" />}
+              </TouchableOpacity>
+              {typeof formData.latitude === "number" && typeof formData.longitude === "number" && (
+                <View style={styles.locationPreview}>
+                  <MapView
+                    style={styles.locationMap}
+                    pointerEvents="none"
+                    region={{
+                      latitude: formData.latitude,
+                      longitude: formData.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: formData.latitude,
+                        longitude: formData.longitude,
+                      }}
+                    />
+                  </MapView>
+                  <Text style={styles.locationCoordinates}>
+                    {formData.latitude.toFixed(5)}, {formData.longitude.toFixed(5)}
+                  </Text>
+                </View>
+              )}
+            </View>
             <TextInput
               style={styles.modalInput}
               placeholder="Contact Number"
@@ -730,10 +829,58 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>Add Place</Text>
             </TouchableOpacity>
-          </ScrollView>
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <Modal visible={isLocationModalVisible} animationType="slide" transparent>
+        <View style={styles.locationModalOverlay}>
+          <View style={styles.locationModalContent}>
+            <View style={styles.locationModalHeader}>
+              <Text style={styles.locationModalTitle}>Confirm Location</Text>
+              <TouchableOpacity onPress={cancelLocationSelection}>
+                <X color={Colors.text} size={24} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.locationModalBody}>
+              {pendingLocation ? (
+                <MapView
+                  style={styles.locationModalMap}
+                  region={{
+                    latitude: pendingLocation.latitude,
+                    longitude: pendingLocation.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                >
+                  <Marker coordinate={pendingLocation} />
+                </MapView>
+              ) : (
+                <View style={styles.locationLoadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primaryLight} />
+                  <Text style={styles.locationLoadingText}>Fetching your location...</Text>
+                </View>
+              )}
+              <View style={styles.locationActions}>
+                <TouchableOpacity style={styles.locationCancelButton} onPress={cancelLocationSelection}>
+                  <Text style={styles.locationActionText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.locationConfirmButton, !pendingLocation && styles.locationButtonDisabled]}
+                  onPress={confirmLocationSelection}
+                  disabled={!pendingLocation}
+                >
+                  <Text style={[styles.locationActionText, styles.locationActionTextPrimary]}>
+                    Use This Location
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -781,6 +928,34 @@ function PlaceDetailModal({ place, visible, onClose, onDelete }: PlaceDetailModa
               />
               <DetailRow label="Overnight Parking" value={place.overnightParking ? "Yes" : "No"} />
               {place.notes && <DetailRow label="Notes" value={place.notes} />}
+
+              {typeof place.latitude === "number" && typeof place.longitude === "number" && (
+                <View style={styles.detailLocationSection}>
+                  <Text style={styles.detailPhotosTitle}>Location</Text>
+                  <MapView
+                    style={styles.detailLocationMap}
+                    pointerEvents="none"
+                    region={{
+                      latitude: place.latitude,
+                      longitude: place.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                  >
+                    <Marker coordinate={{ latitude: place.latitude, longitude: place.longitude }} />
+                  </MapView>
+                  <Text style={styles.locationCoordinates}>
+                    {place.latitude.toFixed(5)}, {place.longitude.toFixed(5)}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.locationNavigateButton}
+                    onPress={() => presentNavigationOptions(place)}
+                  >
+                    <MapPin color={Colors.white} size={20} />
+                    <Text style={styles.locationNavigateButtonText}>Go To</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               {place.photos.length > 0 && (
                 <View style={styles.detailPhotosSection}>
@@ -1227,6 +1402,47 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: 8,
   },
+  locationSection: {
+    marginBottom: 16,
+  },
+  locationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.primaryLight,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  locationButtonDisabled: {
+    opacity: 0.7,
+  },
+  locationButtonText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: "600" as const,
+  },
+  locationPreview: {
+    marginTop: 12,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: Colors.background,
+  },
+  locationMap: {
+    height: 180,
+    width: "100%",
+  },
+  locationCoordinates: {
+    paddingVertical: 8,
+    textAlign: "center",
+    color: Colors.textSecondary,
+    fontSize: 14,
+  },
   categoryOptionsRow: {
     flexDirection: "row",
     gap: 8,
@@ -1359,6 +1575,88 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600" as const,
   },
+  locationModalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  locationModalContent: {
+    width: "100%",
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    overflow: "hidden",
+  },
+  locationModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  locationModalTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: Colors.text,
+  },
+  locationModalBody: {
+    padding: 20,
+    gap: 16,
+  },
+  locationModalMap: {
+    height: 260,
+    borderRadius: 16,
+  },
+  locationLoadingContainer: {
+    height: 260,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+  },
+  locationLoadingText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+  },
+  locationActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  locationCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  locationConfirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  locationActionText: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  locationActionTextPrimary: {
+    color: Colors.white,
+  },
   detailRow: {
     marginBottom: 16,
   },
@@ -1382,6 +1680,34 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
     color: "#000000",
     marginBottom: 12,
+  },
+  detailLocationSection: {
+    marginBottom: 20,
+    gap: 12,
+  },
+  detailLocationMap: {
+    height: 220,
+    width: "100%",
+    borderRadius: 16,
+  },
+  locationNavigateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.primaryLight,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  locationNavigateButtonText: {
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: "600" as const,
   },
   detailPhotosRow: {
     flexDirection: "row",
