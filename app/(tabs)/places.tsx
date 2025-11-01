@@ -435,17 +435,38 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
 
   const handleUseCurrentLocation = async () => {
     try {
+      console.log('[Location] Starting location fetch...');
       setIsFetchingLocation(true);
+      
+      console.log('[Location] Requesting permissions...');
       const { status } = await Location.requestForegroundPermissionsAsync();
+      console.log('[Location] Permission status:', status);
+      
       if (status !== "granted") {
+        console.log('[Location] Permission denied');
         Alert.alert("Permission Required", "Please allow location access to use this feature.");
         setIsFetchingLocation(false);
         return;
       }
 
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
+      console.log('[Location] Getting current position...');
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Location request timed out')), 15000);
       });
+      
+      const locationPromise = Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 5000,
+        distanceInterval: 0,
+      });
+      
+      const position = await Promise.race([
+        locationPromise,
+        timeoutPromise,
+      ]) as Location.LocationObject;
+
+      console.log('[Location] Got position:', position.coords);
 
       const coords = {
         latitude: position.coords.latitude,
@@ -454,10 +475,24 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
 
       setPendingLocation(coords);
       setIsLocationModalVisible(true);
-    } catch (error) {
-      console.error("Error fetching location", error);
-      Alert.alert("Error", "Unable to retrieve your current location. Please try again.");
+      console.log('[Location] Location modal opened');
+    } catch (error: any) {
+      console.error('[Location] Error fetching location:', error);
+      console.error('[Location] Error details:', JSON.stringify(error));
+      
+      let errorMessage = "Unable to retrieve your current location. Please try again.";
+      
+      if (error?.message?.includes('timeout')) {
+        errorMessage = "Location request timed out. Please make sure location services are enabled and try again.";
+      } else if (error?.message?.includes('denied')) {
+        errorMessage = "Location permission was denied. Please enable location services in your device settings.";
+      } else if (error?.message?.includes('unavailable')) {
+        errorMessage = "Location services are unavailable. Please check your device settings.";
+      }
+      
+      Alert.alert("Error", errorMessage);
     } finally {
+      console.log('[Location] Cleaning up, setting isFetchingLocation to false');
       setIsFetchingLocation(false);
     }
   };
