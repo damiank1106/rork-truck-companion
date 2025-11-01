@@ -9,15 +9,16 @@ type WeatherAnimatedBackgroundProps = {
 };
 
 const gradientColors: Record<WeatherCondition, string[]> = {
-  Clear: ["rgba(255, 222, 173, 0.55)", "rgba(255, 244, 214, 0.45)", "rgba(255, 255, 255, 0.3)"],
-  Cloudy: ["rgba(206, 217, 235, 0.6)", "rgba(232, 236, 244, 0.5)", "rgba(255, 255, 255, 0.35)"],
-  Rain: ["rgba(119, 167, 255, 0.55)", "rgba(71, 110, 190, 0.55)", "rgba(179, 198, 255, 0.35)"],
-  Snow: ["rgba(220, 236, 255, 0.6)", "rgba(240, 248, 255, 0.5)", "rgba(255, 255, 255, 0.4)"],
-  Storm: ["rgba(74, 84, 129, 0.65)", "rgba(34, 40, 73, 0.65)", "rgba(13, 17, 41, 0.55)"],
-  Unknown: ["rgba(210, 220, 235, 0.55)", "rgba(236, 240, 246, 0.5)", "rgba(255, 255, 255, 0.35)"],
+  Clear: ["rgba(147, 197, 253, 0.45)", "rgba(191, 219, 254, 0.35)", "rgba(224, 242, 254, 0.28)"],
+  Cloudy: ["rgba(148, 210, 255, 0.42)", "rgba(195, 226, 255, 0.32)", "rgba(232, 244, 255, 0.26)"],
+  Rain: ["rgba(118, 188, 255, 0.46)", "rgba(162, 210, 255, 0.34)", "rgba(213, 232, 255, 0.26)"],
+  Snow: ["rgba(168, 216, 255, 0.5)", "rgba(207, 232, 255, 0.34)", "rgba(235, 246, 255, 0.28)"],
+  Storm: ["rgba(97, 154, 235, 0.46)", "rgba(133, 187, 255, 0.34)", "rgba(193, 220, 255, 0.26)"],
+  Unknown: ["rgba(158, 212, 255, 0.44)", "rgba(202, 230, 255, 0.32)", "rgba(233, 244, 255, 0.26)"],
 };
 
 const DROP_COUNT = 8;
+const SPARKLE_COUNT = 6;
 
 const normalizeCondition = (condition?: string | null): WeatherCondition => {
   if (!condition) {
@@ -38,12 +39,18 @@ export default function WeatherAnimatedBackground({ condition }: WeatherAnimated
   const floatAnim = useRef(new Animated.Value(0)).current;
   const flickerAnim = useRef(new Animated.Value(0)).current;
   const dropAnims = useRef(Array.from({ length: DROP_COUNT }, () => new Animated.Value(0))).current;
+  const highlightAnim = useRef(new Animated.Value(0)).current;
+  const parallaxAnim = useRef(new Animated.Value(0)).current;
+  const sparkleAnims = useRef(Array.from({ length: SPARKLE_COUNT }, () => new Animated.Value(0))).current;
 
   useEffect(() => {
     shimmerAnim.setValue(0);
     floatAnim.setValue(0);
     flickerAnim.setValue(0);
+    highlightAnim.setValue(0);
+    parallaxAnim.setValue(0);
     dropAnims.forEach((anim) => anim.setValue(0));
+    sparkleAnims.forEach((anim) => anim.setValue(0));
 
     const animations: Animated.CompositeAnimation[] = [];
 
@@ -84,6 +91,65 @@ export default function WeatherAnimatedBackground({ condition }: WeatherAnimated
     shimmerLoop.start();
     floatLoop.start();
     animations.push(shimmerLoop, floatLoop);
+
+    const highlightLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(highlightAnim, {
+          toValue: 1,
+          duration: 7000,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(highlightAnim, {
+          toValue: 0,
+          duration: 7000,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    const parallaxLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(parallaxAnim, {
+          toValue: 1,
+          duration: 16000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+        Animated.timing(parallaxAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    highlightLoop.start();
+    parallaxLoop.start();
+    animations.push(highlightLoop, parallaxLoop);
+
+    sparkleAnims.forEach((anim, index) => {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.delay(400 + index * 420),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 2600 + index * 240,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 2600 + index * 240,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      loop.start();
+      animations.push(loop);
+    });
 
     if (variant === "Storm") {
       const flickerLoop = Animated.loop(
@@ -136,7 +202,7 @@ export default function WeatherAnimatedBackground({ condition }: WeatherAnimated
     return () => {
       animations.forEach((animation) => animation.stop());
     };
-  }, [variant, shimmerAnim, floatAnim, flickerAnim, dropAnims]);
+  }, [variant, shimmerAnim, floatAnim, flickerAnim, dropAnims, highlightAnim, parallaxAnim, sparkleAnims]);
 
   const dropMeta = useMemo(
     () =>
@@ -151,11 +217,78 @@ export default function WeatherAnimatedBackground({ condition }: WeatherAnimated
     [dropAnims]
   );
 
+  const sparkleMeta = useMemo(
+    () =>
+      Array.from({ length: SPARKLE_COUNT }, (_, index) => {
+        const row = Math.floor(index / 3);
+        const column = index % 3;
+        return {
+          top: 14 + row * 26,
+          left: 14 + column * 26 + (row % 2) * 8,
+          minScale: 0.55 + (index % 3) * 0.1,
+          maxScale: 0.95 + (index % 3) * 0.15,
+          peakOpacity: 0.14 + row * 0.05,
+        };
+      }),
+    []
+  );
+
   const gradient = gradientColors[variant];
 
   return (
     <View pointerEvents="none" style={styles.container} importantForAccessibility="no-hide-descendants">
       <LinearGradient colors={gradient} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+
+      <Animated.View
+        style={[
+          styles.highlightOverlay,
+          {
+            opacity: highlightAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.05, 0.16],
+            }),
+            transform: [
+              {
+                translateY: parallaxAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-18, 18],
+                }),
+              },
+              {
+                translateX: parallaxAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-12, 12],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
+
+      {sparkleMeta.map((sparkle, index) => (
+        <Animated.View
+          key={`sparkle-${index}`}
+          style={[
+            styles.sparkle,
+            {
+              top: `${sparkle.top}%`,
+              left: `${sparkle.left}%`,
+              opacity: sparkleAnims[index].interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [0, sparkle.peakOpacity, 0],
+              }),
+              transform: [
+                {
+                  scale: sparkleAnims[index].interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [sparkle.minScale, sparkle.maxScale],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+      ))}
 
       {variant === "Clear" && (
         <>
@@ -422,11 +555,27 @@ export default function WeatherAnimatedBackground({ condition }: WeatherAnimated
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 16,
+    borderRadius: 18,
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,
     opacity: 0.9,
+  },
+  highlightOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 18,
+    backgroundColor: "rgba(173, 216, 255, 0.16)",
+  },
+  sparkle: {
+    position: "absolute",
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    shadowColor: "#ffffff",
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
   },
   sunCore: {
     position: "absolute",
