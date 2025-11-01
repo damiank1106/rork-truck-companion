@@ -444,7 +444,13 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
       
       if (status !== "granted") {
         console.log('[Location] Permission denied');
-        Alert.alert("Permission Required", "Please allow location access to use this feature.");
+        Alert.alert(
+          "Location Permission Required", 
+          "This app needs location access to save the location of places. Please enable location permission in your device settings.",
+          [
+            { text: "OK", style: "default" }
+          ]
+        );
         setIsFetchingLocation(false);
         return;
       }
@@ -480,19 +486,32 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
       console.error('[Location] Error message:', error?.message);
       console.error('[Location] Error code:', error?.code);
       
+      let errorTitle = "Location Error";
       let errorMessage = "Unable to retrieve your current location. Please try again.";
       
       if (error?.message?.includes('timeout')) {
+        errorTitle = "Location Timeout";
         errorMessage = "Location request timed out. Please make sure location services are enabled and try again.";
-      } else if (error?.message?.includes('denied') || error?.code === 1) {
-        errorMessage = "Location permission was denied. Please enable location services in your device settings.";
+      } else if (error?.message?.toLowerCase().includes('denied') || 
+                 error?.message?.toLowerCase().includes('permission') || 
+                 error?.code === 1) {
+        errorTitle = "Permission Denied";
+        errorMessage = "Location permission was denied. You can still add places without location data, or enable location services in your device settings to use this feature.";
       } else if (error?.message?.includes('unavailable') || error?.code === 2) {
-        errorMessage = "Location services are unavailable. Please check your device settings.";
+        errorTitle = "Location Unavailable";
+        errorMessage = "Location services are currently unavailable. Please check that location services are enabled in your device settings.";
       } else if (error?.code === 3) {
+        errorTitle = "Location Timeout";
         errorMessage = "Location request timed out. Please try again.";
       }
       
-      Alert.alert("Location Error", errorMessage);
+      Alert.alert(
+        errorTitle, 
+        errorMessage,
+        [
+          { text: "OK", style: "default" }
+        ]
+      );
     } finally {
       console.log('[Location] Cleaning up, setting isFetchingLocation to false');
       setIsFetchingLocation(false);
