@@ -673,15 +673,19 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: "center",
+    justifyContent: "center",
     marginTop: 32,
     paddingTop: 24,
+    paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
   footerCompact: {
     marginTop: 20,
-    paddingTop: 16,
+    paddingTop: 28,
+    paddingBottom: 56,
     marginBottom: 32,
+    minHeight: 160,
   },
   footerText: {
     fontSize: 14,
