@@ -1287,7 +1287,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   weatherBodySmall: {
-    gap: 10,
+    gap: 8,
   },
   locationText: {
     fontSize: 16,
@@ -1307,7 +1307,7 @@ const styles = StyleSheet.create({
   },
   currentWeatherSmall: {
     gap: 4,
-    minWidth: 100,
+    minWidth: 120,
   },
   weatherIcon: {
     fontSize: 30,
