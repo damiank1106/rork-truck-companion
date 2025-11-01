@@ -1197,7 +1197,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 20,
     color: "#000000",
     opacity: 0.7,
     marginBottom: 8,
