@@ -1,18 +1,18 @@
 import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu, X, Newspaper, Shield, HeartHandshake } from "lucide-react-native";
 import React, { useState, useEffect, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing, useWindowDimensions, Modal, TextInput as RNTextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import WeatherAnimatedBackground from "@/components/WeatherAnimatedBackground";
 import { useDriverID } from "@/contexts/DriverIDContext";
 import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 import { useHealthInsurance } from "@/contexts/HealthInsuranceContext";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { useTruck } from "@/contexts/TruckContext";
-import { Modal, TextInput as RNTextInput } from "react-native";
 import { useTrailers } from "@/contexts/TrailerContext";
 
 interface WeatherData {
@@ -57,6 +57,8 @@ export default function HomeScreen() {
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const [isMenuMounted, setIsMenuMounted] = useState<boolean>(false);
   const menuAnimation = useRef(new Animated.Value(0)).current;
+  const { width } = useWindowDimensions();
+  const isSmallDevice = width < 360;
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
 
@@ -413,8 +415,8 @@ export default function HomeScreen() {
         <AnimatedBackground />
         <View style={styles.headerContent}>
           <View style={styles.headerTextGroup}>
-            <Text style={styles.headerTitle}>Trucker Companion</Text>
-            <Text style={styles.headerSubtitle}>Your journey, organized</Text>
+            <Text style={[styles.headerTitle, isSmallDevice && styles.headerTitleSmall]}>Trucker Companion</Text>
+            <Text style={[styles.headerSubtitle, isSmallDevice && styles.headerSubtitleSmall]}>Your journey, organized</Text>
           </View>
           <TouchableOpacity
             style={[styles.menuButton, menuVisible && styles.menuButtonActive]}
@@ -523,46 +525,105 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.weatherContainer} testID="weather-widget">
-          <View style={styles.weatherHeader}>
+        <View
+          style={[
+            styles.weatherContainer,
+            isSmallDevice && styles.weatherContainerSmall,
+            !isSmallDevice && styles.weatherContainerLarge,
+          ]}
+          testID="weather-widget"
+        >
+          <View
+            style={[
+              styles.weatherContent,
+              isSmallDevice && styles.weatherContentSmall,
+            ]}
+          >
+            <WeatherAnimatedBackground
+              condition={weather?.condition ?? forecast[0]?.condition}
+              borderRadius={isSmallDevice ? 16 : 18}
+            />
+            <View style={[styles.weatherHeader, isSmallDevice && styles.weatherHeaderSmall]}>
             <View style={styles.locationRow}>
               <TouchableOpacity onPress={handleLocationPress} disabled={isLoadingLocation}>
                 <MapPinIcon color={Colors.primaryLight} size={20} />
               </TouchableOpacity>
-              <Text style={styles.locationText}>{location}</Text>
+              <Text style={[styles.locationText, isSmallDevice && styles.locationTextSmall]}>{location}</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.tempUnitSwitch} 
+            <TouchableOpacity
+              style={[styles.tempUnitSwitch, isSmallDevice && styles.tempUnitSwitchSmall]}
               onPress={() => setIsCelsius(!isCelsius)}
             >
-              <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
-              <Text style={styles.tempUnitSeparator}>|</Text>
-              <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
+              <Text
+                style={[
+                  styles.tempUnitText,
+                  isSmallDevice && styles.tempUnitTextSmall,
+                  isCelsius ? styles.tempUnitActive : styles.tempUnitInactive,
+                ]}
+              >
+                °C
+              </Text>
+              <Text style={[styles.tempUnitSeparator, isSmallDevice && styles.tempUnitTextSmall]}>|</Text>
+              <Text
+                style={[
+                  styles.tempUnitText,
+                  isSmallDevice && styles.tempUnitTextSmall,
+                  !isCelsius ? styles.tempUnitActive : styles.tempUnitInactive,
+                ]}
+              >
+                °F
+              </Text>
             </TouchableOpacity>
           </View>
 
           {(isLoadingLocation || isWeatherLoading) && (
             <View style={styles.weatherLoadingRow}>
               <ActivityIndicator size="small" color={Colors.primaryLight} />
-              <Text style={styles.weatherLoadingText}>Updating weather...</Text>
+              <Text style={[styles.weatherLoadingText, isSmallDevice && styles.weatherLoadingTextSmall]}>Updating weather...</Text>
             </View>
           )}
 
-          {!isLoadingLocation && !isWeatherLoading && forecast.length > 0 && (
-            <View style={styles.forecastContainer}>
-              {forecast.map((day, index) => (
-                <View key={index} style={styles.forecastDay}>
-                  <Text style={styles.forecastDayName}>{day.date}</Text>
-                  <Text style={styles.forecastIcon}>{day.icon}</Text>
-                  <View style={styles.forecastTempContainer}>
-                    <Text style={styles.forecastTempDay}>{convertTemp(day.tempMax)}°</Text>
-                    <Text style={styles.forecastTempNight}>{convertTemp(day.tempMin)}°</Text>
-                  </View>
+          {!isLoadingLocation && !isWeatherLoading && (weather || forecast.length > 0) && (
+            <View style={[styles.weatherBody, isSmallDevice && styles.weatherBodySmall]}>
+              {weather && (
+                <View style={[styles.currentWeather, isSmallDevice && styles.currentWeatherSmall]}>
+                  <Text style={[styles.weatherIcon, isSmallDevice && styles.weatherIconSmall]}>{weather.icon}</Text>
+                  <Text style={[styles.weatherTemp, isSmallDevice && styles.weatherTempSmall]}>
+                    {convertTemp(weather.temp)}
+                    {getTempUnit()}
+                  </Text>
+                  <Text style={[styles.weatherCondition, isSmallDevice && styles.weatherConditionSmall]}>{weather.condition}</Text>
                 </View>
-              ))}
+              )}
+
+              {forecast.length > 0 && (
+                <View
+                  style={[
+                    styles.forecastContainer,
+                    !weather && styles.forecastContainerOnly,
+                    isSmallDevice && styles.forecastContainerSmall,
+                  ]}
+                >
+                  {forecast.map((day, index) => (
+                    <View key={index} style={[styles.forecastDay, isSmallDevice && styles.forecastDaySmall]}>
+                      <Text style={[styles.forecastDayName, isSmallDevice && styles.forecastDayNameSmall]}>{day.date}</Text>
+                      <Text style={[styles.forecastIcon, isSmallDevice && styles.forecastIconSmall]}>{day.icon}</Text>
+                      <View style={styles.forecastTempContainer}>
+                        <Text style={[styles.forecastTempDay, isSmallDevice && styles.forecastTempDaySmall]}>
+                          {convertTemp(day.tempMax)}°
+                        </Text>
+                        <Text style={[styles.forecastTempNight, isSmallDevice && styles.forecastTempNightSmall]}>
+                          {convertTemp(day.tempMin)}°
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           )}
         </View>
+      </View>
 
         <View style={styles.statsGrid}>
           <StatCard
@@ -577,6 +638,7 @@ export default function HomeScreen() {
               setTruckNumberInput(truckProfile.truckNumber || "");
               setIsTruckModalVisible(true);
             }}
+            isCompact={isSmallDevice}
           />
           <StatCard
             icon={<Container color={Colors.secondary} size={24} />}
@@ -590,6 +652,7 @@ export default function HomeScreen() {
               setTrailerNumberInput(truckProfile.trailerNumber || "");
               setIsTrailerModalVisible(true);
             }}
+            isCompact={isSmallDevice}
           />
         </View>
 
@@ -756,9 +819,21 @@ interface StatCardProps {
   onPress: () => void;
   showPlusIcon?: boolean;
   onPlusPress?: () => void;
+  isCompact?: boolean;
 }
 
-function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, showPlusIcon, onPlusPress }: StatCardProps) {
+function StatCard({
+  icon,
+  title,
+  value,
+  subtitle,
+  thirdLine,
+  color,
+  onPress,
+  showPlusIcon,
+  onPlusPress,
+  isCompact,
+}: StatCardProps) {
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
   const shouldShowShadow = title !== "Places";
 
@@ -778,8 +853,6 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, sho
     }).start();
   };
 
-  const cardStyle = styles.statCardGlass;
-
   return (
     <TouchableOpacity
       style={styles.statCard}
@@ -789,7 +862,14 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, sho
       activeOpacity={1}
       testID={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <Animated.View style={[cardStyle, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View
+        style={[
+          styles.statCardGlass,
+          shouldShowShadow && styles.statCardShadow,
+          shouldShowShadow && isCompact && styles.statCardShadowCompact,
+          { transform: [{ scale: scaleAnim }] },
+        ]}
+      >
         <View style={[styles.iconContainer, { backgroundColor: `${color}20` }]}>
           {icon}
         </View>
@@ -804,10 +884,14 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, sho
             <Plus color={Colors.secondary} size={28} />
           </TouchableOpacity>
         )}
-        <Text style={styles.statTitle}>{title}</Text>
-        <Text style={styles.statValue}>{value}</Text>
-        {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
-        {thirdLine && <Text style={styles.statThirdLine}>{thirdLine}</Text>}
+        <Text style={[styles.statTitle, isCompact && styles.statTitleSmall]}>{title}</Text>
+        <Text style={[styles.statValue, isCompact && styles.statValueSmall]}>{value}</Text>
+        {subtitle && (
+          <Text style={[styles.statSubtitle, isCompact && styles.statSubtitleSmall]}>{subtitle}</Text>
+        )}
+        {thirdLine && (
+          <Text style={[styles.statThirdLine, isCompact && styles.statSubtitleSmall]}>{thirdLine}</Text>
+        )}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -885,6 +969,13 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
     fontFamily: "System",
+  },
+  headerTitleSmall: {
+    fontSize: 18,
+    letterSpacing: 0.2,
+  },
+  headerSubtitleSmall: {
+    fontSize: 11,
   },
   menuButton: {
     width: 44,
@@ -970,7 +1061,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     borderRadius: 16,
-    overflow: "hidden",
+    overflow: "visible",
     height: "100%",
   },
   statCardGlass: {
@@ -992,6 +1083,38 @@ const styles = StyleSheet.create({
       },
       web: {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
+      },
+    }),
+  },
+  statCardShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 12,
+      },
+      web: {
+        boxShadow: "0 10px 24px rgba(0, 0, 0, 0.18)",
+      },
+    }),
+  },
+  statCardShadowCompact: {
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: "0 6px 18px rgba(0, 0, 0, 0.16)",
       },
     }),
   },
@@ -1017,6 +1140,9 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
+  statTitleSmall: {
+    fontSize: 11,
+  },
   statValue: {
     fontSize: 24,
     fontWeight: "bold" as const,
@@ -1028,10 +1154,17 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     lineHeight: 28,
   },
+  statValueSmall: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
   statSubtitle: {
     fontSize: 14,
     color: "#000000",
     fontWeight: "700" as const,
+  },
+  statSubtitleSmall: {
+    fontSize: 12,
   },
   statThirdLine: {
     fontSize: 14,
@@ -1087,7 +1220,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -1099,21 +1232,21 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
   },
   dateTextSmall: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#000000",
     marginBottom: 4,
     fontWeight: "700" as const,
   },
   timeTextSmall: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold" as const,
     color: "#000000",
   },
   speedGauge: {
-    width: 120,
+    width: 100,
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 16,
+    padding:  12,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -1141,7 +1274,7 @@ const styles = StyleSheet.create({
   dateTimeContainer: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     marginBottom: 16,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
@@ -1153,7 +1286,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 20,
     color: "#000000",
     opacity: 0.7,
     marginBottom: 8,
@@ -1166,23 +1299,55 @@ const styles = StyleSheet.create({
   },
   weatherContainer: {
     backgroundColor: Colors.white,
+    borderRadius: 18,
+    marginBottom: 18,
+    ...Platform.select({
+      web: { boxShadow: "0 6px 16px -12px rgba(15,23,42,0.25)" },
+    }),
+  },
+  weatherContainerLarge: {
+    shadowColor: "rgba(15, 23, 42, 0.45)",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.56,
+    shadowRadius: 20,
+    elevation: 14,
+    ...Platform.select({
+      web: { boxShadow: "0 18px 40px -10px rgba(15,23,42,0.35)" },
+    }),
+  },
+  weatherContainerSmall: {
     borderRadius: 16,
-    padding: 12,
-    marginBottom: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowColor: "rgba(15, 23, 42, 0.4)",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.56,
+    shadowRadius: 18,
     elevation: 10,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
-    ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
+    ...Platform.select({
+      web: { boxShadow: "0 14px 36px -12px rgba(15,23,42,0.3)" },
+    }),
+  },
+  weatherContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderWidth: 0.5,
+    borderColor: "rgba(15, 23, 42, 0.08)",
+    overflow: "hidden",
+  },
+  weatherContentSmall: {
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   weatherHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    paddingBottom: 6,
+  },
+  weatherHeaderSmall: {
+    paddingBottom: 4,
   },
   locationRow: {
     flexDirection: "row",
@@ -1198,88 +1363,152 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 6,
   },
+  tempUnitSwitchSmall: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 4,
+  },
   tempUnitText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600" as const,
     color: "#000000",
-    opacity: 0.4,
   },
   tempUnitActive: {
-    opacity: 1,
-    color: Colors.primaryLight,
+    fontWeight: "700" as const,
+    textDecorationLine: "underline" as const,
+  },
+  tempUnitInactive: {
+    fontWeight: "500" as const,
   },
   tempUnitSeparator: {
     fontSize: 14,
     color: "#000000",
-    opacity: 0.3,
+  },
+  tempUnitTextSmall: {
+    fontSize: 13,
+  },
+  weatherBody: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    flexWrap: "wrap",
+  },
+  weatherBodySmall: {
+    gap: 8,
   },
   locationText: {
     fontSize: 16,
     fontWeight: "600" as const,
     color: "#000000",
   },
+  locationTextSmall: {
+    fontSize: 12,
+  },
   currentWeather: {
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
+    justifyContent: "center",
+    gap: 6,
+    flexShrink: 0,
+    minWidth: 120,
+  },
+  currentWeatherSmall: {
+    gap: 4,
+    minWidth: 80,
   },
   weatherIcon: {
-    fontSize: 32,
+    fontSize: 30,
+  },
+  weatherIconSmall: {
+    fontSize: 26,
   },
   weatherTemp: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "bold" as const,
     color: "#000000",
+    textAlign: "center",
+  },
+  weatherTempSmall: {
+    fontSize: 16,
   },
   weatherCondition: {
-    fontSize: 16,
+    fontSize: 13,
     color: "#000000",
-    opacity: 0.7,
+    textAlign: "center",
+  },
+  weatherConditionSmall: {
+    fontSize: 12,
   },
   weatherLoadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   weatherLoadingText: {
     fontSize: 14,
     color: '#000000',
-    opacity: 0.6,
+  },
+  weatherLoadingTextSmall: {
+    fontSize: 12,
   },
   forecastContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 8,
+    justifyContent: "flex-end",
+    flex: 1,
+    gap: 14,
+    flexWrap: "wrap",
+    alignItems: "center",
+    flexShrink: 1,
+  },
+  forecastContainerSmall: {
+    gap: 12,
+  },
+  forecastContainerOnly: {
+    justifyContent: "flex-start",
   },
   forecastDay: {
     alignItems: "center",
-    gap: 3,
+    gap: 2,
+  },
+  forecastDaySmall: {
+    gap: 1,
   },
   forecastDayName: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#000000",
-    opacity: 0.6,
     fontWeight: "600" as const,
   },
+  forecastDayNameSmall: {
+    fontSize: 9,
+  },
   forecastIcon: {
-    fontSize: 20,
+    fontSize: 18,
+  },
+  forecastIconSmall: {
+    fontSize: 16,
   },
   forecastTempContainer: {
     alignItems: "center",
-    gap: 2,
+    gap: 1,
   },
   forecastTempDay: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700" as const,
     color: "#000000",
   },
-  forecastTempNight: {
+  forecastTempDaySmall: {
     fontSize: 11,
+  },
+  forecastTempNight: {
+    fontSize: 10,
     fontWeight: "600" as const,
     color: "#000000",
-    opacity: 0.5,
+  },
+  forecastTempNightSmall: {
+    fontSize: 9,
   },
   quickActionIcon: {
     marginBottom: 8,
@@ -1450,7 +1679,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
   trailerModalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700" as const,
     color: "#000000",
     marginBottom: 24,
