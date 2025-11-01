@@ -555,13 +555,11 @@ export default function HomeScreen() {
               {weather && (
                 <View style={styles.currentWeather}>
                   <Text style={styles.weatherIcon}>{weather.icon}</Text>
-                  <View>
-                    <Text style={styles.weatherTemp}>
-                      {convertTemp(weather.temp)}
-                      {getTempUnit()}
-                    </Text>
-                    <Text style={styles.weatherCondition}>{weather.condition}</Text>
-                  </View>
+                  <Text style={styles.weatherTemp}>
+                    {convertTemp(weather.temp)}
+                    {getTempUnit()}
+                  </Text>
+                  <Text style={styles.weatherCondition}>{weather.condition}</Text>
                 </View>
               )}
 
@@ -1189,16 +1187,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 14,
     marginBottom: 18,
-    shadowColor: "rgba(15, 23, 42, 0.55)",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
-    elevation: 16,
+    shadowColor: "rgba(15, 23, 42, 0.35)",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 14,
+    elevation: 8,
     borderWidth: 0.5,
     borderColor: "rgba(15, 23, 42, 0.08)",
     overflow: "hidden",
     ...Platform.select({
-      web: { boxShadow: "0 20px 40px -18px rgba(15,23,42,0.45)" },
+      web: { boxShadow: "0 12px 24px -16px rgba(15,23,42,0.35)" },
     }),
   },
   weatherHeader: {
@@ -1242,6 +1240,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 16,
+    flexWrap: "wrap",
   },
   locationText: {
     fontSize: 16,
@@ -1249,23 +1248,27 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   currentWeather: {
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "center",
+    gap: 6,
     flexShrink: 0,
+    minWidth: 120,
   },
   weatherIcon: {
     fontSize: 30,
   },
   weatherTemp: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "bold" as const,
     color: "#000000",
+    textAlign: "center",
   },
   weatherCondition: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#000000",
     opacity: 0.7,
+    textAlign: "center",
   },
   weatherLoadingRow: {
     flexDirection: 'row',
@@ -1283,7 +1286,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     flex: 1,
     gap: 14,
-    flexWrap: "nowrap",
+    flexWrap: "wrap",
     alignItems: "center",
     flexShrink: 1,
   },
