@@ -415,8 +415,8 @@ export default function HomeScreen() {
         <AnimatedBackground />
         <View style={styles.headerContent}>
           <View style={styles.headerTextGroup}>
-            <Text style={styles.headerTitle}>Trucker Companion</Text>
-            <Text style={styles.headerSubtitle}>Your journey, organized</Text>
+            <Text style={[styles.headerTitle, isSmallDevice && styles.headerTitleSmall]}>Trucker Companion</Text>
+            <Text style={[styles.headerSubtitle, isSmallDevice && styles.headerSubtitleSmall]}>Your journey, organized</Text>
           </View>
           <TouchableOpacity
             style={[styles.menuButton, menuVisible && styles.menuButtonActive]}
@@ -929,6 +929,13 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
     fontFamily: "System",
+  },
+  headerTitleSmall: {
+    fontSize: 20,
+    letterSpacing: 0.2,
+  },
+  headerSubtitleSmall: {
+    fontSize: 11,
   },
   menuButton: {
     width: 44,
