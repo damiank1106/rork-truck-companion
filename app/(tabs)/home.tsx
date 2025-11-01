@@ -1287,7 +1287,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   weatherBodySmall: {
-    gap: 12,
+    gap: 10,
   },
   locationText: {
     fontSize: 16,
@@ -1295,7 +1295,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   locationTextSmall: {
-    fontSize: 14,
+    fontSize: 12,
   },
   currentWeather: {
     flexDirection: "column",
@@ -1322,7 +1322,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   weatherTempSmall: {
-    fontSize: 20,
+    fontSize: 16,
   },
   weatherCondition: {
     fontSize: 13,
@@ -1343,7 +1343,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   weatherLoadingTextSmall: {
-    fontSize: 13,
+    fontSize: 12,
   },
   forecastContainer: {
     flexDirection: "row",
