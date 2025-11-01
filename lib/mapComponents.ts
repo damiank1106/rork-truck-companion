@@ -1,24 +1,22 @@
 import { Platform } from "react-native";
-import Constants from "expo-constants";
 
-export type MapViewType = typeof import("react-native-maps").default;
-export type MarkerType = typeof import("react-native-maps").Marker;
+export type MapViewType = any;
+export type MarkerType = any;
 
-let MapView: MapViewType | null = null;
-let Marker: MarkerType | null = null;
+let NativeMapView: MapViewType | null = null;
+let NativeMarker: MarkerType | null = null;
+let isNativeMapAvailable = false;
 
-const isExpoGo = Constants.appOwnership === "expo";
-
-if (!isExpoGo && (Platform.OS === "ios" || Platform.OS === "android")) {
-  try {
-    const maps = require("react-native-maps") as typeof import("react-native-maps");
-    MapView = maps.default;
-    Marker = maps.Marker;
-  } catch (error) {
-    console.log("react-native-maps not available. Maps will show placeholder.");
-  }
+if (Platform.OS === "web") {
+  const webMaps = require("./mapComponents.web");
+  NativeMapView = webMaps.NativeMapView;
+  NativeMarker = webMaps.NativeMarker;
+  isNativeMapAvailable = webMaps.isNativeMapAvailable;
+} else {
+  const nativeMaps = require("./mapComponents.native");
+  NativeMapView = nativeMaps.NativeMapView;
+  NativeMarker = nativeMaps.NativeMarker;
+  isNativeMapAvailable = nativeMaps.isNativeMapAvailable;
 }
 
-export const NativeMapView = MapView;
-export const NativeMarker = Marker;
-export const isNativeMapAvailable = MapView !== null && Marker !== null;
+export { NativeMapView, NativeMarker, isNativeMapAvailable };

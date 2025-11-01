@@ -451,14 +451,12 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
 
       console.log('[Location] Getting current position...');
       
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Location request timed out')), 15000);
       });
       
       const locationPromise = Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
-        timeInterval: 5000,
-        distanceInterval: 0,
       });
       
       const position = await Promise.race([
@@ -478,19 +476,23 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
       console.log('[Location] Location modal opened');
     } catch (error: any) {
       console.error('[Location] Error fetching location:', error);
-      console.error('[Location] Error details:', JSON.stringify(error));
+      console.error('[Location] Error name:', error?.name);
+      console.error('[Location] Error message:', error?.message);
+      console.error('[Location] Error code:', error?.code);
       
       let errorMessage = "Unable to retrieve your current location. Please try again.";
       
       if (error?.message?.includes('timeout')) {
         errorMessage = "Location request timed out. Please make sure location services are enabled and try again.";
-      } else if (error?.message?.includes('denied')) {
+      } else if (error?.message?.includes('denied') || error?.code === 1) {
         errorMessage = "Location permission was denied. Please enable location services in your device settings.";
-      } else if (error?.message?.includes('unavailable')) {
+      } else if (error?.message?.includes('unavailable') || error?.code === 2) {
         errorMessage = "Location services are unavailable. Please check your device settings.";
+      } else if (error?.code === 3) {
+        errorMessage = "Location request timed out. Please try again.";
       }
       
-      Alert.alert("Error", errorMessage);
+      Alert.alert("Location Error", errorMessage);
     } finally {
       console.log('[Location] Cleaning up, setting isFetchingLocation to false');
       setIsFetchingLocation(false);
