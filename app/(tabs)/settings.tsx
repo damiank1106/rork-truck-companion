@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 56,
     marginBottom: 32,
-    minHeight: 160,
+    minHeight: 260,
   },
   footerText: {
     fontSize: 14,
