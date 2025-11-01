@@ -1227,7 +1227,7 @@ const styles = StyleSheet.create({
     }),
   },
   weatherContainerSmall: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 12,
     borderRadius: 16,
   },
