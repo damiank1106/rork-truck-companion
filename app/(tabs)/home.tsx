@@ -1570,7 +1570,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
   trailerModalTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700" as const,
     color: "#000000",
     marginBottom: 24,
