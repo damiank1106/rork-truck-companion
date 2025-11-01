@@ -1316,6 +1316,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderRadius: 16,
+    shadowColor: "rgba(15, 23, 42, 0.3)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 0.5,
+    borderColor: "rgba(15, 23, 42, 0.08)",
+    ...Platform.select({
+      web: { boxShadow: "0 10px 20px -14px rgba(15,23,42,0.3)" },
+    }),
   },
   weatherHeader: {
     flexDirection: "row",
