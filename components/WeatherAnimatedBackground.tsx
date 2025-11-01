@@ -6,6 +6,7 @@ type WeatherCondition = "Clear" | "Cloudy" | "Rain" | "Snow" | "Storm" | "Unknow
 
 type WeatherAnimatedBackgroundProps = {
   condition?: string | null;
+  borderRadius?: number;
 };
 
 const gradientColors: Record<WeatherCondition, string[]> = {
@@ -32,7 +33,7 @@ const normalizeCondition = (condition?: string | null): WeatherCondition => {
   return "Unknown";
 };
 
-export default function WeatherAnimatedBackground({ condition }: WeatherAnimatedBackgroundProps) {
+export default function WeatherAnimatedBackground({ condition, borderRadius = 18 }: WeatherAnimatedBackgroundProps) {
   const variant = normalizeCondition(condition);
 
   const shimmerAnim = useRef(new Animated.Value(0)).current;
@@ -236,12 +237,22 @@ export default function WeatherAnimatedBackground({ condition }: WeatherAnimated
   const gradient = gradientColors[variant];
 
   return (
-    <View pointerEvents="none" style={styles.container} importantForAccessibility="no-hide-descendants">
-      <LinearGradient colors={gradient} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+    <View
+      pointerEvents="none"
+      style={[styles.container, { borderRadius }]}
+      importantForAccessibility="no-hide-descendants"
+    >
+      <LinearGradient
+        colors={gradient}
+        style={[styles.gradient, { borderRadius }]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
 
       <Animated.View
         style={[
           styles.highlightOverlay,
+          { borderRadius },
           {
             opacity: highlightAnim.interpolate({
               inputRange: [0, 1],
@@ -555,7 +566,6 @@ export default function WeatherAnimatedBackground({ condition }: WeatherAnimated
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 18,
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,
@@ -563,7 +573,6 @@ const styles = StyleSheet.create({
   },
   highlightOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 18,
     backgroundColor: "rgba(255, 255, 255, 0.12)",
   },
   sparkle: {
