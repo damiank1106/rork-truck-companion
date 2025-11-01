@@ -1308,7 +1308,7 @@ const styles = StyleSheet.create({
   weatherContainerLarge: {
     shadowColor: "rgba(15, 23, 42, 0.45)",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.66,
+    shadowOpacity: 0.56,
     shadowRadius: 20,
     elevation: 14,
     ...Platform.select({
@@ -1319,7 +1319,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     shadowColor: "rgba(15, 23, 42, 0.4)",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.66,
+    shadowOpacity: 0.56,
     shadowRadius: 18,
     elevation: 10,
     ...Platform.select({
