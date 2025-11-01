@@ -26,7 +26,8 @@ import { useTruck } from "@/contexts/TruckContext";
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const isSmallScreen = Dimensions.get("window").height < 700;
-  const bottomPadding = Math.max(48, insets.bottom + (isSmallScreen ? 96 : 60));
+  const baseBottomPadding = isSmallScreen ? 180 : 96;
+  const bottomPadding = insets.bottom + baseBottomPadding;
   const router = useRouter();
   const { resetTruckProfile } = useTruck();
   const { places } = usePlaces();
@@ -680,6 +681,7 @@ const styles = StyleSheet.create({
   footerCompact: {
     marginTop: 20,
     paddingTop: 16,
+    marginBottom: 32,
   },
   footerText: {
     fontSize: 14,
