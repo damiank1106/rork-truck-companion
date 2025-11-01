@@ -543,19 +543,6 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {!isLoadingLocation && !isWeatherLoading && weather && (
-            <View style={styles.currentWeather}>
-              <Text style={styles.weatherIcon}>{weather.icon}</Text>
-              <View>
-                <Text style={styles.weatherTemp}>
-                  {convertTemp(weather.temp)}
-                  {getTempUnit()}
-                </Text>
-                <Text style={styles.weatherCondition}>{weather.condition}</Text>
-              </View>
-            </View>
-          )}
-
           {(isLoadingLocation || isWeatherLoading) && (
             <View style={styles.weatherLoadingRow}>
               <ActivityIndicator size="small" color={Colors.primaryLight} />
@@ -563,18 +550,35 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {!isLoadingLocation && !isWeatherLoading && forecast.length > 0 && (
-            <View style={styles.forecastContainer}>
-              {forecast.map((day, index) => (
-                <View key={index} style={styles.forecastDay}>
-                  <Text style={styles.forecastDayName}>{day.date}</Text>
-                  <Text style={styles.forecastIcon}>{day.icon}</Text>
-                  <View style={styles.forecastTempContainer}>
-                    <Text style={styles.forecastTempDay}>{convertTemp(day.tempMax)}°</Text>
-                    <Text style={styles.forecastTempNight}>{convertTemp(day.tempMin)}°</Text>
+          {!isLoadingLocation && !isWeatherLoading && (weather || forecast.length > 0) && (
+            <View style={styles.weatherBody}>
+              {weather && (
+                <View style={styles.currentWeather}>
+                  <Text style={styles.weatherIcon}>{weather.icon}</Text>
+                  <View>
+                    <Text style={styles.weatherTemp}>
+                      {convertTemp(weather.temp)}
+                      {getTempUnit()}
+                    </Text>
+                    <Text style={styles.weatherCondition}>{weather.condition}</Text>
                   </View>
                 </View>
-              ))}
+              )}
+
+              {forecast.length > 0 && (
+                <View style={[styles.forecastContainer, !weather && styles.forecastContainerOnly]}>
+                  {forecast.map((day, index) => (
+                    <View key={index} style={styles.forecastDay}>
+                      <Text style={styles.forecastDayName}>{day.date}</Text>
+                      <Text style={styles.forecastIcon}>{day.icon}</Text>
+                      <View style={styles.forecastTempContainer}>
+                        <Text style={styles.forecastTempDay}>{convertTemp(day.tempMax)}°</Text>
+                        <Text style={styles.forecastTempNight}>{convertTemp(day.tempMin)}°</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -1181,24 +1185,27 @@ const styles = StyleSheet.create({
   },
   weatherContainer: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    marginBottom: 18,
+    shadowColor: "rgba(15, 23, 42, 0.55)",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    elevation: 16,
+    borderWidth: 0.5,
+    borderColor: "rgba(15, 23, 42, 0.08)",
     overflow: "hidden",
-    ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
+    ...Platform.select({
+      web: { boxShadow: "0 20px 40px -18px rgba(15,23,42,0.45)" },
+    }),
   },
   weatherHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    paddingBottom: 6,
   },
   locationRow: {
     flexDirection: "row",
@@ -1229,6 +1236,13 @@ const styles = StyleSheet.create({
     color: "#000000",
     opacity: 0.3,
   },
+  weatherBody: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+  },
   locationText: {
     fontSize: 16,
     fontWeight: "600" as const,
@@ -1238,18 +1252,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginBottom: 12,
+    flexShrink: 0,
   },
   weatherIcon: {
-    fontSize: 32,
+    fontSize: 30,
   },
   weatherTemp: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "bold" as const,
     color: "#000000",
   },
   weatherCondition: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#000000",
     opacity: 0.7,
   },
@@ -1257,7 +1271,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   weatherLoadingText: {
     fontSize: 14,
@@ -1266,33 +1280,40 @@ const styles = StyleSheet.create({
   },
   forecastContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 8,
+    justifyContent: "flex-end",
+    flex: 1,
+    gap: 14,
+    flexWrap: "nowrap",
+    alignItems: "center",
+    flexShrink: 1,
+  },
+  forecastContainerOnly: {
+    justifyContent: "flex-start",
   },
   forecastDay: {
     alignItems: "center",
-    gap: 3,
+    gap: 2,
   },
   forecastDayName: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#000000",
     opacity: 0.6,
     fontWeight: "600" as const,
   },
   forecastIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
   forecastTempContainer: {
     alignItems: "center",
-    gap: 2,
+    gap: 1,
   },
   forecastTempDay: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700" as const,
     color: "#000000",
   },
   forecastTempNight: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600" as const,
     color: "#000000",
     opacity: 0.5,
