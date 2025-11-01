@@ -931,7 +931,7 @@ const styles = StyleSheet.create({
     fontFamily: "System",
   },
   headerTitleSmall: {
-    fontSize: 20,
+    fontSize: 18,
     letterSpacing: 0.2,
   },
   headerSubtitleSmall: {
