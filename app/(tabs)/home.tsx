@@ -836,8 +836,6 @@ function StatCard({
     }).start();
   };
 
-  const cardStyle = styles.statCardGlass;
-
   return (
     <TouchableOpacity
       style={styles.statCard}
@@ -847,7 +845,9 @@ function StatCard({
       activeOpacity={1}
       testID={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <Animated.View style={[cardStyle, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View
+        style={[styles.statCardGlass, shouldShowShadow && styles.statCardShadow, { transform: [{ scale: scaleAnim }] }]}
+      >
         <View style={[styles.iconContainer, { backgroundColor: `${color}20` }]}>
           {icon}
         </View>
@@ -1039,7 +1039,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     borderRadius: 16,
-    overflow: "hidden",
+    overflow: "visible",
     height: "100%",
   },
   statCardGlass: {
@@ -1061,6 +1061,22 @@ const styles = StyleSheet.create({
       },
       web: {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
+      },
+    }),
+  },
+  statCardShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 12,
+      },
+      web: {
+        boxShadow: "0 10px 24px rgba(0, 0, 0, 0.18)",
       },
     }),
   },
