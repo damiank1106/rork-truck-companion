@@ -10,19 +10,20 @@ import {
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
+  Easing,
   FlatList,
+  Image,
   Modal,
+  PanResponder,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Image,
-  Alert,
-  PanResponder,
-  Easing,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -33,6 +34,7 @@ import {
   NativeMarker,
   isNativeMapAvailable,
 } from "@/lib/mapComponents";
+import type { MapPressEvent, MarkerDragEndEvent, Region } from "react-native-maps";
 
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -80,6 +82,11 @@ const CATEGORY_ORDER_MAP = new Map(
 
 const MapViewComponent = NativeMapView;
 const MarkerComponent = NativeMarker;
+
+const DEFAULT_LOCATION_DELTA: Pick<Region, "latitudeDelta" | "longitudeDelta"> = {
+  latitudeDelta: 0.01,
+  longitudeDelta: 0.01,
+};
 
 export default function PlacesScreen() {
   const insets = useSafeAreaInsets();
@@ -400,6 +407,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
   const [pendingLocation, setPendingLocation] = useState<{ latitude: number; longitude: number } | null>(
     null
   );
+  const [locationRegion, setLocationRegion] = useState<Region | null>(null);
 
   const resetForm = () => {
     setFormData({ ...DEFAULT_PLACE_FORM });
@@ -478,6 +486,11 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
       };
 
       setPendingLocation(coords);
+      setLocationRegion({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        ...DEFAULT_LOCATION_DELTA,
+      });
       setIsLocationModalVisible(true);
       console.log('[Location] Location modal opened');
     } catch (error: any) {
@@ -530,12 +543,49 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
     }));
     setIsLocationModalVisible(false);
     setPendingLocation(null);
+    setLocationRegion(null);
   };
 
   const cancelLocationSelection = () => {
     setIsLocationModalVisible(false);
     setPendingLocation(null);
+    setLocationRegion(null);
   };
+
+  const handleMapPress = (event: MapPressEvent) => {
+    const { coordinate } = event.nativeEvent;
+    setPendingLocation({
+      latitude: coordinate.latitude,
+      longitude: coordinate.longitude,
+    });
+    setLocationRegion((prev) => ({
+      latitude: coordinate.latitude,
+      longitude: coordinate.longitude,
+      latitudeDelta: prev?.latitudeDelta ?? DEFAULT_LOCATION_DELTA.latitudeDelta,
+      longitudeDelta: prev?.longitudeDelta ?? DEFAULT_LOCATION_DELTA.longitudeDelta,
+    }));
+  };
+
+  const handleMarkerDragEnd = (event: MarkerDragEndEvent) => {
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+    setPendingLocation({ latitude, longitude });
+    setLocationRegion((prev) => ({
+      latitude,
+      longitude,
+      latitudeDelta: prev?.latitudeDelta ?? DEFAULT_LOCATION_DELTA.latitudeDelta,
+      longitudeDelta: prev?.longitudeDelta ?? DEFAULT_LOCATION_DELTA.longitudeDelta,
+    }));
+  };
+
+  useEffect(() => {
+    if (isLocationModalVisible && pendingLocation && !locationRegion) {
+      setLocationRegion({
+        latitude: pendingLocation.latitude,
+        longitude: pendingLocation.longitude,
+        ...DEFAULT_LOCATION_DELTA,
+      });
+    }
+  }, [isLocationModalVisible, pendingLocation, locationRegion]);
 
   const pickImage = async () => {
     if (formData.photos.length >= 5) {
@@ -920,14 +970,27 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 MapViewComponent && MarkerComponent && isNativeMapAvailable ? (
                   <MapViewComponent
                     style={styles.locationModalMap}
-                    region={{
+                    region={locationRegion ?? {
                       latitude: pendingLocation.latitude,
                       longitude: pendingLocation.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
+                      ...DEFAULT_LOCATION_DELTA,
                     }}
+                    onRegionChangeComplete={(region: Region) => setLocationRegion(region)}
+                    onPress={handleMapPress}
+                    showsUserLocation
+                    showsCompass
+                    zoomEnabled
+                    scrollEnabled
+                    rotateEnabled
+                    pitchEnabled
+                    loadingEnabled
+                    toolbarEnabled={Platform.OS === "android"}
                   >
-                    <MarkerComponent coordinate={pendingLocation} />
+                    <MarkerComponent
+                      coordinate={pendingLocation}
+                      draggable
+                      onDragEnd={handleMarkerDragEnd}
+                    />
                   </MapViewComponent>
                 ) : (
                   <View style={[styles.locationModalMap, styles.mapPlaceholder]}>
@@ -948,6 +1011,11 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                   <ActivityIndicator size="large" color={Colors.primaryLight} />
                   <Text style={styles.locationLoadingText}>Fetching your location...</Text>
                 </View>
+              )}
+              {pendingLocation && (
+                <Text style={styles.locationInstructionText}>
+                  Drag the pin, tap on the map, or pinch to zoom to refine your exact location.
+                </Text>
               )}
               <View style={styles.locationActions}>
                 <TouchableOpacity style={styles.locationCancelButton} onPress={cancelLocationSelection}>
@@ -1719,6 +1787,12 @@ const styles = StyleSheet.create({
   locationModalMap: {
     height: 260,
     borderRadius: 16,
+  },
+  locationInstructionText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: 4,
   },
   locationLoadingContainer: {
     height: 260,
