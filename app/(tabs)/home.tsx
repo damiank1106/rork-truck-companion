@@ -621,6 +621,7 @@ export default function HomeScreen() {
               setTruckNumberInput(truckProfile.truckNumber || "");
               setIsTruckModalVisible(true);
             }}
+            isCompact={isSmallDevice}
           />
           <StatCard
             icon={<Container color={Colors.secondary} size={24} />}
@@ -634,6 +635,7 @@ export default function HomeScreen() {
               setTrailerNumberInput(truckProfile.trailerNumber || "");
               setIsTrailerModalVisible(true);
             }}
+            isCompact={isSmallDevice}
           />
         </View>
 
@@ -800,9 +802,21 @@ interface StatCardProps {
   onPress: () => void;
   showPlusIcon?: boolean;
   onPlusPress?: () => void;
+  isCompact?: boolean;
 }
 
-function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, showPlusIcon, onPlusPress }: StatCardProps) {
+function StatCard({
+  icon,
+  title,
+  value,
+  subtitle,
+  thirdLine,
+  color,
+  onPress,
+  showPlusIcon,
+  onPlusPress,
+  isCompact,
+}: StatCardProps) {
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
   const shouldShowShadow = title !== "Places";
 
@@ -848,10 +862,14 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, sho
             <Plus color={Colors.secondary} size={28} />
           </TouchableOpacity>
         )}
-        <Text style={styles.statTitle}>{title}</Text>
-        <Text style={styles.statValue}>{value}</Text>
-        {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
-        {thirdLine && <Text style={styles.statThirdLine}>{thirdLine}</Text>}
+        <Text style={[styles.statTitle, isCompact && styles.statTitleSmall]}>{title}</Text>
+        <Text style={[styles.statValue, isCompact && styles.statValueSmall]}>{value}</Text>
+        {subtitle && (
+          <Text style={[styles.statSubtitle, isCompact && styles.statSubtitleSmall]}>{subtitle}</Text>
+        )}
+        {thirdLine && (
+          <Text style={[styles.statThirdLine, isCompact && styles.statSubtitleSmall]}>{thirdLine}</Text>
+        )}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -1068,6 +1086,9 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
+  statTitleSmall: {
+    fontSize: 11,
+  },
   statValue: {
     fontSize: 24,
     fontWeight: "bold" as const,
@@ -1079,10 +1100,17 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     lineHeight: 28,
   },
+  statValueSmall: {
+    fontSize: 20,
+    lineHeight: 24,
+  },
   statSubtitle: {
     fontSize: 14,
     color: "#000000",
     fontWeight: "700" as const,
+  },
+  statSubtitleSmall: {
+    fontSize: 12,
   },
   statThirdLine: {
     fontSize: 14,
