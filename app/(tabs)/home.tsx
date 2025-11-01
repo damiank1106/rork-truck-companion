@@ -1149,12 +1149,12 @@ const styles = StyleSheet.create({
     fontWeight: "700" as const,
   },
   timeTextSmall: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold" as const,
     color: "#000000",
   },
   speedGauge: {
-    width: 120,
+    width: 100,
     backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
