@@ -525,7 +525,14 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.weatherContainer, isSmallDevice && styles.weatherContainerSmall]} testID="weather-widget">
+        <View
+          style={[
+            styles.weatherContainer,
+            isSmallDevice && styles.weatherContainerSmall,
+            !isSmallDevice && styles.weatherContainerLarge,
+          ]}
+          testID="weather-widget"
+        >
           <WeatherAnimatedBackground condition={weather?.condition ?? forecast[0]?.condition} />
           <View style={[styles.weatherHeader, isSmallDevice && styles.weatherHeaderSmall]}>
             <View style={styles.locationRow}>
@@ -846,7 +853,12 @@ function StatCard({
       testID={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <Animated.View
-        style={[styles.statCardGlass, shouldShowShadow && styles.statCardShadow, { transform: [{ scale: scaleAnim }] }]}
+        style={[
+          styles.statCardGlass,
+          shouldShowShadow && styles.statCardShadow,
+          shouldShowShadow && isCompact && styles.statCardShadowCompact,
+          { transform: [{ scale: scaleAnim }] },
+        ]}
       >
         <View style={[styles.iconContainer, { backgroundColor: `${color}20` }]}>
           {icon}
@@ -1080,6 +1092,22 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  statCardShadowCompact: {
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: "0 6px 18px rgba(0, 0, 0, 0.16)",
+      },
+    }),
+  },
   iconContainer: {
     width: 48,
     height: 48,
@@ -1265,6 +1293,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 14,
     marginBottom: 18,
+    borderWidth: 0.5,
+    borderColor: "rgba(15, 23, 42, 0.08)",
+    overflow: "hidden",
+    ...Platform.select({
+      web: { boxShadow: "0 6px 16px -12px rgba(15,23,42,0.25)" },
+    }),
+  },
+  weatherContainerLarge: {
     shadowColor: "rgba(15, 23, 42, 0.35)",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
@@ -1272,7 +1308,6 @@ const styles = StyleSheet.create({
     elevation: 8,
     borderWidth: 0.5,
     borderColor: "rgba(15, 23, 42, 0.08)",
-    overflow: "hidden",
     ...Platform.select({
       web: { boxShadow: "0 12px 24px -16px rgba(15,23,42,0.35)" },
     }),
