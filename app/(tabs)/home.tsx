@@ -7,6 +7,7 @@ import * as Location from "expo-location";
 
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import WeatherAnimatedBackground from "@/components/WeatherAnimatedBackground";
 import { useDriverID } from "@/contexts/DriverIDContext";
 import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 import { useHealthInsurance } from "@/contexts/HealthInsuranceContext";
@@ -524,6 +525,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.weatherContainer} testID="weather-widget">
+          <WeatherAnimatedBackground condition={weather?.condition ?? forecast[0]?.condition} />
           <View style={styles.weatherHeader}>
             <View style={styles.locationRow}>
               <TouchableOpacity onPress={handleLocationPress} disabled={isLoadingLocation}>
@@ -531,8 +533,8 @@ export default function HomeScreen() {
               </TouchableOpacity>
               <Text style={styles.locationText}>{location}</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.tempUnitSwitch} 
+            <TouchableOpacity
+              style={styles.tempUnitSwitch}
               onPress={() => setIsCelsius(!isCelsius)}
             >
               <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
@@ -540,6 +542,19 @@ export default function HomeScreen() {
               <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
             </TouchableOpacity>
           </View>
+
+          {!isLoadingLocation && !isWeatherLoading && weather && (
+            <View style={styles.currentWeather}>
+              <Text style={styles.weatherIcon}>{weather.icon}</Text>
+              <View>
+                <Text style={styles.weatherTemp}>
+                  {convertTemp(weather.temp)}
+                  {getTempUnit()}
+                </Text>
+                <Text style={styles.weatherCondition}>{weather.condition}</Text>
+              </View>
+            </View>
+          )}
 
           {(isLoadingLocation || isWeatherLoading) && (
             <View style={styles.weatherLoadingRow}>
