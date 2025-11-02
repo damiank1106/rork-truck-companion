@@ -95,18 +95,7 @@ export default function RootLayout() {
   useEffect(() => {
     const prepare = async () => {
       try {
-        if (Platform.OS === 'web' && typeof document !== 'undefined') {
-          const viewport = document.querySelector('meta[name="viewport"]');
-          if (viewport) {
-            viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
-          } else {
-            const meta = document.createElement('meta');
-            meta.name = 'viewport';
-            meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
-            document.head.appendChild(meta);
-          }
-        }
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
       } catch (e) {
         console.warn(e);
       } finally {
