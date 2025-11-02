@@ -58,6 +58,7 @@ export default function HomeScreen() {
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
+  const isBiggerScreen = width >= 768;
   const isNightTime = currentTime.getHours() < 6 || currentTime.getHours() >= 18;
 
   useEffect(() => {
@@ -358,7 +359,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.weatherContainer} testID="weather-widget">
+        <View style={[styles.weatherContainer, isBiggerScreen && styles.weatherContainerShadow]} testID="weather-widget">
           <WeatherAnimatedBackground
             condition={weather?.condition}
             timeOfDay={isNightTime ? "night" : "day"}
@@ -970,6 +971,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0, 0, 0, 0.1)",
     ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
+  },
+  weatherContainerShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: "rgba(15, 23, 42, 0.5)",
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.3,
+        shadowRadius: 24,
+      },
+      android: {
+        elevation: 16,
+      },
+      web: {
+        boxShadow: "0 20px 40px rgba(15, 23, 42, 0.25)",
+      },
+    }),
   },
   weatherContent: {
     position: "relative",
