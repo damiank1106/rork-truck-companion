@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   timeTextSmallCompact: {
-    fontSize: 20,
+    fontSize: 16,
   },
   speedGauge: {
     width: 120,
