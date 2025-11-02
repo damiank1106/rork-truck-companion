@@ -429,9 +429,9 @@ export default function HomeScreen() {
           <StatCard
             icon={<Container color={Colors.secondary} size={24} />}
             title="Trailer"
-            value={truckProfile.trailerNumber ? `#${truckProfile.trailerNumber}` : "Not set"}
+            value={firstTrailer?.trailerNumber ? `#${firstTrailer.trailerNumber}` : (truckProfile.trailerNumber ? `#${truckProfile.trailerNumber}` : "Not set")}
             color={Colors.secondary}
-            onPress={() => router.push("/(tabs)/truck")}
+            onPress={() => router.push("/(tabs)/trailer")}
             showPlusIcon
             onPlusPress={() => {
               setTrailerNumberInput(truckProfile.trailerNumber || "");
@@ -928,23 +928,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 16,
-    position: "relative",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 10,
-      },
-      web: {
-        boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-      },
-    }),
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    position: "relative" as const,
+    ...standardShadow,
   },
   weatherBackgroundWrapper: {
     position: "absolute",
