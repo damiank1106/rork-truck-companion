@@ -505,7 +505,7 @@ export default function HomeScreen() {
               <CreditCard color={Colors.white} size={26} />
             </View>
             <View style={styles.driverIDContent}>
-              <Text style={[styles.driverIDTitle, isSmallScreen && styles.driverIDTitleCompact]}>DL NO *</Text>
+              <Text style={[styles.driverIDTitle, isSmallScreen && styles.driverIDTitleCompact]}>Driver ID</Text>
               <Text style={[styles.driverIDSubtitle, isSmallScreen && styles.driverIDSubtitleCompact]}>
                 {driverID ? `${driverID.name} - ${driverID.state}` : "Add driver ID info"}
               </Text>
