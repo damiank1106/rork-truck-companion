@@ -179,7 +179,7 @@ export default function HomeScreen() {
         if (addresses && addresses.length > 0) {
           const address = addresses[0];
           const city = address?.city || address?.name || "Unknown";
-          const state = address?.region || address?.isoCountryCode || "";
+          const state = address?.region || "";
           const locationName = state ? `${city}, ${state}` : city;
           setLocation(locationName);
           setCachedLocation({
@@ -926,9 +926,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 16,
-    overflow: "visible",
+    overflow: "hidden",
     position: "relative",
-    ...standardShadow,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.1)",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+      },
+    }),
   },
   weatherContainerSmallScreen: {},
   weatherContainerBigScreen: {},
