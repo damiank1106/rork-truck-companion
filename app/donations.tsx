@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   infoTextSmallScreen: {
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 20,
   },
   infoTextBigScreen: {
