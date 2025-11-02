@@ -178,7 +178,9 @@ export default function HomeScreen() {
 
         if (addresses && addresses.length > 0) {
           const address = addresses[0];
-          const locationName = address?.city || address?.region || address?.name || "Unknown Location";
+          const city = address?.city || address?.name || "Unknown";
+          const state = address?.region || address?.isoCountryCode || "";
+          const locationName = state ? `${city}, ${state}` : city;
           setLocation(locationName);
           setCachedLocation({
             lat: loc.coords.latitude,
@@ -426,7 +428,6 @@ export default function HomeScreen() {
             icon={<Container color={Colors.secondary} size={24} />}
             title="Trailer"
             value={truckProfile.trailerNumber ? `#${truckProfile.trailerNumber}` : "Not set"}
-            subtitle={truckProfile.trailerNumber ? truckProfile.trailerType : "Add trailer info"}
             color={Colors.secondary}
             onPress={() => router.push("/(tabs)/truck")}
             showPlusIcon
@@ -925,10 +926,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 16,
-    overflow: "hidden",
+    overflow: "visible",
     position: "relative",
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
     ...standardShadow,
   },
   weatherContainerSmallScreen: {},
