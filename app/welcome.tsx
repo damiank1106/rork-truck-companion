@@ -232,7 +232,7 @@ export default function WelcomeScreen() {
               },
             ]}
           >
-            <Text style={styles.title}>Trucker Companion</Text>
+            <Text style={styles.title}>TD Companion</Text>
             <Text style={styles.subtitle}>Your journey, organized</Text>
             <Text style={styles.description}>
               Manage your truck specs, track locations, and document your journey all in one place
