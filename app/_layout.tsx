@@ -9,7 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { DriverIDContext } from "@/contexts/DriverIDContext";
 import { EmergencyContactsContext } from "@/contexts/EmergencyContactsContext";
-import { GalleryProvider } from "@/contexts/GalleryContext";
+
 import { HealthInsuranceProvider } from "@/contexts/HealthInsuranceContext";
 import { PlacesProvider } from "@/contexts/PlacesContext";
 import { TrailerProvider } from "@/contexts/TrailerContext";
@@ -128,19 +128,17 @@ export default function RootLayout() {
         <TruckProvider>
         <TrailerProvider>
           <PlacesProvider>
-            <GalleryProvider>
-              <EmergencyContactsContext>
-                <HealthInsuranceProvider>
-                  <DriverIDContext>
-                    <GestureHandlerRootView style={{ flex: 1 }}>
-                      <SafeAreaProvider>
-                        <RootLayoutNav />
-                      </SafeAreaProvider>
-                    </GestureHandlerRootView>
-                  </DriverIDContext>
-                </HealthInsuranceProvider>
-              </EmergencyContactsContext>
-            </GalleryProvider>
+            <EmergencyContactsContext>
+              <HealthInsuranceProvider>
+                <DriverIDContext>
+                  <GestureHandlerRootView style={{ flex: 1 }}>
+                    <SafeAreaProvider>
+                      <RootLayoutNav />
+                    </SafeAreaProvider>
+                  </GestureHandlerRootView>
+                </DriverIDContext>
+              </HealthInsuranceProvider>
+            </EmergencyContactsContext>
           </PlacesProvider>
         </TrailerProvider>
       </TruckProvider>

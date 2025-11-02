@@ -168,17 +168,7 @@ export default function SettingsScreen() {
 
             <View style={styles.divider} />
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => setShowPolicy(true)}>
-              <View style={styles.menuItemLeft}>
-                <View style={[styles.menuIcon, { backgroundColor: `${Colors.secondary}15` }]}>
-                  <Shield color={Colors.secondary} size={20} />
-                </View>
-                <Text style={styles.menuItemText}>Privacy Policy</Text>
-              </View>
-              <ChevronRight color={Colors.textLight} size={20} />
-            </TouchableOpacity>
 
-            <View style={styles.divider} />
 
             <TouchableOpacity style={styles.menuItem} onPress={handleSupport}>
               <View style={styles.menuItemLeft}>
@@ -308,13 +298,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Edit and manage all place details{"\n"}
               • Search and filter saved places{"\n\n"}
               
-              <Text style={styles.modalBoldText}>📸 Photo Gallery</Text>{"\n"}
-              • Organize photos by category (truck, scenic, location, maintenance, other){"\n"}
-              • Add location and notes to photos{"\n"}
-              • Date-based organization{"\n"}
-              • Full-screen photo viewer with glass overlay{"\n"}
-              • Edit photo descriptions anytime{"\n"}
-              • Take photos or choose from library{"\n\n"}
+
               
               <Text style={styles.modalBoldText}>🏠 Home Dashboard</Text>{"\n"}
               • Real-time date and time display{"\n"}
@@ -376,13 +360,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Tap Edit button to update information{"\n"}
               • Keyboard scrolls automatically when editing{"\n\n"}
               
-              <Text style={styles.modalBoldText}>📷 Gallery Photos</Text>{"\n"}
-              • Tap + to add new photos{"\n"}
-              • Choose from library or take new photo{"\n"}
-              • Select category, add location and notes{"\n"}
-              • Tap any photo for full-screen view{"\n"}
-              • Tap Edit button to change description{"\n"}
-              • Photos organized by date automatically{"\n\n"}
+
               
               <Text style={styles.modalBoldText}>🗺️ Places</Text>{"\n"}
               • Save locations you visit{"\n"}
@@ -408,7 +386,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Initial release{"\n"}
               • Complete truck profile system{"\n"}
               • Places tracking with photo support{"\n"}
-              • Photo gallery with categorization{"\n"}
+
               • Weather widget with C/F toggle{"\n"}
               • Real-time speed tracking with mph/km/h toggle{"\n"}
               • Trailer information management{"\n"}
@@ -417,8 +395,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Driver ID card storage{"\n"}
               • Settings and data management{"\n"}
               • Added News and Safety Information{"\n"}
-              • Full-screen photo viewing with glass overlay{"\n"}
-              • Edit functionality for all photos{"\n"}
+
               • Keyboard-aware scrolling{"\n"}
               • Cross-platform support (iOS, Android, Web){"\n\n"}
               <Text style={styles.modalBoldText}>Key Features:</Text>{"\n"}
@@ -511,7 +488,7 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
             <Text style={styles.modalText}>
               • Truck specifications and details{"\n"}
               • Location information for places you visit{"\n"}
-              • Photos you add to the gallery{"\n"}
+
               • App preferences and settings
             </Text>
 
@@ -611,7 +588,7 @@ function LegalModal({ visible, onClose }: LegalModalProps) {
               <Text style={styles.modalBoldText}>Information Stored</Text>{"\n"}
               • Truck specifications and details{"\n"}
               • Location information for places you visit{"\n"}
-              • Photos you add to the gallery{"\n"}
+
               • App preferences and settings
             </Text>
 
