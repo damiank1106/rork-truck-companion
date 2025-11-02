@@ -135,7 +135,7 @@ export default function DriverIDScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft color={Colors.black} size={24} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Driver ID</Text>
+          <Text style={styles.headerTitle}>DL. NO.</Text>
           <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
             <X color={Colors.black} size={24} />
           </TouchableOpacity>
