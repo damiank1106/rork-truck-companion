@@ -359,7 +359,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.weatherContainer, isBiggerScreen && styles.weatherContainerShadow]} testID="weather-widget">
+        <View style={[styles.weatherContainer, isBiggerScreen ? styles.weatherContainerBigScreen : styles.weatherContainerSmallScreen]} testID="weather-widget">
           <WeatherAnimatedBackground
             condition={weather?.condition}
             timeOfDay={isNightTime ? "night" : "day"}
@@ -963,16 +963,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: "hidden",
     position: "relative",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.55,
-    shadowRadius: 8,
-    elevation: 10,
     borderWidth: 1,
     borderColor: "rgba(0, 0, 0, 0.1)",
-    ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
   },
-  weatherContainerShadow: {
+  weatherContainerSmallScreen: {
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.55,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+      },
+    }),
+  },
+  weatherContainerBigScreen: {
     ...Platform.select({
       ios: {
         shadowColor: "#0F172A",
