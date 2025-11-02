@@ -975,9 +975,9 @@ const styles = StyleSheet.create({
   weatherContainerShadow: {
     ...Platform.select({
       ios: {
-        shadowColor: "rgba(15, 23, 42, 0.5)",
+        shadowColor: "#0F172A",
         shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.5,
         shadowRadius: 24,
       },
       android: {
