@@ -865,7 +865,7 @@ const styles = StyleSheet.create({
     fontWeight: "700" as const,
   },
   dateTextSmallCompact: {
-    fontSize: 13,
+    fontSize: 12,
   },
   timeTextSmall: {
     fontSize: 24,
