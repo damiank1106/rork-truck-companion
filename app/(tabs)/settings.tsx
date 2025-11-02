@@ -292,7 +292,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
             <Text style={styles.modalText}>
               <Text style={styles.modalBoldText}>Version:</Text> 1.0.0{"\n"}
               <Text style={styles.modalBoldText}>Created:</Text> October 15, 2025{"\n"}
-              <Text style={styles.modalBoldText}>Last Updated:</Text> October 31, 2025
+              <Text style={styles.modalBoldText}>Last Updated:</Text> November 02, 2025
             </Text>
 
             <Text style={styles.modalSectionTitle}>Core Features</Text>
@@ -408,7 +408,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
 
             <Text style={styles.modalSectionTitle}>Update History</Text>
             <Text style={styles.modalText}>
-              <Text style={styles.modalBoldText}>v1.0.0 - October 15, 2025</Text>{"\n"}
+              <Text style={styles.modalBoldText}>v1.0.0 - November 02, 2025</Text>{"\n"}
               • Initial release{"\n"}
               • Complete truck profile system{"\n"}
               • Places tracking with photo support{"\n"}
@@ -536,11 +536,11 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
 
             <Text style={styles.modalSectionTitle}>Contact</Text>
             <Text style={styles.modalText}>
-              For questions about privacy or data handling, contact us at support@truckercompanion.com
+              For questions about privacy or data handling, contact us at tdcompanion@icloud.com
             </Text>
 
             <Text style={styles.modalFooter}>
-              Last updated: October 31, 2025
+              Last updated: November 02, 2025
             </Text>
           </ScrollView>
         </Animated.View>
