@@ -57,7 +57,6 @@ export default function HomeScreen() {
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
-  const [isMenuMounted, setIsMenuMounted] = useState<boolean>(false);
   const menuAnimation = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const isSmallDevice = width < 360;
@@ -110,7 +109,6 @@ export default function HomeScreen() {
       return;
     }
     setMenuVisible(true);
-    setIsMenuMounted(true);
     menuAnimation.stopAnimation();
     Animated.timing(menuAnimation, {
       toValue: 1,
@@ -121,7 +119,7 @@ export default function HomeScreen() {
   };
 
   const closeMenu = (onClosed?: () => void) => {
-    if (!menuVisible && !isMenuMounted) {
+    if (!menuVisible) {
       onClosed?.();
       return;
     }
@@ -133,7 +131,6 @@ export default function HomeScreen() {
       useNativeDriver: true,
     }).start(() => {
       setMenuVisible(false);
-      setIsMenuMounted(false);
       onClosed?.();
     });
   };
@@ -549,10 +546,10 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {isMenuMounted && (
+      {menuVisible && (
         <Animated.View
           style={[styles.menuOverlay, { opacity: menuAnimation }]}
-          pointerEvents={menuVisible ? "auto" : "none"}
+          pointerEvents="auto"
         >
           <Pressable
             style={styles.menuBackdrop}
