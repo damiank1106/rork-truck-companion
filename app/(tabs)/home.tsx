@@ -859,7 +859,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dateTextSmall: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#000000",
     marginBottom: 4,
     fontWeight: "700" as const,
