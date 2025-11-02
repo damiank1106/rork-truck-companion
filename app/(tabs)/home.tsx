@@ -965,7 +965,7 @@ const styles = StyleSheet.create({
     position: "relative",
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.55,
     shadowRadius: 8,
     elevation: 10,
     borderWidth: 1,
@@ -977,7 +977,7 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: "#0F172A",
         shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.55,
         shadowRadius: 24,
       },
       android: {
