@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.black,
     lineHeight: 22,
-    marginBottom: 4,
+    marginBottom: 24,
   },
   section: {
     backgroundColor: Colors.cardBackground,
