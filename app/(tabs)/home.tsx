@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 
 import Colors from "@/constants/colors";
+import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
 import WeatherAnimatedBackground from "@/components/WeatherAnimatedBackground";
 import { useDriverID } from "@/contexts/DriverIDContext";
@@ -743,20 +744,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   statCardShadow: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "rgba(15, 23, 42, 0.55)",
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.32,
-        shadowRadius: 20,
-      },
-      android: {
-        elevation: 14,
-      },
-      web: {
-        boxShadow: "0 18px 32px rgba(15, 23, 42, 0.28)",
-      },
-    }),
+    ...standardShadow,
   },
   iconContainer: {
     width: 48,
@@ -867,15 +855,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    ...standardShadow,
     justifyContent: "center",
-    ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
   },
   dateTextSmall: {
     fontSize: 14,
@@ -899,16 +880,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    ...standardShadow,
     alignItems: "center",
     justifyContent: "center",
-    ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
   },
   speedValue: {
     fontSize: 36,
@@ -935,13 +909,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    ...standardShadow,
     alignItems: "center",
   },
   dateText: {
@@ -967,36 +935,10 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.1)",
   },
   weatherContainerSmallScreen: {
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.black,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.55,
-        shadowRadius: 20,
-      },
-      android: {
-        elevation: 10,
-      },
-      web: {
-        boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-      },
-    }),
+    ...standardShadow,
   },
   weatherContainerBigScreen: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "#0F172A",
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.55,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 16,
-      },
-      web: {
-        boxShadow: "0 20px 40px rgba(15, 23, 42, 0.25)",
-      },
-    }),
+    ...standardShadow,
   },
   weatherContent: {
     position: "relative",
@@ -1134,11 +1076,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 18,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
+    ...standardShadow,
     borderLeftWidth: 4,
     borderLeftColor: Colors.error,
   },
@@ -1341,11 +1279,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     marginTop: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
+    ...standardShadow,
     borderLeftWidth: 4,
     borderLeftColor: "#4A90E2",
   },
@@ -1393,11 +1327,7 @@ const styles = StyleSheet.create({
     padding: 18,
     marginTop: 16,
     marginBottom: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
+    ...standardShadow,
     borderLeftWidth: 4,
     borderLeftColor: "#FF9500",
   },

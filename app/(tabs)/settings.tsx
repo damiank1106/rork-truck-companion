@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
+import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
 import { useGallery } from "@/contexts/GalleryContext";
 import { usePlaces } from "@/contexts/PlacesContext";
@@ -577,11 +578,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 20,
     padding: 16,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    ...standardShadow,
   },
   statRow: {
     flexDirection: "row",

@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
+import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
 import { useTruck } from "@/contexts/TruckContext";
 import { TruckProfile } from "@/types";
@@ -664,11 +665,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 20,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    ...standardShadow,
   },
   inputContainer: {
     marginBottom: 16,

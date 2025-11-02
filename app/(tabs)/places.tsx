@@ -28,6 +28,7 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import Colors from "@/constants/colors";
+import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { Place } from "@/types";
@@ -977,11 +978,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 16,
     gap: 12,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    ...standardShadow,
   },
   searchInput: {
     flex: 1,
@@ -1016,11 +1013,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    ...standardShadow,
   },
   emptyStateButtonText: {
     color: Colors.white,
@@ -1043,11 +1036,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     gap: 8,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    ...standardShadow,
   },
   sortMenuTitle: {
     fontSize: 14,
@@ -1081,11 +1070,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     flexDirection: "row",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    ...standardShadow,
   },
   placeCardImage: {
     width: 60,
@@ -1264,11 +1249,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    ...standardShadow,
   },
   photoButtonText: {
     color: Colors.white,
@@ -1307,11 +1288,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginBottom: 20,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    ...standardShadow,
   },
   submitButtonText: {
     color: Colors.white,
@@ -1358,11 +1335,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
     marginBottom: 20,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    ...standardShadow,
   },
   deleteButtonText: {
     color: Colors.white,
