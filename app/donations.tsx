@@ -108,11 +108,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   infoTextSmallScreen: {
-    fontSize: 14,
+    fontSize: 16,
     lineHeight: 20,
   },
   infoTextBigScreen: {
-    fontSize: 17,
+    fontSize: 22,
     lineHeight: 24,
   },
   donateButton: {
