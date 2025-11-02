@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   statValueCompact: {
-    fontSize: 18,
+    fontSize: 16,
     lineHeight: 24,
   },
   statSubtitle: {
