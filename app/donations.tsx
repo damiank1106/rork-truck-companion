@@ -40,10 +40,8 @@ export default function DonationsScreen() {
             isSmallScreen && styles.infoTextSmallScreen,
             isBigScreen && styles.infoTextBigScreen
           ]}>
-            Thanks for keeping{"\n"}
-            the wheels turning.{"\n"}
-            This app is free—tips{"\n"}
-            are 100% optional{"\n"}
+            Thanks for keeping the wheels turning.{"\n"}
+            This app is free—tips are 100% optional{"\n"}
             and don&apos;t unlock any features.{"\n"}
             Your support helps pay for servers,{"\n"}
             data, and new features.{"\n"}{"\n"}
@@ -114,7 +112,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   infoTextBigScreen: {
-    fontSize: 22,
+    fontSize: 17,
     lineHeight: 24,
   },
   donateButton: {
