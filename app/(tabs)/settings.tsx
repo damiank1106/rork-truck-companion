@@ -210,7 +210,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Trucker Companion v1.0.0</Text>
+          <Text style={styles.footerText}>TD Companion v1.0.0</Text>
           <Text style={styles.footerSubtext}>
             Made with care for professional truck drivers
           </Text>
@@ -263,7 +263,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
           ]}
         >
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>About Trucker Companion</Text>
+            <Text style={styles.modalTitle}>About TD Companion</Text>
             <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.closeButton}>✕</Text>
             </TouchableOpacity>
@@ -481,7 +481,7 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
           >
             <Text style={styles.modalSectionTitle}>Data Collection</Text>
             <Text style={styles.modalText}>
-              Trucker Companion stores all data locally on your device. We do not collect, transmit, or store any personal information on external servers.
+              TD Companion stores all data locally on your device. We do not collect, transmit, or store any personal information on external servers.
             </Text>
 
             <Text style={styles.modalSectionTitle}>Information Stored</Text>
