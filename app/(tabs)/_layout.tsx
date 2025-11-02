@@ -9,6 +9,7 @@ export default function TabLayout() {
         tabBarStyle: { display: "none" },
         tabBarShowLabel: false,
       }}
+      tabBar={() => null}
     >
       <Tabs.Screen
         name="home"
