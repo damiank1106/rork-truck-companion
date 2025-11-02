@@ -221,8 +221,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-
-
         <View style={styles.footer}>
           <Text style={styles.footerText}>Trucker Companion v1.0.0</Text>
           <Text style={styles.footerSubtext}>
