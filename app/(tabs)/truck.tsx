@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
-import AnimatedBackground from "@/components/AnimatedBackground";
+import PageHeader from "@/components/PageHeader";
 import { useTruck } from "@/contexts/TruckContext";
 import { TruckProfile } from "@/types";
 
@@ -87,35 +87,33 @@ export default function TruckScreen() {
 
   const profile = isEditing ? editedProfile : truckProfile;
 
+  const headerRight = !isEditing ? (
+    <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+      <Edit3 color={Colors.white} size={20} />
+      <Text style={styles.editButtonText}>Edit</Text>
+    </TouchableOpacity>
+  ) : (
+    <View style={styles.actionButtons}>
+      <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+        <X color={Colors.error} size={20} />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <Save color={Colors.white} size={20} />
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.header}>
-        <AnimatedBackground />
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>My Truck</Text>
-            <Text style={styles.headerSubtitle}>Vehicle specifications</Text>
-          </View>
-          {!isEditing ? (
-            <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-              <Edit3 color={Colors.white} size={20} />
-              <Text style={styles.editButtonText}>Edit</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                <X color={Colors.error} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Save color={Colors.white} size={20} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
+      <PageHeader
+        title="My Truck"
+        subtitle="Vehicle specifications"
+        topInset={insets.top + 16}
+        rightAccessory={headerRight}
+      />
 
       <View style={styles.tabsWrapper}>
         <Animated.ScrollView
@@ -571,47 +569,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.08)",
-    overflow: "hidden",
-  },
-  headerContent: {
-    position: "relative" as const,
-    zIndex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700" as const,
-    color: "#000000",
-    marginBottom: 2,
-    textShadowColor: "rgba(255, 255, 255, 0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-    fontFamily: "System",
-    letterSpacing: 0.3,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#000000",
-    opacity: 0.75,
-    textShadowColor: "rgba(255, 255, 255, 0.3)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    fontFamily: "System",
   },
   editButton: {
     flexDirection: "row",

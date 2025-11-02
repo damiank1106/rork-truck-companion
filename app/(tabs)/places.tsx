@@ -28,7 +28,7 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import Colors from "@/constants/colors";
-import AnimatedBackground from "@/components/AnimatedBackground";
+import PageHeader from "@/components/PageHeader";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { Place } from "@/types";
 import {
@@ -192,31 +192,31 @@ export default function PlacesScreen() {
     setSelectedPlace(null);
   };
 
+  const headerRight = (
+    <View style={styles.headerActions}>
+      <TouchableOpacity
+        style={styles.sortButton}
+        onPress={() => setIsSortMenuVisible((prev) => !prev)}
+        activeOpacity={0.8}
+      >
+        <Animated.View style={rotationStyle}>
+          <ArrowUpDown color={Colors.primary} size={20} />
+        </Animated.View>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.addButton} onPress={handleAddPlace}>
+        <Plus color={Colors.white} size={20} />
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <AnimatedBackground />
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>Places</Text>
-            <Text style={styles.headerSubtitle}>{places.length} locations saved</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.sortButton}
-              onPress={() => setIsSortMenuVisible((prev) => !prev)}
-              activeOpacity={0.8}
-            >
-              <Animated.View style={rotationStyle}>
-                <ArrowUpDown color={Colors.primary} size={20} />
-              </Animated.View>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.addButton} onPress={handleAddPlace}>
-              <Plus color={Colors.white} size={20} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <PageHeader
+        title="Places"
+        subtitle={`${places.length} locations saved`}
+        topInset={insets.top + 16}
+        rightAccessory={headerRight}
+      />
 
       <View style={styles.searchContainer}>
         <Search color={Colors.textLight} size={20} />
@@ -932,47 +932,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.08)",
-    overflow: "hidden",
-  },
-  headerContent: {
-    position: "relative" as const,
-    zIndex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700" as const,
-    color: "#000000",
-    marginBottom: 2,
-    textShadowColor: "rgba(255, 255, 255, 0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-    fontFamily: "System",
-    letterSpacing: 0.3,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#000000",
-    opacity: 0.75,
-    textShadowColor: "rgba(255, 255, 255, 0.3)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    fontFamily: "System",
   },
   headerActions: {
     flexDirection: "row",
