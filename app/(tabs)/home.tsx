@@ -331,7 +331,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <PageHeader
-        title="Trucker Companion"
+        title="TD Companion"
         subtitle="Your journey, organized"
         topInset={insets.top + 16}
       />
