@@ -3,7 +3,7 @@ import { Platform, ViewStyle } from 'react-native';
 const standardShadow: ViewStyle = {
   shadowColor: "#000000",
   shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.15,
+  shadowOpacity: 0.25,
   shadowRadius: 8,
   elevation: 10,
   borderWidth: 1,
