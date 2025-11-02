@@ -969,10 +969,10 @@ const styles = StyleSheet.create({
   weatherContainerSmallScreen: {
     ...Platform.select({
       ios: {
-        shadowColor: "#000000",
+        shadowColor: Colors.black,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1.55,
-        shadowRadius: 8,
+        shadowOpacity: 0.55,
+        shadowRadius: 20,
       },
       android: {
         elevation: 10,
