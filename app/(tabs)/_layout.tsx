@@ -32,13 +32,7 @@ export default function TabLayout() {
           tabBarButton: () => null,
         }}
       />
-      <Tabs.Screen
-        name="gallery"
-        options={{
-          title: "Gallery",
-          tabBarButton: () => null,
-        }}
-      />
+
       <Tabs.Screen
         name="settings"
         options={{

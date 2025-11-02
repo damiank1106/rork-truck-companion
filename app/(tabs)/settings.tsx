@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
-import { useGallery } from "@/contexts/GalleryContext";
+
 import { usePlaces } from "@/contexts/PlacesContext";
 import { useTruck } from "@/contexts/TruckContext";
 
@@ -28,11 +28,11 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { resetTruckProfile } = useTruck();
   const { places } = usePlaces();
-  const { photos } = useGallery();
+
   const [storageSize, setStorageSize] = useState<string>("0 KB");
   const [truckSize, setTruckSize] = useState<string>("0 KB");
   const [placesSize, setPlacesSize] = useState<string>("0 KB");
-  const [photosSize, setPhotosSize] = useState<string>("0 KB");
+
   const [showAbout, setShowAbout] = useState<boolean>(false);
   const [showPolicy, setShowPolicy] = useState<boolean>(false);
   const [showLegal, setShowLegal] = useState<boolean>(false);
@@ -43,7 +43,7 @@ export default function SettingsScreen() {
       let totalSize = 0;
       let truckDataSize = 0;
       let placesDataSize = 0;
-      let photosDataSize = 0;
+
       
       for (const key of keys) {
         const value = await AsyncStorage.getItem(key);
@@ -55,8 +55,6 @@ export default function SettingsScreen() {
             truckDataSize += size;
           } else if (key.includes('places')) {
             placesDataSize += size;
-          } else if (key.includes('gallery')) {
-            photosDataSize += size;
           }
         }
       }
@@ -64,7 +62,7 @@ export default function SettingsScreen() {
       setStorageSize(formatSize(totalSize));
       setTruckSize(formatSize(truckDataSize));
       setPlacesSize(formatSize(placesDataSize));
-      setPhotosSize(formatSize(photosDataSize));
+
     } catch (error) {
       console.error("Error calculating storage size:", error);
     }
@@ -72,7 +70,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     calculateStorageSize();
-  }, [places, photos]);
+  }, [places]);
 
   const formatSize = (bytes: number): string => {
     if (bytes === 0) return "0 B";
@@ -596,6 +594,47 @@ function LegalModal({ visible, onClose }: LegalModalProps) {
             contentContainerStyle={styles.modalScrollContent}
             showsVerticalScrollIndicator={false}
           >
+            <Text style={styles.modalSectionTitle}>About and Copyright</Text>
+            <Text style={styles.modalText}>
+              TD Companion helps professional drivers with on-the-road tools and info.{"\n"}
+              © 2025 TD Companion. All rights reserved.
+            </Text>
+
+            <Text style={styles.modalSectionTitle}>Privacy Policy</Text>
+            
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Data Collection</Text>{"\n"}
+              TD Companion stores all data locally on your device. We do not collect, transmit, or store any personal information on external servers.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Information Stored</Text>{"\n"}
+              • Truck specifications and details{"\n"}
+              • Location information for places you visit{"\n"}
+              • Photos you add to the gallery{"\n"}
+              • App preferences and settings
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Data Security</Text>{"\n"}
+              All data is stored locally using secure device storage. Your information remains on your device and is never transmitted to external servers.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Data Control</Text>{"\n"}
+              You have complete control over your data. You can delete individual items or clear all data at any time through the Settings screen.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Third-Party Services</Text>{"\n"}
+              This app does not use any third-party analytics, tracking, or advertising services.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Contact</Text>{"\n"}
+              For questions about privacy or data handling, contact us at tdcompanionsupport@icloud.com
+            </Text>
+
             <Text style={styles.modalSectionTitle}>Donations & Tips Policy</Text>
             
             <Text style={styles.modalText}>
@@ -624,6 +663,49 @@ function LegalModal({ visible, onClose }: LegalModalProps) {
 
             <Text style={styles.modalText}>
               <Text style={styles.modalBoldText}>Contact:</Text> tdcompanionsupport@icloud.com
+            </Text>
+
+            <Text style={styles.modalSectionTitle}>Terms of Use</Text>
+            
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>License</Text>{"\n"}
+              We grant you a personal, non-transferable license to use the app.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Acceptable use</Text>{"\n"}
+              Don&apos;t misuse the app or violate laws. No reverse engineering, scraping, or security testing.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>User content</Text>{"\n"}
+              The app has no public posting features at this time. If you later add UGC, you must keep it lawful and respectful; we may remove content and suspend access.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Safety & disclaimers</Text>{"\n"}
+              Use the app responsibly. Do not interact with the app while driving; obey local laws. Information is provided &quot;as is,&quot; without warranties. You are responsible for how you use the app.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Liability</Text>{"\n"}
+              To the maximum extent permitted by law, we&apos;re not liable for indirect, incidental, or consequential damages.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Termination</Text>{"\n"}
+              We may suspend or end access for violations or misuse.
+            </Text>
+
+            <Text style={styles.modalSectionTitle}>Driving Safety Notice</Text>
+            <Text style={styles.modalText}>
+              For safety, do not use this app while driving. Stop your vehicle in a safe place before interacting with your phone. Obey all laws and company policies.
+            </Text>
+
+            <Text style={styles.modalSectionTitle}>EULA</Text>
+            <Text style={styles.modalText}>
+              This app is licensed under Apple&apos;s Standard EULA:{"\n"}
+              https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
             </Text>
 
             <Text style={styles.modalFooter}>
