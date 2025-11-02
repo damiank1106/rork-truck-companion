@@ -1,9 +1,10 @@
 import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu, X, Newspaper, Shield, HeartHandshake } from "lucide-react-native";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing, useWindowDimensions, Modal, TextInput as RNTextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
+import { PermissionStatus } from "expo-modules-core";
 
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -59,8 +60,48 @@ export default function HomeScreen() {
   const menuAnimation = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const isSmallDevice = width < 360;
+  const locationPermissionStatusRef = useRef<PermissionStatus | null>(null);
+  const locationPermissionRequestRef = useRef<Promise<PermissionStatus> | null>(null);
+  const locationWatchRef = useRef<Location.LocationSubscription | null>(null);
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
+
+  const ensureLocationPermission = useCallback(async (): Promise<PermissionStatus> => {
+    if (Platform.OS === "web") {
+      locationPermissionStatusRef.current = PermissionStatus.GRANTED;
+      return PermissionStatus.GRANTED;
+    }
+
+    if (locationPermissionStatusRef.current === PermissionStatus.GRANTED) {
+      return PermissionStatus.GRANTED;
+    }
+
+    if (locationPermissionRequestRef.current) {
+      return locationPermissionRequestRef.current;
+    }
+
+    const permissionRequest = (async () => {
+      try {
+        const currentStatus = await Location.getForegroundPermissionsAsync();
+        locationPermissionStatusRef.current = currentStatus.status;
+
+        if (currentStatus.status === PermissionStatus.GRANTED || !currentStatus.canAskAgain) {
+          return currentStatus.status;
+        }
+      } catch (error) {
+        console.error("Error checking location permission:", error);
+      }
+
+      const response = await Location.requestForegroundPermissionsAsync();
+      locationPermissionStatusRef.current = response.status;
+      return response.status;
+    })().finally(() => {
+      locationPermissionRequestRef.current = null;
+    });
+
+    locationPermissionRequestRef.current = permissionRequest;
+    return permissionRequest;
+  }, []);
 
   const openMenu = () => {
     if (menuVisible) {
@@ -159,18 +200,32 @@ export default function HomeScreen() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (locationWatchRef.current) {
+        locationWatchRef.current.remove();
+        locationWatchRef.current = null;
+      }
+    };
+  }, []);
+
   const startSpeedTracking = async () => {
     if (Platform.OS === 'web') {
       console.log('Speed tracking not available on web');
       return;
     }
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      const status = await ensureLocationPermission();
+      if (status !== PermissionStatus.GRANTED) {
         return;
       }
 
-      await Location.watchPositionAsync(
+      if (locationWatchRef.current) {
+        locationWatchRef.current.remove();
+        locationWatchRef.current = null;
+      }
+
+      locationWatchRef.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
           timeInterval: 1000,
@@ -185,6 +240,10 @@ export default function HomeScreen() {
       );
     } catch (error) {
       console.error("Error starting speed tracking:", error);
+      if (locationWatchRef.current) {
+        locationWatchRef.current.remove();
+        locationWatchRef.current = null;
+      }
     }
   };
 
@@ -216,8 +275,8 @@ export default function HomeScreen() {
         return;
       }
 
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      const status = await ensureLocationPermission();
+      if (status !== PermissionStatus.GRANTED) {
         setLocation("Permission denied");
         setIsLoadingLocation(false);
         return;
