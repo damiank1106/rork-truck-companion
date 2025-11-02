@@ -26,6 +26,7 @@ import {
 
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Colors from "@/constants/colors";
+import standardShadow from "@/constants/shadows";
 
 interface PageHeaderProps {
   title: string;
@@ -304,6 +305,7 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 30,
     elevation: 6,
+    ...standardShadow,
   },
   headerContent: {
     flexDirection: "row",

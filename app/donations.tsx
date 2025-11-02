@@ -1,5 +1,5 @@
 import React from "react";
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Linking, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
@@ -10,6 +10,9 @@ import Colors from "@/constants/colors";
 export default function DonationsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+  const isBigScreen = width >= 768;
 
   const headerLeft = (
     <TouchableOpacity
@@ -32,7 +35,11 @@ export default function DonationsScreen() {
 
       <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 32) }]}>
         <View style={styles.infoCard}>
-          <Text style={styles.infoText}>
+          <Text style={[
+            styles.infoText,
+            isSmallScreen && styles.infoTextSmallScreen,
+            isBigScreen && styles.infoTextBigScreen
+          ]}>
             Thanks for keeping the wheels turning.{"\n"}
             This app is free—tips are 100% optional{"\n"}
             and don&apos;t unlock any features.{"\n"}
@@ -99,6 +106,14 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textAlign: "center",
     lineHeight: 22,
+  },
+  infoTextSmallScreen: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  infoTextBigScreen: {
+    fontSize: 17,
+    lineHeight: 24,
   },
   donateButton: {
     backgroundColor: "#0070BA",

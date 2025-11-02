@@ -505,7 +505,7 @@ export default function HomeScreen() {
               <CreditCard color={Colors.white} size={26} />
             </View>
             <View style={styles.driverIDContent}>
-              <Text style={[styles.driverIDTitle, isSmallScreen && styles.driverIDTitleCompact]}>Driver ID</Text>
+              <Text style={[styles.driverIDTitle, isSmallScreen && styles.driverIDTitleCompact]}>DL NO *</Text>
               <Text style={[styles.driverIDSubtitle, isSmallScreen && styles.driverIDSubtitleCompact]}>
                 {driverID ? `${driverID.name} - ${driverID.state}` : "Add driver ID info"}
               </Text>
@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
   },
   weatherContainer: {
     backgroundColor: Colors.white,
-    borderRadius: 2,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 16,
     overflow: "hidden",
@@ -935,10 +935,18 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.1)",
   },
   weatherContainerSmallScreen: {
-    ...standardShadow,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 10,
   },
   weatherContainerBigScreen: {
-    ...standardShadow,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
   },
   weatherContent: {
     position: "relative",

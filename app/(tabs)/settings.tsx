@@ -149,21 +149,6 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>Data Storage</Text>
           <View style={styles.card}>
             <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Truck Profile</Text>
-              <Text style={styles.statValue}>1 profile ({truckSize})</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Places Saved</Text>
-              <Text style={styles.statValue}>{places.length} locations ({placesSize})</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Photos</Text>
-              <Text style={styles.statValue}>{photos.length} photos ({photosSize})</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.statRow}>
               <Text style={styles.statLabel}>Total Storage Used</Text>
               <Text style={styles.statValue}>{storageSize}</Text>
             </View>
