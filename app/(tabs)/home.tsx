@@ -401,8 +401,11 @@ export default function HomeScreen() {
             title="My Truck"
             value={truckProfile.truckNumber ? `Truck #${truckProfile.truckNumber}` : "Not set"}
             subtitle={truckProfile.driverId ? `Driver ID: ${truckProfile.driverId}` : undefined}
+            thirdLine={truckProfile.tripNumber ? `Trip #: ${truckProfile.tripNumber}` : undefined}
             color={Colors.primaryLight}
             onPress={() => router.push("/(tabs)/truck")}
+            onSubtitlePress={() => router.push("/driver-id")}
+            onThirdLinePress={() => router.push("/(tabs)/truck")}
             showPlusIcon
             onPlusPress={() => {
               setTruckNumberInput(truckProfile.truckNumber || "");
@@ -585,11 +588,13 @@ interface StatCardProps {
   thirdLine?: string;
   color: string;
   onPress: () => void;
+  onSubtitlePress?: () => void;
+  onThirdLinePress?: () => void;
   showPlusIcon?: boolean;
   onPlusPress?: () => void;
 }
 
-function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, showPlusIcon, onPlusPress }: StatCardProps) {
+function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onSubtitlePress, onThirdLinePress, showPlusIcon, onPlusPress }: StatCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shouldShowShadow = title !== "Places";
 
@@ -637,8 +642,30 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, sho
         )}
         <Text style={styles.statTitle}>{title}</Text>
         <Text style={styles.statValue}>{value}</Text>
-        {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
-        {thirdLine && <Text style={styles.statThirdLine}>{thirdLine}</Text>}
+        {subtitle && (
+          onSubtitlePress ? (
+            <TouchableOpacity onPress={(e) => {
+              e.stopPropagation();
+              onSubtitlePress();
+            }}>
+              <Text style={[styles.statSubtitle, styles.touchableText]}>{subtitle}</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.statSubtitle}>{subtitle}</Text>
+          )
+        )}
+        {thirdLine && (
+          onThirdLinePress ? (
+            <TouchableOpacity onPress={(e) => {
+              e.stopPropagation();
+              onThirdLinePress();
+            }}>
+              <Text style={[styles.statThirdLine, styles.touchableText]}>{thirdLine}</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.statThirdLine}>{thirdLine}</Text>
+          )
+        )}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -1273,6 +1300,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     marginTop: 16,
+    marginBottom: 16,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -1312,5 +1340,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#000000",
     opacity: 0.6,
+  },
+  touchableText: {
+    textDecorationLine: "underline" as const,
   },
 });
