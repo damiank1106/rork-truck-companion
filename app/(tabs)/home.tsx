@@ -1,6 +1,6 @@
 import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard } from "lucide-react-native";
 import React, { useState, useEffect, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -55,6 +55,8 @@ export default function HomeScreen() {
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -340,17 +342,17 @@ export default function HomeScreen() {
       >
         <View style={styles.topRow}>
           <View style={styles.dateTimeSection} testID="date-time-card">
-            <Text style={styles.dateTextSmall}>{formatDate(currentTime)}</Text>
-            <Text style={styles.timeTextSmall}>{formatTime(currentTime)}</Text>
+            <Text style={[styles.dateTextSmall, isSmallScreen && styles.dateTextSmallCompact]}>{formatDate(currentTime)}</Text>
+            <Text style={[styles.timeTextSmall, isSmallScreen && styles.timeTextSmallCompact]}>{formatTime(currentTime)}</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.speedGauge}
             onPress={() => setIsSpeedKmh(!isSpeedKmh)}
           >
-            <Text style={styles.speedValue}>
+            <Text style={[styles.speedValue, isSmallScreen && styles.speedValueCompact]}>
               {isSpeedKmh ? Math.round(speed * 3.6) : Math.round(speed * 2.23694)}
             </Text>
-            <Text style={styles.speedUnit}>{isSpeedKmh ? 'km/h' : 'mph'}</Text>
+            <Text style={[styles.speedUnit, isSmallScreen && styles.speedUnitCompact]}>{isSpeedKmh ? 'km/h' : 'mph'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -411,6 +413,7 @@ export default function HomeScreen() {
               setTruckNumberInput(truckProfile.truckNumber || "");
               setIsTruckModalVisible(true);
             }}
+            compact={isSmallScreen}
           />
           <StatCard
             icon={<Container color={Colors.secondary} size={24} />}
@@ -424,17 +427,18 @@ export default function HomeScreen() {
               setTrailerNumberInput(truckProfile.trailerNumber || "");
               setIsTrailerModalVisible(true);
             }}
+            compact={isSmallScreen}
           />
         </View>
 
         <View style={styles.emergencySection}>
           <View style={styles.emergencySectionHeader}>
-            <Text style={styles.sectionTitle}>Emergency Contacts</Text>
-            <TouchableOpacity 
+            <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleCompact]}>Emergency Contacts</Text>
+            <TouchableOpacity
               style={styles.viewAllButton}
               onPress={() => router.push("/emergency-contacts-list")}
             >
-              <Text style={styles.viewAllText}>View All</Text>
+              <Text style={[styles.viewAllText, isSmallScreen && styles.viewAllTextCompact]}>View All</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.emergencyContactsContainer}>
@@ -464,7 +468,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.healthInsuranceSection}
           onPress={() => router.push("/health-insurance")}
         >
@@ -473,15 +477,15 @@ export default function HomeScreen() {
               <ShieldPlus color={Colors.white} size={26} />
             </View>
             <View style={styles.healthInsuranceContent}>
-              <Text style={styles.healthInsuranceTitle}>Health Insurance</Text>
-              <Text style={styles.healthInsuranceSubtitle}>
+              <Text style={[styles.healthInsuranceTitle, isSmallScreen && styles.healthInsuranceTitleCompact]}>Health Insurance</Text>
+              <Text style={[styles.healthInsuranceSubtitle, isSmallScreen && styles.healthInsuranceSubtitleCompact]}>
                 {insurance ? insurance.providerName : "Add insurance info"}
               </Text>
             </View>
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.driverIDSection}
           onPress={() => router.push("/driver-id")}
         >
@@ -490,8 +494,8 @@ export default function HomeScreen() {
               <CreditCard color={Colors.white} size={26} />
             </View>
             <View style={styles.driverIDContent}>
-              <Text style={styles.driverIDTitle}>Driver ID</Text>
-              <Text style={styles.driverIDSubtitle}>
+              <Text style={[styles.driverIDTitle, isSmallScreen && styles.driverIDTitleCompact]}>Driver ID</Text>
+              <Text style={[styles.driverIDSubtitle, isSmallScreen && styles.driverIDSubtitleCompact]}>
                 {driverID ? `${driverID.name} - ${driverID.state}` : "Add driver ID info"}
               </Text>
             </View>
@@ -592,9 +596,10 @@ interface StatCardProps {
   onThirdLinePress?: () => void;
   showPlusIcon?: boolean;
   onPlusPress?: () => void;
+  compact?: boolean;
 }
 
-function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onSubtitlePress, onThirdLinePress, showPlusIcon, onPlusPress }: StatCardProps) {
+function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onSubtitlePress, onThirdLinePress, showPlusIcon, onPlusPress, compact = false }: StatCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shouldShowShadow = title !== "Places";
 
@@ -640,18 +645,18 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onS
             <Plus color={Colors.secondary} size={28} />
           </TouchableOpacity>
         )}
-        <Text style={styles.statTitle}>{title}</Text>
-        <Text style={styles.statValue}>{value}</Text>
+        <Text style={[styles.statTitle, compact && styles.statTitleCompact]}>{title}</Text>
+        <Text style={[styles.statValue, compact && styles.statValueCompact]}>{value}</Text>
         {subtitle && (
           onSubtitlePress ? (
             <TouchableOpacity onPress={(e) => {
               e.stopPropagation();
               onSubtitlePress();
             }}>
-              <Text style={[styles.statSubtitle, styles.touchableText]}>{subtitle}</Text>
+              <Text style={[styles.statSubtitle, styles.touchableText, compact && styles.statSubtitleCompact]}>{subtitle}</Text>
             </TouchableOpacity>
           ) : (
-            <Text style={styles.statSubtitle}>{subtitle}</Text>
+            <Text style={[styles.statSubtitle, compact && styles.statSubtitleCompact]}>{subtitle}</Text>
           )
         )}
         {thirdLine && (
@@ -660,10 +665,10 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onS
               e.stopPropagation();
               onThirdLinePress();
             }}>
-              <Text style={[styles.statThirdLine, styles.touchableText]}>{thirdLine}</Text>
+              <Text style={[styles.statThirdLine, styles.touchableText, compact && styles.statThirdLineCompact]}>{thirdLine}</Text>
             </TouchableOpacity>
           ) : (
-            <Text style={styles.statThirdLine}>{thirdLine}</Text>
+            <Text style={[styles.statThirdLine, compact && styles.statThirdLineCompact]}>{thirdLine}</Text>
           )
         )}
       </Animated.View>
@@ -758,6 +763,9 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
+  statTitleCompact: {
+    fontSize: 12,
+  },
   statValue: {
     fontSize: 22,
     fontWeight: "bold" as const,
@@ -769,16 +777,26 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     lineHeight: 28,
   },
+  statValueCompact: {
+    fontSize: 18,
+    lineHeight: 24,
+  },
   statSubtitle: {
     fontSize: 14,
     color: "#000000",
     fontWeight: "700" as const,
+  },
+  statSubtitleCompact: {
+    fontSize: 12,
   },
   statThirdLine: {
     fontSize: 14,
     color: "#000000",
     fontWeight: "700" as const,
     marginTop: 2,
+  },
+  statThirdLineCompact: {
+    fontSize: 12,
   },
   quickActionsSection: {
     marginTop: 8,
@@ -792,6 +810,9 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0, 0, 0, 0.15)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  sectionTitleCompact: {
+    fontSize: 18,
   },
   quickActionsGrid: {
     flexDirection: "row",
@@ -845,10 +866,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontWeight: "700" as const,
   },
+  dateTextSmallCompact: {
+    fontSize: 12,
+  },
   timeTextSmall: {
     fontSize: 24,
     fontWeight: "bold" as const,
     color: "#000000",
+  },
+  timeTextSmallCompact: {
+    fontSize: 20,
   },
   speedGauge: {
     width: 120,
@@ -872,12 +899,19 @@ const styles = StyleSheet.create({
     color: Colors.primaryLight,
     lineHeight: 40,
   },
+  speedValueCompact: {
+    fontSize: 30,
+    lineHeight: 34,
+  },
   speedUnit: {
     fontSize: 14,
     fontWeight: "600" as const,
     color: "#000000",
     opacity: 0.6,
     marginTop: 2,
+  },
+  speedUnitCompact: {
+    fontSize: 12,
   },
   dateTimeContainer: {
     backgroundColor: Colors.white,
@@ -1075,6 +1109,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600" as const,
     color: Colors.white,
+  },
+  viewAllTextCompact: {
+    fontSize: 11,
   },
   emergencyContactsContainer: {
     flexDirection: "row",
@@ -1290,10 +1327,16 @@ const styles = StyleSheet.create({
     color: "#000000",
     marginBottom: 4,
   },
+  healthInsuranceTitleCompact: {
+    fontSize: 16,
+  },
   healthInsuranceSubtitle: {
     fontSize: 14,
     color: "#000000",
     opacity: 0.6,
+  },
+  healthInsuranceSubtitleCompact: {
+    fontSize: 12,
   },
   driverIDSection: {
     backgroundColor: Colors.white,
@@ -1336,10 +1379,16 @@ const styles = StyleSheet.create({
     color: "#000000",
     marginBottom: 4,
   },
+  driverIDTitleCompact: {
+    fontSize: 16,
+  },
   driverIDSubtitle: {
     fontSize: 14,
     color: "#000000",
     opacity: 0.6,
+  },
+  driverIDSubtitleCompact: {
+    fontSize: 12,
   },
   touchableText: {
     textDecorationLine: "underline" as const,
