@@ -107,7 +107,7 @@ export default function SettingsScreen() {
   };
 
   const handleSupport = () => {
-    Linking.openURL("mailto:support@truckercompanion.com?subject=Support Request");
+    Linking.openURL("mailto:tdcompanionsupport@icloud.com?subject=Support Request");
   };
 
   const handleReloadApp = () => {
