@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold" as const,
     color: "#000000",
     marginBottom: 3,
