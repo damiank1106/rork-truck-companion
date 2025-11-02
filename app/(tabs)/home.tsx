@@ -455,13 +455,14 @@ export default function HomeScreen() {
       {isMenuMounted && (
         <Animated.View
           style={[styles.menuOverlay, { opacity: menuAnimation }]}
-          pointerEvents={menuVisible ? "auto" : "none"}
+          pointerEvents="box-none"
         >
           <Pressable
             style={styles.menuBackdrop}
             onPress={handleMenuClose}
             accessibilityRole="button"
             accessibilityLabel="Close menu"
+            pointerEvents={menuVisible ? "auto" : "none"}
           />
           <Animated.View
             style={[
@@ -916,9 +917,11 @@ const styles = StyleSheet.create({
   menuOverlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 50,
+    pointerEvents: 'box-none',
   },
   menuBackdrop: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   menuDropdown: {
     position: "absolute" as const,
