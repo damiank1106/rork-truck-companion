@@ -13,7 +13,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, RefreshCw, X, ExternalLink } from "lucide-react-native";
 
-import AnimatedBackground from "@/components/AnimatedBackground";
+import PageHeader from "@/components/PageHeader";
 import Colors from "@/constants/colors";
 import {
   PublishedNewsItem,
@@ -216,35 +216,41 @@ export default function DailyNewsScreen() {
     [insets.bottom]
   );
 
+  const headerLeft = (
+    <TouchableOpacity
+      style={styles.headerButton}
+      onPress={() => router.replace("/(tabs)/home")}
+      accessibilityRole="button"
+      accessibilityLabel="Go back to home"
+    >
+      <ArrowLeft color={Colors.text} size={20} />
+    </TouchableOpacity>
+  );
+
+  const headerRight = (
+    <TouchableOpacity
+      style={[styles.headerButton, isRefreshing && styles.headerButtonDisabled]}
+      onPress={handleRefresh}
+      disabled={isRefreshing}
+      accessibilityRole="button"
+      accessibilityLabel="Refresh news"
+    >
+      {isRefreshing ? (
+        <ActivityIndicator size="small" color={Colors.text} />
+      ) : (
+        <RefreshCw color={Colors.text} size={20} />
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <AnimatedBackground />
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => router.replace("/(tabs)/home")}
-            accessibilityRole="button"
-            accessibilityLabel="Go back to home"
-          >
-            <ArrowLeft color={Colors.text} size={20} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Daily News</Text>
-          <TouchableOpacity
-            style={[styles.headerButton, isRefreshing && styles.headerButtonDisabled]}
-            onPress={handleRefresh}
-            disabled={isRefreshing}
-            accessibilityRole="button"
-            accessibilityLabel="Refresh news"
-          >
-            {isRefreshing ? (
-              <ActivityIndicator size="small" color={Colors.text} />
-            ) : (
-              <RefreshCw color={Colors.text} size={20} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      <PageHeader
+        title="Daily News"
+        topInset={insets.top + 12}
+        leftAccessory={headerLeft}
+        rightAccessory={headerRight}
+      />
 
       <View style={styles.content}>
         {headerUpdatedLabel ? <Text style={styles.updatedText}>{headerUpdatedLabel}</Text> : null}
@@ -323,20 +329,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderBottomColor: "rgba(15, 23, 42, 0.08)",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    overflow: "hidden",
-    position: "relative",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
   headerButton: {
     width: 40,
     height: 40,
@@ -352,13 +344,6 @@ const styles = StyleSheet.create({
   },
   headerButtonDisabled: {
     opacity: 0.6,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.text,
-    textAlign: "center",
-    flex: 1,
   },
   content: {
     flex: 1,

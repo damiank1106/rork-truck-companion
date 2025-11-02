@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 import Colors from "@/constants/colors";
-import AnimatedBackground from "@/components/AnimatedBackground";
+import PageHeader from "@/components/PageHeader";
 import { useGallery } from "@/contexts/GalleryContext";
 import { GalleryPhoto } from "@/types";
 
@@ -66,20 +66,20 @@ export default function GalleryScreen() {
     data: items,
   }));
 
+  const headerRight = (
+    <TouchableOpacity style={styles.addButton} onPress={handleAddPhoto}>
+      <Plus color={Colors.white} size={20} />
+    </TouchableOpacity>
+  );
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <AnimatedBackground />
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>Gallery</Text>
-            <Text style={styles.headerSubtitle}>{photos.length} photos</Text>
-          </View>
-          <TouchableOpacity style={styles.addButton} onPress={handleAddPhoto}>
-            <Plus color={Colors.white} size={20} />
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <PageHeader
+        title="Gallery"
+        subtitle={`${photos.length} photos`}
+        topInset={insets.top + 16}
+        rightAccessory={headerRight}
+      />
 
       {photos.length === 0 ? (
         <View style={styles.emptyState}>
@@ -559,47 +559,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.08)",
-    overflow: "hidden",
-  },
-  headerContent: {
-    position: "relative" as const,
-    zIndex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700" as const,
-    color: "#000000",
-    marginBottom: 2,
-    textShadowColor: "rgba(255, 255, 255, 0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-    fontFamily: "System",
-    letterSpacing: 0.3,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#000000",
-    opacity: 0.75,
-    textShadowColor: "rgba(255, 255, 255, 0.3)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    fontFamily: "System",
   },
   addButton: {
     backgroundColor: Colors.primaryLight,
