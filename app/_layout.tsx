@@ -7,12 +7,12 @@ import { View, ActivityIndicator, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { DriverIDContext } from "@/contexts/DriverIDContext";
-import { EmergencyContactsContext, useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
+import { EmergencyContactsContext } from "@/contexts/EmergencyContactsContext";
 import { GalleryProvider } from "@/contexts/GalleryContext";
 import { HealthInsuranceProvider } from "@/contexts/HealthInsuranceContext";
-import { PlacesProvider, usePlaces } from "@/contexts/PlacesContext";
+import { PlacesProvider } from "@/contexts/PlacesContext";
 import { TrailerProvider } from "@/contexts/TrailerContext";
-import { TruckProvider, useTruck } from "@/contexts/TruckContext";
+import { TruckProvider } from "@/contexts/TruckContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 import Colors from "@/constants/colors";
 
@@ -89,32 +89,6 @@ function RootLayoutNav() {
   );
 }
 
-function AppContent() {
-  const { isLoading: truckLoading } = useTruck();
-  const { isLoading: placesLoading } = usePlaces();
-  const { isLoading: contactsLoading } = useEmergencyContacts();
-  const [splashHidden, setSplashHidden] = useState(false);
-
-  useEffect(() => {
-    if (!truckLoading && !placesLoading && !contactsLoading && !splashHidden) {
-      setSplashHidden(true);
-      if (Platform.OS !== 'web') {
-        setTimeout(() => {
-          SplashScreen.hideAsync();
-        }, 100);
-      }
-    }
-  }, [truckLoading, placesLoading, contactsLoading, splashHidden]);
-
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <RootLayoutNav />
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
-  );
-}
-
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
 
@@ -132,11 +106,14 @@ export default function RootLayout() {
             document.head.appendChild(meta);
           }
         }
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
       } catch (e) {
         console.warn(e);
       } finally {
         setIsReady(true);
+        if (Platform.OS !== 'web') {
+          await SplashScreen.hideAsync();
+        }
       }
     };
 
@@ -155,20 +132,24 @@ export default function RootLayout() {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <TruckProvider>
-          <TrailerProvider>
-            <PlacesProvider>
-              <GalleryProvider>
-                <EmergencyContactsContext>
-                  <HealthInsuranceProvider>
-                    <DriverIDContext>
-                      <AppContent />
-                    </DriverIDContext>
-                  </HealthInsuranceProvider>
-                </EmergencyContactsContext>
-              </GalleryProvider>
-            </PlacesProvider>
-          </TrailerProvider>
-        </TruckProvider>
+        <TrailerProvider>
+          <PlacesProvider>
+            <GalleryProvider>
+              <EmergencyContactsContext>
+                <HealthInsuranceProvider>
+                  <DriverIDContext>
+                    <GestureHandlerRootView style={{ flex: 1 }}>
+                      <SafeAreaProvider>
+                        <RootLayoutNav />
+                      </SafeAreaProvider>
+                    </GestureHandlerRootView>
+                  </DriverIDContext>
+                </HealthInsuranceProvider>
+              </EmergencyContactsContext>
+            </GalleryProvider>
+          </PlacesProvider>
+        </TrailerProvider>
+      </TruckProvider>
       </QueryClientProvider>
     </trpc.Provider>
   );

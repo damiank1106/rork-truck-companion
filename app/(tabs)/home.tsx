@@ -1,6 +1,6 @@
 import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu, X, Newspaper, Shield, HeartHandshake } from "lucide-react-native";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing, useWindowDimensions, Modal, TextInput as RNTextInput } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing, useWindowDimensions, Modal, TextInput as RNTextInput, InteractionManager } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -431,11 +431,20 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       screenIsFocusedRef.current = true;
-      loadLocation();
-      startSpeedTracking();
+      let isActive = true;
+
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (!isActive) {
+          return;
+        }
+        loadLocation();
+        startSpeedTracking();
+      });
 
       return () => {
+        isActive = false;
         screenIsFocusedRef.current = false;
+        task?.cancel?.();
         stopSpeedTracking();
       };
     }, [loadLocation, startSpeedTracking, stopSpeedTracking])
@@ -540,10 +549,10 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {menuVisible && isMenuMounted && (
+      {isMenuMounted && (
         <Animated.View
           style={[styles.menuOverlay, { opacity: menuAnimation }]}
-          pointerEvents="auto"
+          pointerEvents={menuVisible ? "auto" : "none"}
         >
           <Pressable
             style={styles.menuBackdrop}
