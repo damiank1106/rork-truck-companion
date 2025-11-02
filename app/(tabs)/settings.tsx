@@ -536,7 +536,7 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
 
             <Text style={styles.modalSectionTitle}>Contact</Text>
             <Text style={styles.modalText}>
-              For questions about privacy or data handling, contact us at tdcompanion@icloud.com
+              For questions about privacy or data handling, contact us at tdcompanionsupport@icloud.com
             </Text>
 
             <Text style={styles.modalFooter}>
