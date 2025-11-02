@@ -297,7 +297,6 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Full-screen photo viewing{"\n"}
               • Edit and manage all place details{"\n"}
               • Search and filter saved places{"\n\n"}
-              
 
               
               <Text style={styles.modalBoldText}>🏠 Home Dashboard</Text>{"\n"}
@@ -397,7 +396,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Added News and Safety Information{"\n"}
 
               • Keyboard-aware scrolling{"\n"}
-              • Cross-platform support (iOS, Android, Web){"\n\n"}
+              • Cross-platform support (iOS, Android -coming soon, Web){"\n\n"}
               <Text style={styles.modalBoldText}>Key Features:</Text>{"\n"}
               • Offline-first architecture{"\n"}
               • Local device storage{"\n"}
@@ -409,7 +408,9 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
 
             <Text style={styles.modalSectionTitle}>Technology Stack</Text>
             <Text style={styles.modalText}>
-              • Built with React Native & Expo{"\n"}
+              • Built with React Native & Expo - MIT License{"\n"}
+              • Lucide-react-native — ISC License{"\n"}
+              • React Query — MIT License{"\n"}
               • TypeScript for type safety{"\n"}
               • AsyncStorage for local data{"\n"}
               • Expo Location for GPS tracking{"\n"}
