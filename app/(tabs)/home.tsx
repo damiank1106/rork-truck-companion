@@ -363,11 +363,13 @@ export default function HomeScreen() {
         </View>
 
         <View style={[styles.weatherContainer, isBiggerScreen ? styles.weatherContainerBigScreen : styles.weatherContainerSmallScreen]} testID="weather-widget">
-          <WeatherAnimatedBackground
-            condition={weather?.condition}
-            timeOfDay={isNightTime ? "night" : "day"}
-            borderRadius={16}
-          />
+          <View style={styles.weatherBackgroundWrapper}>
+            <WeatherAnimatedBackground
+              condition={weather?.condition}
+              timeOfDay={isNightTime ? "night" : "day"}
+              borderRadius={16}
+            />
+          </View>
           <View style={styles.weatherContent}>
             <View style={styles.weatherHeader}>
               <View style={styles.locationRow}>
@@ -926,20 +928,32 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 16,
-    overflow: "hidden",
     position: "relative",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
     ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 10,
+      },
       web: {
         boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
       },
     }),
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.1)",
+  },
+  weatherBackgroundWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
+    overflow: "hidden",
   },
   weatherContainerSmallScreen: {},
   weatherContainerBigScreen: {},
