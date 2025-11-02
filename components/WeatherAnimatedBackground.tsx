@@ -9,7 +9,7 @@ type WeatherAnimatedBackgroundProps = {
   borderRadius?: number;
 };
 
-const gradientColors: Record<WeatherCondition, string[]> = {
+const gradientColors: Record<WeatherCondition, readonly [string, string, string]> = {
   Clear: ["rgba(255, 222, 173, 0.55)", "rgba(255, 244, 214, 0.45)", "rgba(255, 255, 255, 0.3)"],
   Cloudy: ["rgba(206, 217, 235, 0.6)", "rgba(232, 236, 244, 0.5)", "rgba(255, 255, 255, 0.35)"],
   Rain: ["rgba(119, 167, 255, 0.55)", "rgba(71, 110, 190, 0.55)", "rgba(179, 198, 255, 0.35)"],
