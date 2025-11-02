@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
   },
   weatherContainer: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
+    borderRadius: 2,
     padding: 12,
     marginBottom: 16,
     overflow: "hidden",
