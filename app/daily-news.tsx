@@ -439,6 +439,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
+    backgroundColor: Colors.overlay,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,

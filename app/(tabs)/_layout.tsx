@@ -10,7 +10,6 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const isIOS = Platform.OS === "ios";
   const bottomPadding = Math.max(insets.bottom, isIOS ? 24 : 16);
-  const extraVerticalInset = isIOS ? 12 : 10;
 
   return (
     <Tabs
@@ -21,8 +20,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: Colors.white,
           borderTopWidth: 0,
-          height: (isIOS ? 64 : 60) + bottomPadding + extraVerticalInset,
-          paddingBottom: bottomPadding + extraVerticalInset,
+          height: (isIOS ? 64 : 60) + bottomPadding,
+          paddingBottom: bottomPadding,
           paddingTop: 8,
           shadowColor: Colors.black,
           shadowOffset: { width: 0, height: -4 },

@@ -13,7 +13,6 @@ import {
   View,
   Animated,
   Platform,
-  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -25,9 +24,6 @@ import { useTruck } from "@/contexts/TruckContext";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const isSmallScreen = Dimensions.get("window").height < 700;
-  const baseBottomPadding = isSmallScreen ? 180 : 96;
-  const bottomPadding = insets.bottom + baseBottomPadding;
   const router = useRouter();
   const { resetTruckProfile } = useTruck();
   const { places } = usePlaces();
@@ -146,7 +142,7 @@ export default function SettingsScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.section}>
@@ -230,7 +226,7 @@ export default function SettingsScreen() {
 
 
 
-        <View style={[styles.footer, isSmallScreen && styles.footerCompact]}>
+        <View style={styles.footer}>
           <Text style={styles.footerText}>Trucker Companion v1.0.0</Text>
           <Text style={styles.footerSubtext}>
             Made with care for professional truck drivers
@@ -673,19 +669,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: "center",
-    justifyContent: "center",
     marginTop: 32,
     paddingTop: 24,
-    paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-  },
-  footerCompact: {
-    marginTop: 20,
-    paddingTop: 28,
-    paddingBottom: 56,
-    marginBottom: 32,
-    minHeight: 160,
   },
   footerText: {
     fontSize: 14,

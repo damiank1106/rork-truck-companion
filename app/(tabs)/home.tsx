@@ -1,20 +1,18 @@
 import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu, X, Newspaper, Shield, HeartHandshake } from "lucide-react-native";
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing, useWindowDimensions, Modal, TextInput as RNTextInput, InteractionManager } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
-import { PermissionStatus } from "expo-modules-core";
 
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import WeatherAnimatedBackground from "@/components/WeatherAnimatedBackground";
 import { useDriverID } from "@/contexts/DriverIDContext";
 import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 import { useHealthInsurance } from "@/contexts/HealthInsuranceContext";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { useTruck } from "@/contexts/TruckContext";
+import { Modal, TextInput as RNTextInput } from "react-native";
 import { useTrailers } from "@/contexts/TrailerContext";
 
 interface WeatherData {
@@ -50,65 +48,24 @@ export default function HomeScreen() {
   const [isCelsius, setIsCelsius] = useState<boolean>(true);
   const [speed, setSpeed] = useState<number>(0);
   const [isSpeedKmh, setIsSpeedKmh] = useState<boolean>(false);
-  const lastGeocodeTimeRef = useRef<number>(0);
-  const cachedLocationRef = useRef<{ lat: number; lon: number; name: string } | null>(null);
+  const [lastGeocodeTime, setLastGeocodeTime] = useState<number>(0);
+  const [cachedLocation, setCachedLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
   const [isTrailerModalVisible, setIsTrailerModalVisible] = useState<boolean>(false);
   const [trailerNumberInput, setTrailerNumberInput] = useState<string>("");
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
   const [truckNumberInput, setTruckNumberInput] = useState<string>("");
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
+  const [isMenuMounted, setIsMenuMounted] = useState<boolean>(false);
   const menuAnimation = useRef(new Animated.Value(0)).current;
-  const { width } = useWindowDimensions();
-  const isSmallDevice = width < 360;
-  const locationPermissionStatusRef = useRef<PermissionStatus | null>(null);
-  const locationPermissionRequestRef = useRef<Promise<PermissionStatus> | null>(null);
-  const locationWatchRef = useRef<Location.LocationSubscription | null>(null);
-  const screenIsFocusedRef = useRef<boolean>(true);
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
-
-  const ensureLocationPermission = useCallback(async (): Promise<PermissionStatus> => {
-    if (Platform.OS === "web") {
-      locationPermissionStatusRef.current = PermissionStatus.GRANTED;
-      return PermissionStatus.GRANTED;
-    }
-
-    if (locationPermissionStatusRef.current === PermissionStatus.GRANTED) {
-      return PermissionStatus.GRANTED;
-    }
-
-    if (locationPermissionRequestRef.current) {
-      return locationPermissionRequestRef.current;
-    }
-
-    const permissionRequest = (async () => {
-      try {
-        const currentStatus = await Location.getForegroundPermissionsAsync();
-        locationPermissionStatusRef.current = currentStatus.status;
-
-        if (currentStatus.status === PermissionStatus.GRANTED || !currentStatus.canAskAgain) {
-          return currentStatus.status;
-        }
-      } catch (error) {
-        console.error("Error checking location permission:", error);
-      }
-
-      const response = await Location.requestForegroundPermissionsAsync();
-      locationPermissionStatusRef.current = response.status;
-      return response.status;
-    })().finally(() => {
-      locationPermissionRequestRef.current = null;
-    });
-
-    locationPermissionRequestRef.current = permissionRequest;
-    return permissionRequest;
-  }, []);
 
   const openMenu = () => {
     if (menuVisible) {
       return;
     }
     setMenuVisible(true);
+    setIsMenuMounted(true);
     menuAnimation.stopAnimation();
     Animated.timing(menuAnimation, {
       toValue: 1,
@@ -119,7 +76,7 @@ export default function HomeScreen() {
   };
 
   const closeMenu = (onClosed?: () => void) => {
-    if (!menuVisible) {
+    if (!menuVisible && !isMenuMounted) {
       onClosed?.();
       return;
     }
@@ -131,6 +88,7 @@ export default function HomeScreen() {
       useNativeDriver: true,
     }).start(() => {
       setMenuVisible(false);
+      setIsMenuMounted(false);
       onClosed?.();
     });
   };
@@ -192,39 +150,25 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    return () => {
-      screenIsFocusedRef.current = false;
-    };
+    const timer = setTimeout(() => {
+      loadLocation();
+      startSpeedTracking();
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
-  const stopSpeedTracking = useCallback(() => {
-    if (locationWatchRef.current) {
-      locationWatchRef.current.remove();
-      locationWatchRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      stopSpeedTracking();
-    };
-  }, [stopSpeedTracking]);
-
-  const startSpeedTracking = useCallback(async () => {
+  const startSpeedTracking = async () => {
     if (Platform.OS === 'web') {
       console.log('Speed tracking not available on web');
       return;
     }
     try {
-      const status = await ensureLocationPermission();
-      if (status !== PermissionStatus.GRANTED) {
-        stopSpeedTracking();
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
         return;
       }
 
-      stopSpeedTracking();
-
-      locationWatchRef.current = await Location.watchPositionAsync(
+      await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
           timeInterval: 1000,
@@ -239,29 +183,115 @@ export default function HomeScreen() {
       );
     } catch (error) {
       console.error("Error starting speed tracking:", error);
-      stopSpeedTracking();
     }
-  }, [ensureLocationPermission, stopSpeedTracking]);
+  };
 
-  const getWeatherCondition = useCallback((code: number): string => {
-    if (code === 0) return "Clear";
-    if (code <= 3) return "Cloudy";
-    if (code <= 67) return "Rain";
-    if (code <= 77) return "Snow";
-    if (code <= 99) return "Storm";
-    return "Unknown";
-  }, []);
+  const loadLocation = async (forceRefresh: boolean = false) => {
+    setIsLoadingLocation(true);
+    try {
+      if (Platform.OS === 'web') {
+        if (typeof navigator !== 'undefined' && (navigator as any).geolocation) {
+          (navigator as any).geolocation.getCurrentPosition(
+            async (pos: GeolocationPosition) => {
+              const lat = pos.coords.latitude;
+              const lon = pos.coords.longitude;
+              setLocation(`${lat.toFixed(2)}°, ${lon.toFixed(2)}°`);
+              await fetchWeather(lat, lon);
+              setIsLoadingLocation(false);
+            },
+            (err: GeolocationPositionError) => {
+              console.warn('Geolocation error on web', err);
+              setLocation('Location unavailable');
+              setIsLoadingLocation(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+          );
+        } else {
+          console.log('navigator.geolocation not available on web');
+          setLocation('Location unavailable');
+          setIsLoadingLocation(false);
+        }
+        return;
+      }
 
-  const getWeatherIcon = useCallback((code: number): string => {
-    if (code === 0) return "\u2600\ufe0f";
-    if (code <= 3) return "\u2601\ufe0f";
-    if (code <= 67) return "\ud83c\udf27\ufe0f";
-    if (code <= 77) return "\u2744\ufe0f";
-    if (code <= 99) return "\u26c8\ufe0f";
-    return "\ud83c\udf24\ufe0f";
-  }, []);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setLocation("Permission denied");
+        setIsLoadingLocation(false);
+        return;
+      }
 
-  const fetchWeather = useCallback(async (lat: number, lon: number) => {
+      const loc = await Location.getCurrentPositionAsync({});
+      const currentTime = Date.now();
+      const timeSinceLastGeocode = currentTime - lastGeocodeTime;
+      const GEOCODE_COOLDOWN = 60000;
+
+      if (cachedLocation && !forceRefresh) {
+        const distance = Math.sqrt(
+          Math.pow(loc.coords.latitude - cachedLocation.lat, 2) +
+          Math.pow(loc.coords.longitude - cachedLocation.lon, 2)
+        );
+        
+        if (distance < 0.01 && timeSinceLastGeocode < GEOCODE_COOLDOWN) {
+          setLocation(cachedLocation.name);
+          await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+          setIsLoadingLocation(false);
+          return;
+        }
+      }
+
+      if (timeSinceLastGeocode < GEOCODE_COOLDOWN && !forceRefresh) {
+        if (cachedLocation) {
+          setLocation(cachedLocation.name);
+        }
+        await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+        setIsLoadingLocation(false);
+        return;
+      }
+
+      try {
+        const addresses = await Location.reverseGeocodeAsync({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+
+        if (addresses && addresses.length > 0) {
+          const address = addresses[0];
+          const locationName = address?.city || address?.region || address?.name || "Unknown Location";
+          setLocation(locationName);
+          setCachedLocation({
+            lat: loc.coords.latitude,
+            lon: loc.coords.longitude,
+            name: locationName
+          });
+          setLastGeocodeTime(currentTime);
+        } else {
+          setLocation("Unknown Location");
+        }
+      } catch (geocodeError: any) {
+        console.error("Geocoding error:", geocodeError);
+        if (geocodeError?.message?.includes("rate limit")) {
+          if (cachedLocation) {
+            setLocation(cachedLocation.name);
+          } else {
+            setLocation(`${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`);
+          }
+        } else {
+          setLocation("Location unavailable");
+        }
+      }
+
+      await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+    } catch (error) {
+      console.error("Error loading location:", error);
+      setLocation("Unable to load");
+    } finally {
+      // avoid double set false on web success path
+      setIsLoadingLocation(false);
+    }
+  };
+
+  const fetchWeather = async (lat: number, lon: number) => {
     setIsWeatherLoading(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -303,149 +333,25 @@ export default function HomeScreen() {
       clearTimeout(timeoutId);
       setIsWeatherLoading(false);
     }
-  }, [getWeatherCondition, getWeatherIcon]);
+  };
 
-  const loadLocation = useCallback(async (forceRefresh: boolean = false) => {
-    setIsLoadingLocation(true);
-    try {
-      if (Platform.OS === 'web') {
-        if (typeof navigator !== 'undefined' && (navigator as any).geolocation) {
-          (navigator as any).geolocation.getCurrentPosition(
-            async (pos: GeolocationPosition) => {
-              const lat = pos.coords.latitude;
-              const lon = pos.coords.longitude;
-              if (screenIsFocusedRef.current) {
-                setLocation(`${lat.toFixed(2)}°, ${lon.toFixed(2)}°`);
-              }
-              await fetchWeather(lat, lon);
-              if (screenIsFocusedRef.current) {
-                setIsLoadingLocation(false);
-              }
-            },
-            (err: GeolocationPositionError) => {
-              console.warn('Geolocation error on web', err);
-              if (screenIsFocusedRef.current) {
-                setLocation('Location unavailable');
-                setIsLoadingLocation(false);
-              }
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
-          );
-        } else {
-          console.log('navigator.geolocation not available on web');
-          if (screenIsFocusedRef.current) {
-            setLocation('Location unavailable');
-            setIsLoadingLocation(false);
-          }
-        }
-        return;
-      }
+  const getWeatherCondition = (code: number): string => {
+    if (code === 0) return "Clear";
+    if (code <= 3) return "Cloudy";
+    if (code <= 67) return "Rain";
+    if (code <= 77) return "Snow";
+    if (code <= 99) return "Storm";
+    return "Unknown";
+  };
 
-      const status = await ensureLocationPermission();
-      if (status !== PermissionStatus.GRANTED) {
-        if (screenIsFocusedRef.current) {
-          setLocation("Permission denied");
-        }
-        return;
-      }
-
-      const loc = await Location.getCurrentPositionAsync({});
-      const currentTime = Date.now();
-      const timeSinceLastGeocode = currentTime - lastGeocodeTimeRef.current;
-      const GEOCODE_COOLDOWN = 60000;
-      const cachedLocation = cachedLocationRef.current;
-
-      if (cachedLocation && !forceRefresh) {
-        const distance = Math.sqrt(
-          Math.pow(loc.coords.latitude - cachedLocation.lat, 2) +
-          Math.pow(loc.coords.longitude - cachedLocation.lon, 2)
-        );
-
-        if (distance < 0.01 && timeSinceLastGeocode < GEOCODE_COOLDOWN) {
-          if (screenIsFocusedRef.current) {
-            setLocation(cachedLocation.name);
-          }
-          await fetchWeather(loc.coords.latitude, loc.coords.longitude);
-          return;
-        }
-      }
-
-      if (timeSinceLastGeocode < GEOCODE_COOLDOWN && !forceRefresh) {
-        if (cachedLocation && screenIsFocusedRef.current) {
-          setLocation(cachedLocation.name);
-        }
-        await fetchWeather(loc.coords.latitude, loc.coords.longitude);
-        return;
-      }
-
-      try {
-        const addresses = await Location.reverseGeocodeAsync({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        });
-
-        if (addresses && addresses.length > 0) {
-          const address = addresses[0];
-          const locationName = address?.city || address?.region || address?.name || "Unknown Location";
-          if (screenIsFocusedRef.current) {
-            setLocation(locationName);
-          }
-          cachedLocationRef.current = {
-            lat: loc.coords.latitude,
-            lon: loc.coords.longitude,
-            name: locationName,
-          };
-          lastGeocodeTimeRef.current = currentTime;
-        } else if (screenIsFocusedRef.current) {
-          setLocation("Unknown Location");
-        }
-      } catch (geocodeError: any) {
-        console.error("Geocoding error:", geocodeError);
-        if (geocodeError?.message?.includes("rate limit")) {
-          if (cachedLocation && screenIsFocusedRef.current) {
-            setLocation(cachedLocation.name);
-          } else if (screenIsFocusedRef.current) {
-            setLocation(`${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`);
-          }
-        } else if (screenIsFocusedRef.current) {
-          setLocation("Location unavailable");
-        }
-      }
-
-      await fetchWeather(loc.coords.latitude, loc.coords.longitude);
-    } catch (error) {
-      console.error("Error loading location:", error);
-      if (screenIsFocusedRef.current) {
-        setLocation("Unable to load");
-      }
-    } finally {
-      if (screenIsFocusedRef.current) {
-        setIsLoadingLocation(false);
-      }
-    }
-  }, [ensureLocationPermission, fetchWeather]);
-
-  useFocusEffect(
-    useCallback(() => {
-      screenIsFocusedRef.current = true;
-      let isActive = true;
-
-      const task = InteractionManager.runAfterInteractions(() => {
-        if (!isActive) {
-          return;
-        }
-        loadLocation();
-        startSpeedTracking();
-      });
-
-      return () => {
-        isActive = false;
-        screenIsFocusedRef.current = false;
-        task?.cancel?.();
-        stopSpeedTracking();
-      };
-    }, [loadLocation, startSpeedTracking, stopSpeedTracking])
-  );
+  const getWeatherIcon = (code: number): string => {
+    if (code === 0) return "\u2600\ufe0f";
+    if (code <= 3) return "\u2601\ufe0f";
+    if (code <= 67) return "\ud83c\udf27\ufe0f";
+    if (code <= 77) return "\u2744\ufe0f";
+    if (code <= 99) return "\u26c8\ufe0f";
+    return "\ud83c\udf24\ufe0f";
+  };
 
   const convertTemp = (celsius: number): number => {
     if (isCelsius) return celsius;
@@ -457,7 +363,7 @@ export default function HomeScreen() {
   };
 
   const handleLocationPress = () => {
-    const timeSinceLastGeocode = Date.now() - lastGeocodeTimeRef.current;
+    const timeSinceLastGeocode = Date.now() - lastGeocodeTime;
     const GEOCODE_COOLDOWN = 60000;
     
     if (timeSinceLastGeocode < GEOCODE_COOLDOWN) {
@@ -507,8 +413,8 @@ export default function HomeScreen() {
         <AnimatedBackground />
         <View style={styles.headerContent}>
           <View style={styles.headerTextGroup}>
-            <Text style={[styles.headerTitle, isSmallDevice && styles.headerTitleSmall]}>Trucker Companion</Text>
-            <Text style={[styles.headerSubtitle, isSmallDevice && styles.headerSubtitleSmall]}>Your journey, organized</Text>
+            <Text style={styles.headerTitle}>Trucker Companion</Text>
+            <Text style={styles.headerSubtitle}>Your journey, organized</Text>
           </View>
           <TouchableOpacity
             style={[styles.menuButton, menuVisible && styles.menuButtonActive]}
@@ -546,10 +452,10 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {menuVisible && (
+      {isMenuMounted && (
         <Animated.View
           style={[styles.menuOverlay, { opacity: menuAnimation }]}
-          pointerEvents="auto"
+          pointerEvents={menuVisible ? "auto" : "none"}
         >
           <Pressable
             style={styles.menuBackdrop}
@@ -617,105 +523,46 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View
-          style={[
-            styles.weatherContainer,
-            isSmallDevice && styles.weatherContainerSmall,
-            !isSmallDevice && styles.weatherContainerLarge,
-          ]}
-          testID="weather-widget"
-        >
-          <View
-            style={[
-              styles.weatherContent,
-              isSmallDevice && styles.weatherContentSmall,
-            ]}
-          >
-            <WeatherAnimatedBackground
-              condition={weather?.condition ?? forecast[0]?.condition}
-              borderRadius={isSmallDevice ? 16 : 18}
-            />
-            <View style={[styles.weatherHeader, isSmallDevice && styles.weatherHeaderSmall]}>
+        <View style={styles.weatherContainer} testID="weather-widget">
+          <View style={styles.weatherHeader}>
             <View style={styles.locationRow}>
               <TouchableOpacity onPress={handleLocationPress} disabled={isLoadingLocation}>
                 <MapPinIcon color={Colors.primaryLight} size={20} />
               </TouchableOpacity>
-              <Text style={[styles.locationText, isSmallDevice && styles.locationTextSmall]}>{location}</Text>
+              <Text style={styles.locationText}>{location}</Text>
             </View>
-            <TouchableOpacity
-              style={[styles.tempUnitSwitch, isSmallDevice && styles.tempUnitSwitchSmall]}
+            <TouchableOpacity 
+              style={styles.tempUnitSwitch} 
               onPress={() => setIsCelsius(!isCelsius)}
             >
-              <Text
-                style={[
-                  styles.tempUnitText,
-                  isSmallDevice && styles.tempUnitTextSmall,
-                  isCelsius ? styles.tempUnitActive : styles.tempUnitInactive,
-                ]}
-              >
-                °C
-              </Text>
-              <Text style={[styles.tempUnitSeparator, isSmallDevice && styles.tempUnitTextSmall]}>|</Text>
-              <Text
-                style={[
-                  styles.tempUnitText,
-                  isSmallDevice && styles.tempUnitTextSmall,
-                  !isCelsius ? styles.tempUnitActive : styles.tempUnitInactive,
-                ]}
-              >
-                °F
-              </Text>
+              <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
+              <Text style={styles.tempUnitSeparator}>|</Text>
+              <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
             </TouchableOpacity>
           </View>
 
           {(isLoadingLocation || isWeatherLoading) && (
             <View style={styles.weatherLoadingRow}>
               <ActivityIndicator size="small" color={Colors.primaryLight} />
-              <Text style={[styles.weatherLoadingText, isSmallDevice && styles.weatherLoadingTextSmall]}>Updating weather...</Text>
+              <Text style={styles.weatherLoadingText}>Updating weather...</Text>
             </View>
           )}
 
-          {!isLoadingLocation && !isWeatherLoading && (weather || forecast.length > 0) && (
-            <View style={[styles.weatherBody, isSmallDevice && styles.weatherBodySmall]}>
-              {weather && (
-                <View style={[styles.currentWeather, isSmallDevice && styles.currentWeatherSmall]}>
-                  <Text style={[styles.weatherIcon, isSmallDevice && styles.weatherIconSmall]}>{weather.icon}</Text>
-                  <Text style={[styles.weatherTemp, isSmallDevice && styles.weatherTempSmall]}>
-                    {convertTemp(weather.temp)}
-                    {getTempUnit()}
-                  </Text>
-                  <Text style={[styles.weatherCondition, isSmallDevice && styles.weatherConditionSmall]}>{weather.condition}</Text>
+          {!isLoadingLocation && !isWeatherLoading && forecast.length > 0 && (
+            <View style={styles.forecastContainer}>
+              {forecast.map((day, index) => (
+                <View key={index} style={styles.forecastDay}>
+                  <Text style={styles.forecastDayName}>{day.date}</Text>
+                  <Text style={styles.forecastIcon}>{day.icon}</Text>
+                  <View style={styles.forecastTempContainer}>
+                    <Text style={styles.forecastTempDay}>{convertTemp(day.tempMax)}°</Text>
+                    <Text style={styles.forecastTempNight}>{convertTemp(day.tempMin)}°</Text>
+                  </View>
                 </View>
-              )}
-
-              {forecast.length > 0 && (
-                <View
-                  style={[
-                    styles.forecastContainer,
-                    !weather && styles.forecastContainerOnly,
-                    isSmallDevice && styles.forecastContainerSmall,
-                  ]}
-                >
-                  {forecast.map((day, index) => (
-                    <View key={index} style={[styles.forecastDay, isSmallDevice && styles.forecastDaySmall]}>
-                      <Text style={[styles.forecastDayName, isSmallDevice && styles.forecastDayNameSmall]}>{day.date}</Text>
-                      <Text style={[styles.forecastIcon, isSmallDevice && styles.forecastIconSmall]}>{day.icon}</Text>
-                      <View style={styles.forecastTempContainer}>
-                        <Text style={[styles.forecastTempDay, isSmallDevice && styles.forecastTempDaySmall]}>
-                          {convertTemp(day.tempMax)}°
-                        </Text>
-                        <Text style={[styles.forecastTempNight, isSmallDevice && styles.forecastTempNightSmall]}>
-                          {convertTemp(day.tempMin)}°
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
+              ))}
             </View>
           )}
         </View>
-      </View>
 
         <View style={styles.statsGrid}>
           <StatCard
@@ -730,7 +577,6 @@ export default function HomeScreen() {
               setTruckNumberInput(truckProfile.truckNumber || "");
               setIsTruckModalVisible(true);
             }}
-            isCompact={isSmallDevice}
           />
           <StatCard
             icon={<Container color={Colors.secondary} size={24} />}
@@ -744,7 +590,6 @@ export default function HomeScreen() {
               setTrailerNumberInput(truckProfile.trailerNumber || "");
               setIsTrailerModalVisible(true);
             }}
-            isCompact={isSmallDevice}
           />
         </View>
 
@@ -911,21 +756,9 @@ interface StatCardProps {
   onPress: () => void;
   showPlusIcon?: boolean;
   onPlusPress?: () => void;
-  isCompact?: boolean;
 }
 
-function StatCard({
-  icon,
-  title,
-  value,
-  subtitle,
-  thirdLine,
-  color,
-  onPress,
-  showPlusIcon,
-  onPlusPress,
-  isCompact,
-}: StatCardProps) {
+function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, showPlusIcon, onPlusPress }: StatCardProps) {
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
   const shouldShowShadow = title !== "Places";
 
@@ -945,6 +778,8 @@ function StatCard({
     }).start();
   };
 
+  const cardStyle = styles.statCardGlass;
+
   return (
     <TouchableOpacity
       style={styles.statCard}
@@ -954,14 +789,7 @@ function StatCard({
       activeOpacity={1}
       testID={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <Animated.View
-        style={[
-          styles.statCardGlass,
-          shouldShowShadow && styles.statCardShadow,
-          shouldShowShadow && isCompact && styles.statCardShadowCompact,
-          { transform: [{ scale: scaleAnim }] },
-        ]}
-      >
+      <Animated.View style={[cardStyle, { transform: [{ scale: scaleAnim }] }]}>
         <View style={[styles.iconContainer, { backgroundColor: `${color}20` }]}>
           {icon}
         </View>
@@ -976,14 +804,10 @@ function StatCard({
             <Plus color={Colors.secondary} size={28} />
           </TouchableOpacity>
         )}
-        <Text style={[styles.statTitle, isCompact && styles.statTitleSmall]}>{title}</Text>
-        <Text style={[styles.statValue, isCompact && styles.statValueSmall]}>{value}</Text>
-        {subtitle && (
-          <Text style={[styles.statSubtitle, isCompact && styles.statSubtitleSmall]}>{subtitle}</Text>
-        )}
-        {thirdLine && (
-          <Text style={[styles.statThirdLine, isCompact && styles.statSubtitleSmall]}>{thirdLine}</Text>
-        )}
+        <Text style={styles.statTitle}>{title}</Text>
+        <Text style={styles.statValue}>{value}</Text>
+        {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
+        {thirdLine && <Text style={styles.statThirdLine}>{thirdLine}</Text>}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -1061,13 +885,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
     fontFamily: "System",
-  },
-  headerTitleSmall: {
-    fontSize: 18,
-    letterSpacing: 0.2,
-  },
-  headerSubtitleSmall: {
-    fontSize: 11,
   },
   menuButton: {
     width: 44,
@@ -1153,7 +970,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     borderRadius: 16,
-    overflow: "visible",
+    overflow: "hidden",
     height: "100%",
   },
   statCardGlass: {
@@ -1175,38 +992,6 @@ const styles = StyleSheet.create({
       },
       web: {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
-      },
-    }),
-  },
-  statCardShadow: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 12,
-      },
-      web: {
-        boxShadow: "0 10px 24px rgba(0, 0, 0, 0.18)",
-      },
-    }),
-  },
-  statCardShadowCompact: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.18,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 10,
-      },
-      web: {
-        boxShadow: "0 6px 18px rgba(0, 0, 0, 0.16)",
       },
     }),
   },
@@ -1232,9 +1017,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
-  statTitleSmall: {
-    fontSize: 11,
-  },
   statValue: {
     fontSize: 24,
     fontWeight: "bold" as const,
@@ -1246,17 +1028,10 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     lineHeight: 28,
   },
-  statValueSmall: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
   statSubtitle: {
     fontSize: 14,
     color: "#000000",
     fontWeight: "700" as const,
-  },
-  statSubtitleSmall: {
-    fontSize: 12,
   },
   statThirdLine: {
     fontSize: 14,
@@ -1312,7 +1087,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 12,
+    padding: 16,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -1324,21 +1099,21 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
   },
   dateTextSmall: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#000000",
     marginBottom: 4,
     fontWeight: "700" as const,
   },
   timeTextSmall: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "bold" as const,
     color: "#000000",
   },
   speedGauge: {
-    width: 100,
+    width: 120,
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding:  12,
+    padding: 16,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -1366,7 +1141,7 @@ const styles = StyleSheet.create({
   dateTimeContainer: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
     marginBottom: 16,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
@@ -1378,7 +1153,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: 20,
+    fontSize: 16,
     color: "#000000",
     opacity: 0.7,
     marginBottom: 8,
@@ -1391,55 +1166,23 @@ const styles = StyleSheet.create({
   },
   weatherContainer: {
     backgroundColor: Colors.white,
-    borderRadius: 18,
-    marginBottom: 18,
-    ...Platform.select({
-      web: { boxShadow: "0 6px 16px -12px rgba(15,23,42,0.25)" },
-    }),
-  },
-  weatherContainerLarge: {
-    shadowColor: "rgba(15, 23, 42, 0.45)",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.56,
-    shadowRadius: 20,
-    elevation: 14,
-    ...Platform.select({
-      web: { boxShadow: "0 18px 40px -10px rgba(15,23,42,0.35)" },
-    }),
-  },
-  weatherContainerSmall: {
     borderRadius: 16,
-    shadowColor: "rgba(15, 23, 42, 0.4)",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.56,
-    shadowRadius: 18,
+    padding: 12,
+    marginBottom: 16,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
     elevation: 10,
-    ...Platform.select({
-      web: { boxShadow: "0 14px 36px -12px rgba(15,23,42,0.3)" },
-    }),
-  },
-  weatherContent: {
-    backgroundColor: Colors.white,
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderWidth: 0.5,
-    borderColor: "rgba(15, 23, 42, 0.08)",
-    overflow: "hidden",
-  },
-  weatherContentSmall: {
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.1)",
+    ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
   },
   weatherHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingBottom: 6,
-  },
-  weatherHeaderSmall: {
-    paddingBottom: 4,
+    marginBottom: 8,
   },
   locationRow: {
     flexDirection: "row",
@@ -1455,152 +1198,88 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 6,
   },
-  tempUnitSwitchSmall: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    gap: 4,
-  },
   tempUnitText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600" as const,
     color: "#000000",
+    opacity: 0.4,
   },
   tempUnitActive: {
-    fontWeight: "700" as const,
-    textDecorationLine: "underline" as const,
-  },
-  tempUnitInactive: {
-    fontWeight: "500" as const,
+    opacity: 1,
+    color: Colors.primaryLight,
   },
   tempUnitSeparator: {
     fontSize: 14,
     color: "#000000",
-  },
-  tempUnitTextSmall: {
-    fontSize: 13,
-  },
-  weatherBody: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-    flexWrap: "wrap",
-  },
-  weatherBodySmall: {
-    gap: 8,
+    opacity: 0.3,
   },
   locationText: {
     fontSize: 16,
     fontWeight: "600" as const,
     color: "#000000",
   },
-  locationTextSmall: {
-    fontSize: 12,
-  },
   currentWeather: {
-    flexDirection: "column",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    flexShrink: 0,
-    minWidth: 120,
-  },
-  currentWeatherSmall: {
-    gap: 4,
-    minWidth: 80,
+    gap: 10,
+    marginBottom: 12,
   },
   weatherIcon: {
-    fontSize: 30,
-  },
-  weatherIconSmall: {
-    fontSize: 26,
+    fontSize: 32,
   },
   weatherTemp: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "bold" as const,
     color: "#000000",
-    textAlign: "center",
-  },
-  weatherTempSmall: {
-    fontSize: 16,
   },
   weatherCondition: {
-    fontSize: 13,
+    fontSize: 16,
     color: "#000000",
-    textAlign: "center",
-  },
-  weatherConditionSmall: {
-    fontSize: 12,
+    opacity: 0.7,
   },
   weatherLoadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   weatherLoadingText: {
     fontSize: 14,
     color: '#000000',
-  },
-  weatherLoadingTextSmall: {
-    fontSize: 12,
+    opacity: 0.6,
   },
   forecastContainer: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    flex: 1,
-    gap: 14,
-    flexWrap: "wrap",
-    alignItems: "center",
-    flexShrink: 1,
-  },
-  forecastContainerSmall: {
-    gap: 12,
-  },
-  forecastContainerOnly: {
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
+    paddingTop: 8,
   },
   forecastDay: {
     alignItems: "center",
-    gap: 2,
-  },
-  forecastDaySmall: {
-    gap: 1,
+    gap: 3,
   },
   forecastDayName: {
-    fontSize: 10,
+    fontSize: 11,
     color: "#000000",
+    opacity: 0.6,
     fontWeight: "600" as const,
   },
-  forecastDayNameSmall: {
-    fontSize: 9,
-  },
   forecastIcon: {
-    fontSize: 18,
-  },
-  forecastIconSmall: {
-    fontSize: 16,
+    fontSize: 20,
   },
   forecastTempContainer: {
     alignItems: "center",
-    gap: 1,
+    gap: 2,
   },
   forecastTempDay: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700" as const,
     color: "#000000",
   },
-  forecastTempDaySmall: {
-    fontSize: 11,
-  },
   forecastTempNight: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "600" as const,
     color: "#000000",
-  },
-  forecastTempNightSmall: {
-    fontSize: 9,
+    opacity: 0.5,
   },
   quickActionIcon: {
     marginBottom: 8,
@@ -1771,7 +1450,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
   trailerModalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700" as const,
     color: "#000000",
     marginBottom: 24,

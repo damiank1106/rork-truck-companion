@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X } from "lucide-react-native";
+import { ArrowLeft, Camera, Image as ImageIcon, X } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -15,20 +15,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import {
-  NativeMapView,
-  NativeMarker,
-  isNativeMapAvailable,
-} from "@/lib/mapComponents";
 
 import Colors from "@/constants/colors";
 import { CATEGORY_OPTIONS, CategoryOption, resetCategoryState } from "@/constants/placeCategories";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { Place } from "@/types";
-import { presentNavigationOptions } from "@/lib/navigation";
-
-const MapViewComponent = NativeMapView;
-const MarkerComponent = NativeMarker;
 
 export default function PlaceDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -346,61 +337,6 @@ export default function PlaceDetailScreen() {
                 />
               ) : (
                 <Text style={styles.fieldValue}>{editedPlace.address || "Not provided"}</Text>
-              )}
-            </View>
-
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Location</Text>
-              {typeof editedPlace.latitude === "number" && typeof editedPlace.longitude === "number" ? (
-                <View style={styles.locationPreviewSection}>
-                  {MapViewComponent && MarkerComponent && isNativeMapAvailable ? (
-                    <MapViewComponent
-                      style={styles.detailMap}
-                      pointerEvents="none"
-                      region={{
-                        latitude: editedPlace.latitude,
-                        longitude: editedPlace.longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                      }}
-                    >
-                      <MarkerComponent
-                        coordinate={{
-                          latitude: editedPlace.latitude,
-                          longitude: editedPlace.longitude,
-                        }}
-                      />
-                    </MapViewComponent>
-                  ) : (
-                    <View style={[styles.detailMap, styles.mapPlaceholder]}>
-                      <MapPin color={Colors.primaryLight} size={28} />
-                      <Text style={styles.mapPlaceholderText}>
-                        Map preview available on mobile devices
-                      </Text>
-                    </View>
-                  )}
-                  <View style={styles.locationMetaRow}>
-                    <Text style={styles.locationCoordinates}>
-                      {editedPlace.latitude.toFixed(5)}, {editedPlace.longitude.toFixed(5)}
-                    </Text>
-                    {!isEditing && (
-                      <TouchableOpacity
-                        style={styles.detailGoToButton}
-                        onPress={() => presentNavigationOptions(editedPlace)}
-                      >
-                        <MapPin color={Colors.white} size={18} />
-                        <Text style={styles.detailGoToButtonText}>Go To</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  {isEditing && (
-                    <Text style={styles.fieldHelperText}>
-                      Location is captured when adding the place. Remove and re-add to change it.
-                    </Text>
-                  )}
-                </View>
-              ) : (
-                <Text style={styles.fieldValue}>No location saved</Text>
               )}
             </View>
 
@@ -804,58 +740,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: "#000000",
-  },
-  fieldHelperText: {
-    fontSize: 13,
-    color: Colors.textLight,
-  },
-  locationPreviewSection: {
-    gap: 12,
-  },
-  detailMap: {
-    height: 220,
-    width: "100%",
-    borderRadius: 16,
-  },
-  mapPlaceholder: {
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  mapPlaceholderText: {
-    color: Colors.textSecondary,
-    fontSize: 13,
-    textAlign: "center" as const,
-  },
-  locationMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  locationCoordinates: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  detailGoToButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  detailGoToButtonText: {
-    color: Colors.white,
-    fontSize: 14,
-    fontWeight: "600" as const,
   },
   categoryOptionsRow: {
     flexDirection: "row",
