@@ -7,6 +7,7 @@ import * as Location from "expo-location";
 
 import Colors from "@/constants/colors";
 import PageHeader from "@/components/PageHeader";
+import WeatherAnimatedBackground from "@/components/WeatherAnimatedBackground";
 import { useDriverID } from "@/contexts/DriverIDContext";
 import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 import { useHealthInsurance } from "@/contexts/HealthInsuranceContext";
@@ -57,6 +58,7 @@ export default function HomeScreen() {
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
+  const isNightTime = currentTime.getHours() < 6 || currentTime.getHours() >= 18;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -357,44 +359,51 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.weatherContainer} testID="weather-widget">
-          <View style={styles.weatherHeader}>
-            <View style={styles.locationRow}>
-              <TouchableOpacity onPress={handleLocationPress} disabled={isLoadingLocation}>
-                <MapPinIcon color={Colors.primaryLight} size={20} />
+          <WeatherAnimatedBackground
+            condition={weather?.condition}
+            timeOfDay={isNightTime ? "night" : "day"}
+            borderRadius={16}
+          />
+          <View style={styles.weatherContent}>
+            <View style={styles.weatherHeader}>
+              <View style={styles.locationRow}>
+                <TouchableOpacity onPress={handleLocationPress} disabled={isLoadingLocation}>
+                  <MapPinIcon color={Colors.primaryLight} size={20} />
+                </TouchableOpacity>
+                <Text style={styles.locationText}>{location}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.tempUnitSwitch}
+                onPress={() => setIsCelsius(!isCelsius)}
+              >
+                <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
+                <Text style={styles.tempUnitSeparator}>|</Text>
+                <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
               </TouchableOpacity>
-              <Text style={styles.locationText}>{location}</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.tempUnitSwitch} 
-              onPress={() => setIsCelsius(!isCelsius)}
-            >
-              <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
-              <Text style={styles.tempUnitSeparator}>|</Text>
-              <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
-            </TouchableOpacity>
-          </View>
 
-          {(isLoadingLocation || isWeatherLoading) && (
-            <View style={styles.weatherLoadingRow}>
-              <ActivityIndicator size="small" color={Colors.primaryLight} />
-              <Text style={styles.weatherLoadingText}>Updating weather...</Text>
-            </View>
-          )}
+            {(isLoadingLocation || isWeatherLoading) && (
+              <View style={styles.weatherLoadingRow}>
+                <ActivityIndicator size="small" color={Colors.primaryLight} />
+                <Text style={styles.weatherLoadingText}>Updating weather...</Text>
+              </View>
+            )}
 
-          {!isLoadingLocation && !isWeatherLoading && forecast.length > 0 && (
-            <View style={styles.forecastContainer}>
-              {forecast.map((day, index) => (
-                <View key={index} style={styles.forecastDay}>
-                  <Text style={styles.forecastDayName}>{day.date}</Text>
-                  <Text style={styles.forecastIcon}>{day.icon}</Text>
-                  <View style={styles.forecastTempContainer}>
-                    <Text style={styles.forecastTempDay}>{convertTemp(day.tempMax)}°</Text>
-                    <Text style={styles.forecastTempNight}>{convertTemp(day.tempMin)}°</Text>
+            {!isLoadingLocation && !isWeatherLoading && forecast.length > 0 && (
+              <View style={styles.forecastContainer}>
+                {forecast.map((day, index) => (
+                  <View key={index} style={styles.forecastDay}>
+                    <Text style={styles.forecastDayName}>{day.date}</Text>
+                    <Text style={styles.forecastIcon}>{day.icon}</Text>
+                    <View style={styles.forecastTempContainer}>
+                      <Text style={styles.forecastTempDay}>{convertTemp(day.tempMax)}°</Text>
+                      <Text style={styles.forecastTempNight}>{convertTemp(day.tempMin)}°</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </View>
-          )}
+                ))}
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={styles.statsGrid}>
@@ -601,7 +610,7 @@ interface StatCardProps {
 
 function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onSubtitlePress, onThirdLinePress, showPlusIcon, onPlusPress, compact = false }: StatCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const shouldShowShadow = title !== "Places";
+  const shouldShowShadow = title === "My Truck" || title === "Trailer";
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -619,8 +628,6 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onS
     }).start();
   };
 
-  const cardStyle = styles.statCardGlass;
-
   return (
     <TouchableOpacity
       style={styles.statCard}
@@ -630,7 +637,13 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onS
       activeOpacity={1}
       testID={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <Animated.View style={[cardStyle, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View
+        style={[
+          styles.statCardGlass,
+          shouldShowShadow && styles.statCardShadow,
+          { transform: [{ scale: scaleAnim }] },
+        ]}
+      >
         <View style={[styles.iconContainer, { backgroundColor: `${color}20` }]}>
           {icon}
         </View>
@@ -716,7 +729,8 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     borderRadius: 16,
-    overflow: "hidden",
+    overflow: "visible",
+    position: "relative",
     height: "100%",
   },
   statCardGlass: {
@@ -726,18 +740,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.1)",
     borderRadius: 16,
     height: "100%",
+  },
+  statCardShadow: {
     ...Platform.select({
       ios: {
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
+        shadowColor: "rgba(15, 23, 42, 0.55)",
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.32,
+        shadowRadius: 20,
       },
       android: {
-        elevation: 8,
+        elevation: 14,
       },
       web: {
-        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
+        boxShadow: "0 18px 32px rgba(15, 23, 42, 0.28)",
       },
     }),
   },
@@ -944,6 +960,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 16,
+    overflow: "hidden",
+    position: "relative",
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -952,6 +970,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0, 0, 0, 0.1)",
     ...Platform.select({ web: { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" } }),
+  },
+  weatherContent: {
+    position: "relative",
+    zIndex: 1,
   },
   weatherHeader: {
     flexDirection: "row",

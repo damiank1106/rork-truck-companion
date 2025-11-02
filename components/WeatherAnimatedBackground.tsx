@@ -3,19 +3,31 @@ import { Animated, Easing, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 type WeatherCondition = "Clear" | "Cloudy" | "Rain" | "Snow" | "Storm" | "Unknown";
+type TimeOfDay = "day" | "night";
 
 type WeatherAnimatedBackgroundProps = {
   condition?: string | null;
   borderRadius?: number;
+  timeOfDay?: TimeOfDay;
 };
 
-const gradientColors: Record<WeatherCondition, readonly [string, string, string]> = {
-  Clear: ["rgba(255, 222, 173, 0.55)", "rgba(255, 244, 214, 0.45)", "rgba(255, 255, 255, 0.3)"],
-  Cloudy: ["rgba(206, 217, 235, 0.6)", "rgba(232, 236, 244, 0.5)", "rgba(255, 255, 255, 0.35)"],
-  Rain: ["rgba(119, 167, 255, 0.55)", "rgba(71, 110, 190, 0.55)", "rgba(179, 198, 255, 0.35)"],
-  Snow: ["rgba(220, 236, 255, 0.6)", "rgba(240, 248, 255, 0.5)", "rgba(255, 255, 255, 0.4)"],
-  Storm: ["rgba(74, 84, 129, 0.65)", "rgba(34, 40, 73, 0.65)", "rgba(13, 17, 41, 0.55)"],
-  Unknown: ["rgba(210, 220, 235, 0.55)", "rgba(236, 240, 246, 0.5)", "rgba(255, 255, 255, 0.35)"],
+const gradientPalettes: Record<TimeOfDay, Record<WeatherCondition, readonly [string, string, string]>> = {
+  day: {
+    Clear: ["rgba(255, 222, 173, 0.55)", "rgba(255, 244, 214, 0.45)", "rgba(255, 255, 255, 0.3)"],
+    Cloudy: ["rgba(206, 217, 235, 0.6)", "rgba(232, 236, 244, 0.5)", "rgba(255, 255, 255, 0.35)"],
+    Rain: ["rgba(119, 167, 255, 0.55)", "rgba(71, 110, 190, 0.55)", "rgba(179, 198, 255, 0.35)"],
+    Snow: ["rgba(220, 236, 255, 0.6)", "rgba(240, 248, 255, 0.5)", "rgba(255, 255, 255, 0.4)"],
+    Storm: ["rgba(74, 84, 129, 0.65)", "rgba(34, 40, 73, 0.65)", "rgba(13, 17, 41, 0.55)"],
+    Unknown: ["rgba(210, 220, 235, 0.55)", "rgba(236, 240, 246, 0.5)", "rgba(255, 255, 255, 0.35)"],
+  },
+  night: {
+    Clear: ["rgba(32, 54, 121, 0.85)", "rgba(18, 24, 47, 0.88)", "rgba(63, 81, 181, 0.6)"],
+    Cloudy: ["rgba(40, 53, 88, 0.8)", "rgba(24, 31, 56, 0.82)", "rgba(81, 99, 149, 0.55)"],
+    Rain: ["rgba(44, 62, 112, 0.85)", "rgba(17, 26, 54, 0.88)", "rgba(96, 120, 171, 0.6)"],
+    Snow: ["rgba(54, 74, 128, 0.82)", "rgba(28, 40, 72, 0.86)", "rgba(116, 142, 192, 0.58)"],
+    Storm: ["rgba(24, 28, 54, 0.9)", "rgba(11, 14, 32, 0.92)", "rgba(53, 63, 108, 0.6)"],
+    Unknown: ["rgba(36, 51, 92, 0.82)", "rgba(19, 26, 49, 0.85)", "rgba(72, 91, 147, 0.58)"],
+  },
 };
 
 const DROP_COUNT = 8;
@@ -33,7 +45,7 @@ const normalizeCondition = (condition?: string | null): WeatherCondition => {
   return "Unknown";
 };
 
-export default function WeatherAnimatedBackground({ condition, borderRadius = 18 }: WeatherAnimatedBackgroundProps) {
+export default function WeatherAnimatedBackground({ condition, borderRadius = 18, timeOfDay = "day" }: WeatherAnimatedBackgroundProps) {
   const variant = normalizeCondition(condition);
 
   const shimmerAnim = useRef(new Animated.Value(0)).current;
@@ -203,7 +215,7 @@ export default function WeatherAnimatedBackground({ condition, borderRadius = 18
     return () => {
       animations.forEach((animation) => animation.stop());
     };
-  }, [variant, shimmerAnim, floatAnim, flickerAnim, dropAnims, highlightAnim, parallaxAnim, sparkleAnims]);
+  }, [variant, timeOfDay, shimmerAnim, floatAnim, flickerAnim, dropAnims, highlightAnim, parallaxAnim, sparkleAnims]);
 
   const dropMeta = useMemo(
     () =>
@@ -234,7 +246,9 @@ export default function WeatherAnimatedBackground({ condition, borderRadius = 18
     []
   );
 
-  const gradient = gradientColors[variant];
+  const gradient = useMemo(() => gradientPalettes[timeOfDay][variant], [timeOfDay, variant]);
+
+  const sparkleStyle = timeOfDay === "night" ? styles.starSparkle : styles.sparkle;
 
   return (
     <View
@@ -254,6 +268,7 @@ export default function WeatherAnimatedBackground({ condition, borderRadius = 18
           styles.highlightOverlay,
           { borderRadius },
           {
+            backgroundColor: timeOfDay === "night" ? "rgba(12, 18, 35, 0.28)" : "rgba(255, 255, 255, 0.12)",
             opacity: highlightAnim.interpolate({
               inputRange: [0, 1],
               outputRange: [0.05, 0.16],
@@ -280,7 +295,7 @@ export default function WeatherAnimatedBackground({ condition, borderRadius = 18
         <Animated.View
           key={`sparkle-${index}`}
           style={[
-            styles.sparkle,
+            sparkleStyle,
             {
               top: `${sparkle.top}%`,
               left: `${sparkle.left}%`,
@@ -301,7 +316,7 @@ export default function WeatherAnimatedBackground({ condition, borderRadius = 18
         />
       ))}
 
-      {variant === "Clear" && (
+      {timeOfDay === "day" && variant === "Clear" && (
         <>
           <Animated.View
             style={[
@@ -338,6 +353,91 @@ export default function WeatherAnimatedBackground({ condition, borderRadius = 18
                     translateY: floatAnim.interpolate({
                       inputRange: [0, 1],
                       outputRange: [0, 12],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+        </>
+      )}
+
+      {timeOfDay === "night" && (
+        <>
+          <Animated.View
+            style={[
+              styles.nightGlow,
+              {
+                borderRadius,
+                opacity: shimmerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.12, 0.24],
+                }),
+                transform: [
+                  {
+                    translateY: floatAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-12, 12],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.moonAura,
+              {
+                transform: [
+                  {
+                    scale: shimmerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1.1],
+                    }),
+                  },
+                  {
+                    translateY: floatAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 8],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.moonCore,
+              {
+                opacity: shimmerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.75, 0.95],
+                }),
+                transform: [
+                  {
+                    translateY: floatAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 6],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.stardust,
+              {
+                borderRadius,
+                opacity: shimmerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.05, 0.12],
+                }),
+                transform: [
+                  {
+                    translateX: parallaxAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-10, 10],
                     }),
                   },
                 ],
@@ -585,6 +685,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 0 },
+    zIndex: 3,
+  },
+  starSparkle: {
+    position: "absolute",
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    shadowColor: "#8097ff",
+    shadowOpacity: 0.6,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 0 },
+    zIndex: 3,
   },
   sunCore: {
     position: "absolute",
@@ -603,6 +716,36 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.24)",
     top: -120,
     right: -120,
+  },
+  nightGlow: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(15, 19, 40, 0.45)",
+    zIndex: 0,
+  },
+  moonAura: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(120, 148, 255, 0.22)",
+    top: -60,
+    right: -70,
+    zIndex: 1,
+  },
+  moonCore: {
+    position: "absolute",
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "rgba(214, 225, 255, 0.85)",
+    top: -30,
+    right: -40,
+    zIndex: 2,
+  },
+  stardust: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(128, 149, 255, 0.12)",
+    zIndex: 1,
   },
   cloudLarge: {
     position: "absolute",
