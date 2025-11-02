@@ -93,26 +93,18 @@ function AppContent() {
   const { isLoading: truckLoading } = useTruck();
   const { isLoading: placesLoading } = usePlaces();
   const { isLoading: contactsLoading } = useEmergencyContacts();
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [splashHidden, setSplashHidden] = useState(false);
 
   useEffect(() => {
-    if (!truckLoading && !placesLoading && !contactsLoading && isInitialLoad) {
-      setIsInitialLoad(false);
+    if (!truckLoading && !placesLoading && !contactsLoading && !splashHidden) {
+      setSplashHidden(true);
       if (Platform.OS !== 'web') {
         setTimeout(() => {
           SplashScreen.hideAsync();
         }, 100);
       }
     }
-  }, [truckLoading, placesLoading, contactsLoading, isInitialLoad]);
-
-  if (isInitialLoad && (truckLoading || placesLoading || contactsLoading)) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.white }}>
-        <ActivityIndicator size="large" color={Colors.primaryLight} />
-      </View>
-    );
-  }
+  }, [truckLoading, placesLoading, contactsLoading, splashHidden]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
