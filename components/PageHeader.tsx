@@ -104,7 +104,7 @@ export default function PageHeader({
     () =>
       menuAnimation.interpolate({
         inputRange: [0, 1],
-        outputRange: [-12, 0],
+        outputRange: [-8, 0],
       }),
     [menuAnimation]
   );
@@ -229,21 +229,30 @@ export default function PageHeader({
       </View>
 
       {isMenuMounted ? (
-        <Animated.View
-          pointerEvents={isMenuVisible ? "auto" : "none"}
-          style={[styles.menuOverlay, { opacity: menuAnimation }]}
+        <View
+          pointerEvents={isMenuVisible ? "box-none" : "none"}
+          style={styles.menuLayer}
         >
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.menuDimmer,
+              { opacity: menuAnimation, top: headerHeight },
+            ]}
+          />
           <Pressable
-            style={styles.menuBackdrop}
+            style={[styles.menuBackdrop, { top: headerHeight }]}
             onPress={() => closeMenu()}
             accessibilityRole="button"
             accessibilityLabel="Close menu"
           />
           <Animated.View
+            pointerEvents="auto"
             style={[
               styles.menuDropdown,
               {
-                top: headerHeight - 12,
+                top: headerHeight + 8,
+                opacity: menuAnimation,
                 transform: [{ translateY: dropdownTranslateY }, { scale: dropdownScale }],
               },
             ]}
@@ -278,7 +287,7 @@ export default function PageHeader({
               );
             })}
           </Animated.View>
-        </Animated.View>
+        </View>
       ) : null}
     </>
   );
@@ -293,6 +302,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     position: "relative",
+    zIndex: 30,
+    elevation: 6,
   },
   headerContent: {
     flexDirection: "row",
@@ -362,7 +373,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  menuOverlay: {
+  menuLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 40,
+  },
+  menuDimmer: {
     position: "absolute",
     top: 0,
     left: 0,
@@ -371,7 +390,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(15, 23, 42, 0.25)",
   },
   menuBackdrop: {
-    flex: 1,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   menuDropdown: {
     position: "absolute",
@@ -385,6 +408,7 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
     width: 220,
+    zIndex: 2,
   },
   menuItem: {
     paddingHorizontal: 16,
