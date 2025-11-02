@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ChevronRight, Info, FileText, Shield, RefreshCw } from "lucide-react-native";
+import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
@@ -35,6 +35,7 @@ export default function SettingsScreen() {
   const [photosSize, setPhotosSize] = useState<string>("0 KB");
   const [showAbout, setShowAbout] = useState<boolean>(false);
   const [showPolicy, setShowPolicy] = useState<boolean>(false);
+  const [showLegal, setShowLegal] = useState<boolean>(false);
 
   const calculateStorageSize = async () => {
     try {
@@ -205,6 +206,18 @@ export default function SettingsScreen() {
               </View>
               <ChevronRight color={Colors.textLight} size={20} />
             </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity style={styles.menuItem} onPress={() => setShowLegal(true)}>
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: `${Colors.primaryLight}15` }]}>
+                  <Scale color={Colors.primaryLight} size={20} />
+                </View>
+                <Text style={styles.menuItemText}>Legal</Text>
+              </View>
+              <ChevronRight color={Colors.textLight} size={20} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -235,6 +248,7 @@ export default function SettingsScreen() {
 
       <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} storageSize={storageSize} />
       <PolicyModal visible={showPolicy} onClose={() => setShowPolicy(false)} />
+      <LegalModal visible={showLegal} onClose={() => setShowLegal(false)} />
     </View>
   );
 }
@@ -542,6 +556,95 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
 
             <Text style={styles.modalFooter}>
               Last updated: October 31, 2025
+            </Text>
+          </ScrollView>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
+}
+
+interface LegalModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+function LegalModal({ visible, onClose }: LegalModalProps) {
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
+
+  const handleClose = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      onClose();
+    });
+  };
+
+  return (
+    <Modal visible={visible} animationType="none" transparent>
+      <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
+        <Animated.View 
+          style={[
+            styles.modalContent,
+            { opacity: fadeAnim }
+          ]}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Legal</Text>
+            <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.closeButton}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView 
+            style={styles.modalScroll} 
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.modalSectionTitle}>Donations & Tips Policy</Text>
+            
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Nature of tips:</Text> Tips are voluntary and do not provide access to additional features, content, or services in this app.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Payment processor:</Text> Tips are handled by PayPal. We do not collect or store card details. See PayPal&apos;s policies for how they process data.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Fees:</Text> Payment-processor fees may apply; we do not add surcharges.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Refunds:</Text> If you tipped by mistake, email tdcompanionsupport@icloud.com with your PayPal receipt and we&apos;ll assist.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Tax:</Text> Tips to us are not charitable donations and are generally not tax-deductible.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Data we receive from PayPal:</Text> We may receive payer name, email, and amount. We use this only for receipts/support and do not sell this data.
+            </Text>
+
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBoldText}>Contact:</Text> tdcompanionsupport@icloud.com
+            </Text>
+
+            <Text style={styles.modalFooter}>
+              Last updated: November 2, 2025
             </Text>
           </ScrollView>
         </Animated.View>

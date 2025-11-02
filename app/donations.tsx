@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
@@ -31,12 +31,30 @@ export default function DonationsScreen() {
       />
 
       <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 32) }]}>
-        <View style={styles.placeholderCard}>
-          <Text style={styles.placeholderTitle}>Thank you for your support!</Text>
-          <Text style={styles.placeholderSubtitle}>
-            We’re preparing a donations portal so you can help keep Trucker Companion running for everyone on the road.
+        <View style={styles.infoCard}>
+          <Text style={styles.infoText}>
+            Thanks for keeping the wheels turning.{"\n"}
+            This app is free—tips are 100% optional{"\n"}
+            and don&apos;t unlock any features.{"\n"}
+            Your support helps pay for servers,{"\n"}
+            data, and new features.{"\n"}{"\n"}
+            Payments are processed by PayPal{"\n"}
+            on their side.{"\n"}{"\n"}
+            Questions or refunds:{"\n"}
+            tdcompanionsupport@icloud.com
           </Text>
         </View>
+
+        <TouchableOpacity
+          style={styles.donateButton}
+          onPress={() => {
+            Linking.openURL("https://www.paypal.com/donate?hosted_button_id=8YCU6SXJ59BW4");
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Donate with PayPal"
+        >
+          <Text style={styles.donateButtonText}>Donate with PayPal</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -65,27 +83,38 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
   },
-  placeholderCard: {
+  infoCard: {
     backgroundColor: Colors.cardBackground,
     borderRadius: 20,
     padding: 24,
+    marginBottom: 24,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.12,
     shadowRadius: 18,
     elevation: 6,
   },
-  placeholderTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  placeholderSubtitle: {
+  infoText: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: Colors.text,
     textAlign: "center",
     lineHeight: 22,
+  },
+  donateButton: {
+    backgroundColor: "#0070BA",
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    alignItems: "center",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  donateButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.white,
   },
 });
