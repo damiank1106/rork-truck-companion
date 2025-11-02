@@ -549,10 +549,10 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {isMenuMounted && (
+      {menuVisible && (
         <Animated.View
           style={[styles.menuOverlay, { opacity: menuAnimation }]}
-          pointerEvents={menuVisible ? "auto" : "none"}
+          pointerEvents="auto"
         >
           <Pressable
             style={styles.menuBackdrop}
