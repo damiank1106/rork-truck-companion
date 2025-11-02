@@ -42,7 +42,6 @@ const MENU_ITEMS = [
   { label: "Home", path: "/(tabs)/home", icon: HomeIcon },
   { label: "My Truck", path: "/(tabs)/truck", icon: Truck },
   { label: "Places", path: "/(tabs)/places", icon: MapPin },
-  { label: "Gallery", path: "/(tabs)/gallery", icon: ImageIcon },
   { label: "Daily News", path: "/daily-news", icon: Newspaper },
   { label: "Safety Information", path: "/safety-information", icon: Shield },
   { label: "Settings", path: "/(tabs)/settings", icon: SettingsIcon },
