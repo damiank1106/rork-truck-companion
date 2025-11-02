@@ -1,9 +1,11 @@
 import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, Menu, X, Newspaper, Shield, HeartHandshake } from "lucide-react-native";
-import React, { useState, useEffect, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing, useWindowDimensions, Modal, TextInput as RNTextInput } from "react-native";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, Pressable, Easing, useWindowDimensions, Modal, TextInput as RNTextInput, InteractionManager } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
+import { PermissionStatus } from "expo-modules-core";
 
 import Colors from "@/constants/colors";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -48,8 +50,8 @@ export default function HomeScreen() {
   const [isCelsius, setIsCelsius] = useState<boolean>(true);
   const [speed, setSpeed] = useState<number>(0);
   const [isSpeedKmh, setIsSpeedKmh] = useState<boolean>(false);
-  const [lastGeocodeTime, setLastGeocodeTime] = useState<number>(0);
-  const [cachedLocation, setCachedLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
+  const lastGeocodeTimeRef = useRef<number>(0);
+  const cachedLocationRef = useRef<{ lat: number; lon: number; name: string } | null>(null);
   const [isTrailerModalVisible, setIsTrailerModalVisible] = useState<boolean>(false);
   const [trailerNumberInput, setTrailerNumberInput] = useState<string>("");
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
@@ -59,8 +61,49 @@ export default function HomeScreen() {
   const menuAnimation = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const isSmallDevice = width < 360;
+  const locationPermissionStatusRef = useRef<PermissionStatus | null>(null);
+  const locationPermissionRequestRef = useRef<Promise<PermissionStatus> | null>(null);
+  const locationWatchRef = useRef<Location.LocationSubscription | null>(null);
+  const screenIsFocusedRef = useRef<boolean>(true);
 
   const hasTruckInfo = truckProfile.truckNumber || truckProfile.driverId;
+
+  const ensureLocationPermission = useCallback(async (): Promise<PermissionStatus> => {
+    if (Platform.OS === "web") {
+      locationPermissionStatusRef.current = PermissionStatus.GRANTED;
+      return PermissionStatus.GRANTED;
+    }
+
+    if (locationPermissionStatusRef.current === PermissionStatus.GRANTED) {
+      return PermissionStatus.GRANTED;
+    }
+
+    if (locationPermissionRequestRef.current) {
+      return locationPermissionRequestRef.current;
+    }
+
+    const permissionRequest = (async () => {
+      try {
+        const currentStatus = await Location.getForegroundPermissionsAsync();
+        locationPermissionStatusRef.current = currentStatus.status;
+
+        if (currentStatus.status === PermissionStatus.GRANTED || !currentStatus.canAskAgain) {
+          return currentStatus.status;
+        }
+      } catch (error) {
+        console.error("Error checking location permission:", error);
+      }
+
+      const response = await Location.requestForegroundPermissionsAsync();
+      locationPermissionStatusRef.current = response.status;
+      return response.status;
+    })().finally(() => {
+      locationPermissionRequestRef.current = null;
+    });
+
+    locationPermissionRequestRef.current = permissionRequest;
+    return permissionRequest;
+  }, []);
 
   const openMenu = () => {
     if (menuVisible) {
@@ -152,25 +195,39 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadLocation();
-      startSpeedTracking();
-    }, 100);
-    return () => clearTimeout(timer);
+    return () => {
+      screenIsFocusedRef.current = false;
+    };
   }, []);
 
-  const startSpeedTracking = async () => {
+  const stopSpeedTracking = useCallback(() => {
+    if (locationWatchRef.current) {
+      locationWatchRef.current.remove();
+      locationWatchRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopSpeedTracking();
+    };
+  }, [stopSpeedTracking]);
+
+  const startSpeedTracking = useCallback(async () => {
     if (Platform.OS === 'web') {
       console.log('Speed tracking not available on web');
       return;
     }
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      const status = await ensureLocationPermission();
+      if (status !== PermissionStatus.GRANTED) {
+        stopSpeedTracking();
         return;
       }
 
-      await Location.watchPositionAsync(
+      stopSpeedTracking();
+
+      locationWatchRef.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
           timeInterval: 1000,
@@ -185,115 +242,29 @@ export default function HomeScreen() {
       );
     } catch (error) {
       console.error("Error starting speed tracking:", error);
+      stopSpeedTracking();
     }
-  };
+  }, [ensureLocationPermission, stopSpeedTracking]);
 
-  const loadLocation = async (forceRefresh: boolean = false) => {
-    setIsLoadingLocation(true);
-    try {
-      if (Platform.OS === 'web') {
-        if (typeof navigator !== 'undefined' && (navigator as any).geolocation) {
-          (navigator as any).geolocation.getCurrentPosition(
-            async (pos: GeolocationPosition) => {
-              const lat = pos.coords.latitude;
-              const lon = pos.coords.longitude;
-              setLocation(`${lat.toFixed(2)}°, ${lon.toFixed(2)}°`);
-              await fetchWeather(lat, lon);
-              setIsLoadingLocation(false);
-            },
-            (err: GeolocationPositionError) => {
-              console.warn('Geolocation error on web', err);
-              setLocation('Location unavailable');
-              setIsLoadingLocation(false);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
-          );
-        } else {
-          console.log('navigator.geolocation not available on web');
-          setLocation('Location unavailable');
-          setIsLoadingLocation(false);
-        }
-        return;
-      }
+  const getWeatherCondition = useCallback((code: number): string => {
+    if (code === 0) return "Clear";
+    if (code <= 3) return "Cloudy";
+    if (code <= 67) return "Rain";
+    if (code <= 77) return "Snow";
+    if (code <= 99) return "Storm";
+    return "Unknown";
+  }, []);
 
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setLocation("Permission denied");
-        setIsLoadingLocation(false);
-        return;
-      }
+  const getWeatherIcon = useCallback((code: number): string => {
+    if (code === 0) return "\u2600\ufe0f";
+    if (code <= 3) return "\u2601\ufe0f";
+    if (code <= 67) return "\ud83c\udf27\ufe0f";
+    if (code <= 77) return "\u2744\ufe0f";
+    if (code <= 99) return "\u26c8\ufe0f";
+    return "\ud83c\udf24\ufe0f";
+  }, []);
 
-      const loc = await Location.getCurrentPositionAsync({});
-      const currentTime = Date.now();
-      const timeSinceLastGeocode = currentTime - lastGeocodeTime;
-      const GEOCODE_COOLDOWN = 60000;
-
-      if (cachedLocation && !forceRefresh) {
-        const distance = Math.sqrt(
-          Math.pow(loc.coords.latitude - cachedLocation.lat, 2) +
-          Math.pow(loc.coords.longitude - cachedLocation.lon, 2)
-        );
-        
-        if (distance < 0.01 && timeSinceLastGeocode < GEOCODE_COOLDOWN) {
-          setLocation(cachedLocation.name);
-          await fetchWeather(loc.coords.latitude, loc.coords.longitude);
-          setIsLoadingLocation(false);
-          return;
-        }
-      }
-
-      if (timeSinceLastGeocode < GEOCODE_COOLDOWN && !forceRefresh) {
-        if (cachedLocation) {
-          setLocation(cachedLocation.name);
-        }
-        await fetchWeather(loc.coords.latitude, loc.coords.longitude);
-        setIsLoadingLocation(false);
-        return;
-      }
-
-      try {
-        const addresses = await Location.reverseGeocodeAsync({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        });
-
-        if (addresses && addresses.length > 0) {
-          const address = addresses[0];
-          const locationName = address?.city || address?.region || address?.name || "Unknown Location";
-          setLocation(locationName);
-          setCachedLocation({
-            lat: loc.coords.latitude,
-            lon: loc.coords.longitude,
-            name: locationName
-          });
-          setLastGeocodeTime(currentTime);
-        } else {
-          setLocation("Unknown Location");
-        }
-      } catch (geocodeError: any) {
-        console.error("Geocoding error:", geocodeError);
-        if (geocodeError?.message?.includes("rate limit")) {
-          if (cachedLocation) {
-            setLocation(cachedLocation.name);
-          } else {
-            setLocation(`${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`);
-          }
-        } else {
-          setLocation("Location unavailable");
-        }
-      }
-
-      await fetchWeather(loc.coords.latitude, loc.coords.longitude);
-    } catch (error) {
-      console.error("Error loading location:", error);
-      setLocation("Unable to load");
-    } finally {
-      // avoid double set false on web success path
-      setIsLoadingLocation(false);
-    }
-  };
-
-  const fetchWeather = async (lat: number, lon: number) => {
+  const fetchWeather = useCallback(async (lat: number, lon: number) => {
     setIsWeatherLoading(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -335,25 +306,149 @@ export default function HomeScreen() {
       clearTimeout(timeoutId);
       setIsWeatherLoading(false);
     }
-  };
+  }, [getWeatherCondition, getWeatherIcon]);
 
-  const getWeatherCondition = (code: number): string => {
-    if (code === 0) return "Clear";
-    if (code <= 3) return "Cloudy";
-    if (code <= 67) return "Rain";
-    if (code <= 77) return "Snow";
-    if (code <= 99) return "Storm";
-    return "Unknown";
-  };
+  const loadLocation = useCallback(async (forceRefresh: boolean = false) => {
+    setIsLoadingLocation(true);
+    try {
+      if (Platform.OS === 'web') {
+        if (typeof navigator !== 'undefined' && (navigator as any).geolocation) {
+          (navigator as any).geolocation.getCurrentPosition(
+            async (pos: GeolocationPosition) => {
+              const lat = pos.coords.latitude;
+              const lon = pos.coords.longitude;
+              if (screenIsFocusedRef.current) {
+                setLocation(`${lat.toFixed(2)}°, ${lon.toFixed(2)}°`);
+              }
+              await fetchWeather(lat, lon);
+              if (screenIsFocusedRef.current) {
+                setIsLoadingLocation(false);
+              }
+            },
+            (err: GeolocationPositionError) => {
+              console.warn('Geolocation error on web', err);
+              if (screenIsFocusedRef.current) {
+                setLocation('Location unavailable');
+                setIsLoadingLocation(false);
+              }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+          );
+        } else {
+          console.log('navigator.geolocation not available on web');
+          if (screenIsFocusedRef.current) {
+            setLocation('Location unavailable');
+            setIsLoadingLocation(false);
+          }
+        }
+        return;
+      }
 
-  const getWeatherIcon = (code: number): string => {
-    if (code === 0) return "\u2600\ufe0f";
-    if (code <= 3) return "\u2601\ufe0f";
-    if (code <= 67) return "\ud83c\udf27\ufe0f";
-    if (code <= 77) return "\u2744\ufe0f";
-    if (code <= 99) return "\u26c8\ufe0f";
-    return "\ud83c\udf24\ufe0f";
-  };
+      const status = await ensureLocationPermission();
+      if (status !== PermissionStatus.GRANTED) {
+        if (screenIsFocusedRef.current) {
+          setLocation("Permission denied");
+        }
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({});
+      const currentTime = Date.now();
+      const timeSinceLastGeocode = currentTime - lastGeocodeTimeRef.current;
+      const GEOCODE_COOLDOWN = 60000;
+      const cachedLocation = cachedLocationRef.current;
+
+      if (cachedLocation && !forceRefresh) {
+        const distance = Math.sqrt(
+          Math.pow(loc.coords.latitude - cachedLocation.lat, 2) +
+          Math.pow(loc.coords.longitude - cachedLocation.lon, 2)
+        );
+
+        if (distance < 0.01 && timeSinceLastGeocode < GEOCODE_COOLDOWN) {
+          if (screenIsFocusedRef.current) {
+            setLocation(cachedLocation.name);
+          }
+          await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+          return;
+        }
+      }
+
+      if (timeSinceLastGeocode < GEOCODE_COOLDOWN && !forceRefresh) {
+        if (cachedLocation && screenIsFocusedRef.current) {
+          setLocation(cachedLocation.name);
+        }
+        await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+        return;
+      }
+
+      try {
+        const addresses = await Location.reverseGeocodeAsync({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+
+        if (addresses && addresses.length > 0) {
+          const address = addresses[0];
+          const locationName = address?.city || address?.region || address?.name || "Unknown Location";
+          if (screenIsFocusedRef.current) {
+            setLocation(locationName);
+          }
+          cachedLocationRef.current = {
+            lat: loc.coords.latitude,
+            lon: loc.coords.longitude,
+            name: locationName,
+          };
+          lastGeocodeTimeRef.current = currentTime;
+        } else if (screenIsFocusedRef.current) {
+          setLocation("Unknown Location");
+        }
+      } catch (geocodeError: any) {
+        console.error("Geocoding error:", geocodeError);
+        if (geocodeError?.message?.includes("rate limit")) {
+          if (cachedLocation && screenIsFocusedRef.current) {
+            setLocation(cachedLocation.name);
+          } else if (screenIsFocusedRef.current) {
+            setLocation(`${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`);
+          }
+        } else if (screenIsFocusedRef.current) {
+          setLocation("Location unavailable");
+        }
+      }
+
+      await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+    } catch (error) {
+      console.error("Error loading location:", error);
+      if (screenIsFocusedRef.current) {
+        setLocation("Unable to load");
+      }
+    } finally {
+      if (screenIsFocusedRef.current) {
+        setIsLoadingLocation(false);
+      }
+    }
+  }, [ensureLocationPermission, fetchWeather]);
+
+  useFocusEffect(
+    useCallback(() => {
+      screenIsFocusedRef.current = true;
+      let isActive = true;
+
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (!isActive) {
+          return;
+        }
+        loadLocation();
+        startSpeedTracking();
+      });
+
+      return () => {
+        isActive = false;
+        screenIsFocusedRef.current = false;
+        task?.cancel?.();
+        stopSpeedTracking();
+      };
+    }, [loadLocation, startSpeedTracking, stopSpeedTracking])
+  );
 
   const convertTemp = (celsius: number): number => {
     if (isCelsius) return celsius;
@@ -365,7 +460,7 @@ export default function HomeScreen() {
   };
 
   const handleLocationPress = () => {
-    const timeSinceLastGeocode = Date.now() - lastGeocodeTime;
+    const timeSinceLastGeocode = Date.now() - lastGeocodeTimeRef.current;
     const GEOCODE_COOLDOWN = 60000;
     
     if (timeSinceLastGeocode < GEOCODE_COOLDOWN) {
