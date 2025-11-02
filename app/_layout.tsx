@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { View, ActivityIndicator, Platform } from "react-native";
+import { enableFreeze } from "react-native-screens";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { DriverIDContext } from "@/contexts/DriverIDContext";
@@ -15,6 +16,10 @@ import { TrailerProvider } from "@/contexts/TrailerContext";
 import { TruckProvider } from "@/contexts/TruckContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 import Colors from "@/constants/colors";
+
+if (Platform.OS === 'ios') {
+  enableFreeze(false);
+}
 
 if (Platform.OS !== 'web') {
   SplashScreen.preventAutoHideAsync();
