@@ -332,7 +332,10 @@ export default function HomeScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + 12, 24) },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topRow}>
@@ -670,7 +673,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   statsGrid: {
     flexDirection: "row",
