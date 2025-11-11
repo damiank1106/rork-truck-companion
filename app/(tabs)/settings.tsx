@@ -151,16 +151,6 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data Storage</Text>
-          <View style={styles.card}>
-            <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Total Storage Used</Text>
-              <Text style={styles.statValue}>{storageSize}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Information</Text>
           <View style={styles.card}>
             <TouchableOpacity style={styles.menuItem} onPress={() => setShowAbout(true)}>

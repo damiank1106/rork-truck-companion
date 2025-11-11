@@ -45,7 +45,7 @@ const MENU_ITEMS = [
   { label: "My Truck", path: "/(tabs)/truck", icon: Truck },
   { label: "Places", path: "/(tabs)/places", icon: MapPin },
   { label: "Files", path: "/files", icon: FileText },
-  { label: "Daily News", path: "/daily-news", icon: Newspaper },
+  { label: "News", path: "/daily-news", icon: Newspaper },
   { label: "Safety Information", path: "/safety-information", icon: Shield },
   { label: "Settings", path: "/(tabs)/settings", icon: SettingsIcon },
   { label: "Donations", path: "/donations", icon: HeartHandshake },

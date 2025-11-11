@@ -1034,6 +1034,9 @@ const styles = StyleSheet.create({
   iconItem: {
     width: 70,
     alignItems: "center",
+    ...standardShadow,
+    borderRadius: 12,
+    backgroundColor: Colors.white,
   },
   iconThumbnail: {
     width: 70,
@@ -1041,11 +1044,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
     backgroundColor: Colors.white,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
   },
   iconPlaceholder: {
     width: 70,
@@ -1055,11 +1053,6 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.primaryLight}15`,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
   },
   iconText: {
     fontSize: 12,
