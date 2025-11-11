@@ -9,7 +9,7 @@ import {
   Alert,
   useWindowDimensions,
   Modal,
-  Animated,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -185,9 +185,16 @@ export default function FilesScreen() {
                 ]}
                 onPress={() => router.push(`/file-detail?id=${file.id}`)}
               >
-                <View style={styles.gridIconContainer}>
-                  <FileText color={Colors.primaryLight} size={32} />
-                </View>
+                {file.scanImages.length > 0 ? (
+                  <Image
+                    source={{ uri: file.scanImages[0] }}
+                    style={styles.gridThumbnail}
+                  />
+                ) : (
+                  <View style={styles.gridIconContainer}>
+                    <FileText color={Colors.primaryLight} size={32} />
+                  </View>
+                )}
                 <Text style={styles.gridFileName} numberOfLines={2}>
                   {file.fileName}
                 </Text>
@@ -212,9 +219,16 @@ export default function FilesScreen() {
                 style={styles.listItem}
                 onPress={() => router.push(`/file-detail?id=${file.id}`)}
               >
-                <View style={styles.listIconContainer}>
-                  <FileText color={Colors.primaryLight} size={24} />
-                </View>
+                {file.scanImages.length > 0 ? (
+                  <Image
+                    source={{ uri: file.scanImages[0] }}
+                    style={styles.listThumbnail}
+                  />
+                ) : (
+                  <View style={styles.listIconContainer}>
+                    <FileText color={Colors.primaryLight} size={24} />
+                  </View>
+                )}
                 <View style={styles.listContent}>
                   <Text style={styles.listFileName}>{file.fileName}</Text>
                   <View style={styles.listMeta}>
@@ -452,6 +466,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 12,
   },
+  gridThumbnail: {
+    width: "100%",
+    aspectRatio: 0.707,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
   gridFileName: {
     fontSize: 16,
     fontWeight: "600" as const,
@@ -496,6 +516,12 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.primaryLight}15`,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 12,
+  },
+  listThumbnail: {
+    width: 60,
+    height: 85,
+    borderRadius: 8,
     marginRight: 12,
   },
   listContent: {
