@@ -12,6 +12,7 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -423,39 +424,50 @@ export default function FileDetailScreen() {
         transparent
         onRequestClose={() => setShowEditModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit File</Text>
-              <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                <X color={Colors.text} size={24} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.editSection}>
-              <Text style={styles.editLabel}>File Name</Text>
-              <TextInput
-                style={styles.editInput}
-                placeholder="Enter file name..."
-                placeholderTextColor={Colors.textLight}
-                value={editFileName}
-                onChangeText={setEditFileName}
-              />
-            </View>
-            <View style={styles.editSection}>
-              <Text style={styles.editLabel}>Trip Number (Optional)</Text>
-              <TextInput
-                style={styles.editInput}
-                placeholder="Enter trip number..."
-                placeholderTextColor={Colors.textLight}
-                value={editTripNumber}
-                onChangeText={setEditTripNumber}
-              />
-            </View>
-            <TouchableOpacity style={styles.editSaveButton} onPress={handleEditFile}>
-              <Text style={styles.editSaveButtonText}>Save Changes</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.modalOverlay}
+            onPress={() => setShowEditModal(false)}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Edit File</Text>
+                  <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                    <X color={Colors.text} size={24} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.editSection}>
+                  <Text style={styles.editLabel}>File Name</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    placeholder="Enter file name..."
+                    placeholderTextColor={Colors.textLight}
+                    value={editFileName}
+                    onChangeText={setEditFileName}
+                  />
+                </View>
+                <View style={styles.editSection}>
+                  <Text style={styles.editLabel}>Trip Number (Optional)</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    placeholder="Enter trip number..."
+                    placeholderTextColor={Colors.textLight}
+                    value={editTripNumber}
+                    onChangeText={setEditTripNumber}
+                  />
+                </View>
+                <TouchableOpacity style={styles.editSaveButton} onPress={handleEditFile}>
+                  <Text style={styles.editSaveButtonText}>Save Changes</Text>
+                </TouchableOpacity>
+              </View>
             </TouchableOpacity>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
