@@ -10,6 +10,8 @@ import {
   useWindowDimensions,
   Share,
   Platform,
+  ActivityIndicator,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -20,7 +22,17 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  Plus,
+  Camera,
+  Upload,
+  FileText,
+  X,
 } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
+import * as MailComposer from "expo-mail-composer";
 
 import PageHeader from "@/components/PageHeader";
 import Colors from "@/constants/colors";
@@ -32,9 +44,11 @@ export default function FileDetailScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { files, deleteFile } = useFiles();
+  const { files, deleteFile, updateFile } = useFiles();
 
   const [currentPage, setCurrentPage] = useState<number>(0);
+  const [showAddPhotoModal, setShowAddPhotoModal] = useState<boolean>(false);
+  const [isConverting, setIsConverting] = useState<boolean>(false);
 
   const isSmallScreen = width < 360;
 
@@ -128,6 +142,152 @@ export default function FileDetailScreen() {
     }
   };
 
+  const handleAddFromCamera = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 1,
+        allowsEditing: false,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const newImages = result.assets.map((asset) => asset.uri);
+        await updateFile(file.id, {
+          scanImages: [...file.scanImages, ...newImages],
+        });
+        setShowAddPhotoModal(false);
+        Alert.alert("Success", "Photos added successfully!");
+      }
+    } catch (error) {
+      console.error("Error adding from camera:", error);
+      Alert.alert("Error", "Failed to add photos from camera.");
+    }
+  };
+
+  const handleAddFromDevice = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: true,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const newImages = result.assets.map((asset) => asset.uri);
+        await updateFile(file.id, {
+          scanImages: [...file.scanImages, ...newImages],
+        });
+        setShowAddPhotoModal(false);
+        Alert.alert("Success", "Photos added successfully!");
+      }
+    } catch (error) {
+      console.error("Error adding from device:", error);
+      Alert.alert("Error", "Failed to add photos from device.");
+    }
+  };
+
+  const handleDeletePage = (index: number) => {
+    Alert.alert(
+      "Delete Page",
+      `Are you sure you want to delete page ${index + 1}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const newImages = file.scanImages.filter((_, i) => i !== index);
+            if (newImages.length === 0) {
+              Alert.alert(
+                "Cannot Delete",
+                "You must keep at least one page in the file."
+              );
+              return;
+            }
+            await updateFile(file.id, { scanImages: newImages });
+            if (currentPage >= newImages.length) {
+              setCurrentPage(newImages.length - 1);
+            }
+            Alert.alert("Success", "Page deleted successfully!");
+          },
+        },
+      ]
+    );
+  };
+
+  const handleConvertToPDF = async () => {
+    if (file.scanImages.length === 0) {
+      Alert.alert("No Content", "This file has no pages to convert.");
+      return;
+    }
+
+    try {
+      setIsConverting(true);
+
+      const htmlContent = `
+        <html>
+          <head>
+            <style>
+              body { margin: 0; padding: 0; }
+              img { width: 100%; height: auto; page-break-after: always; }
+            </style>
+          </head>
+          <body>
+            ${file.scanImages.map((uri) => `<img src="${uri}" />`).join("")}
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html: htmlContent });
+
+      if (Platform.OS === "web") {
+        Alert.alert("PDF Created", "PDF has been downloaded to your device.");
+      } else {
+        Alert.alert(
+          "PDF Created",
+          "What would you like to do with the PDF?",
+          [
+            {
+              text: "Save to Device",
+              onPress: async () => {
+                const canShare = await Sharing.isAvailableAsync();
+                if (canShare) {
+                  await Sharing.shareAsync(uri, {
+                    mimeType: "application/pdf",
+                    dialogTitle: "Save PDF",
+                    UTI: "com.adobe.pdf",
+                  });
+                } else {
+                  Alert.alert("Not Available", "Sharing is not available on this device.");
+                }
+              },
+            },
+            {
+              text: "Send by Email",
+              onPress: async () => {
+                const isAvailable = await MailComposer.isAvailableAsync();
+                if (isAvailable) {
+                  await MailComposer.composeAsync({
+                    subject: `${file.fileName}.pdf`,
+                    body: "Please find the attached PDF document.",
+                    attachments: [uri],
+                  });
+                } else {
+                  Alert.alert("Not Available", "Email is not configured on this device.");
+                }
+              },
+            },
+            { text: "Cancel", style: "cancel" },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error("Error converting to PDF:", error);
+      Alert.alert("Error", "Failed to convert to PDF. Please try again.");
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <PageHeader
@@ -141,6 +301,23 @@ export default function FileDetailScreen() {
         }
         rightAccessory={
           <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={() => setShowAddPhotoModal(true)}
+            >
+              <Plus color={Colors.primaryLight} size={20} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.headerIconButton, styles.convertButton]}
+              onPress={handleConvertToPDF}
+              disabled={isConverting}
+            >
+              {isConverting ? (
+                <ActivityIndicator size="small" color={Colors.white} />
+              ) : (
+                <FileText color={Colors.white} size={20} />
+              )}
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerIconButton}
               onPress={handleShareFile}
@@ -236,23 +413,59 @@ export default function FileDetailScreen() {
                 contentContainerStyle={styles.thumbnails}
               >
                 {file.scanImages.map((uri, index) => (
-                  <TouchableOpacity
+                  <View
                     key={index}
                     style={[
                       styles.thumbnail,
                       currentPage === index && styles.thumbnailActive,
                     ]}
-                    onPress={() => setCurrentPage(index)}
                   >
-                    <Image source={{ uri }} style={styles.thumbnailImage} />
-                    <Text style={styles.thumbnailLabel}>Page {index + 1}</Text>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.thumbnailTouchable}
+                      onPress={() => setCurrentPage(index)}
+                    >
+                      <Image source={{ uri }} style={styles.thumbnailImage} />
+                      <Text style={styles.thumbnailLabel}>Page {index + 1}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.thumbnailDeleteButton}
+                      onPress={() => handleDeletePage(index)}
+                    >
+                      <Trash2 color={Colors.white} size={12} />
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </ScrollView>
             </View>
           </>
         )}
       </ScrollView>
+
+      <Modal
+        visible={showAddPhotoModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAddPhotoModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Photos</Text>
+              <TouchableOpacity onPress={() => setShowAddPhotoModal(false)}>
+                <X color={Colors.text} size={24} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.modalButton} onPress={handleAddFromCamera}>
+              <Camera color={Colors.primaryLight} size={24} />
+              <Text style={styles.modalButtonText}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={handleAddFromDevice}>
+              <Upload color={Colors.secondary} size={24} />
+              <Text style={styles.modalButtonText}>Choose from Device</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -277,6 +490,9 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: `${Colors.error}15`,
+  },
+  convertButton: {
+    backgroundColor: Colors.primaryLight,
   },
   scrollView: {
     flex: 1,
@@ -395,6 +611,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "transparent",
     overflow: "hidden",
+    position: "relative",
+  },
+  thumbnailTouchable: {
+    width: "100%",
   },
   thumbnailActive: {
     borderColor: Colors.primaryLight,
@@ -410,5 +630,54 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textAlign: "center",
     paddingVertical: 8,
+  },
+  thumbnailDeleteButton: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.error,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "700" as const,
+    color: Colors.text,
+  },
+  modalButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    gap: 16,
+  },
+  modalButtonText: {
+    fontSize: 18,
+    fontWeight: "600" as const,
+    color: Colors.text,
   },
 });

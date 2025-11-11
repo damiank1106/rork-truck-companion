@@ -30,7 +30,7 @@ import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
 
-type SortOption = "date-newest" | "date-oldest" | "name-az" | "name-za";
+type SortOption = "name-az" | "name-za" | "day" | "month" | "year";
 type DisplayMode = "grid" | "list";
 
 export default function FilesScreen() {
@@ -40,7 +40,7 @@ export default function FilesScreen() {
   const { files, deleteFile } = useFiles();
 
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortBy, setSortBy] = useState<SortOption>("date-newest");
+  const [sortBy, setSortBy] = useState<SortOption>("name-az");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("list");
   const [showSortModal, setShowSortModal] = useState<boolean>(false);
   const [showDisplayModal, setShowDisplayModal] = useState<boolean>(false);
@@ -55,22 +55,34 @@ export default function FilesScreen() {
       const query = searchQuery.toLowerCase();
       result = result.filter((file) => {
         const fileName = file.fileName.toLowerCase();
+        const tripNumber = file.tripNumber?.toLowerCase() || "";
         const date = new Date(file.createdAt);
         const dateStr = date.toLocaleDateString().toLowerCase();
-        return fileName.includes(query) || dateStr.includes(query);
+        return fileName.includes(query) || tripNumber.includes(query) || dateStr.includes(query);
       });
     }
 
     result.sort((a, b) => {
       switch (sortBy) {
-        case "date-newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "date-oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         case "name-az":
           return a.fileName.localeCompare(b.fileName);
         case "name-za":
           return b.fileName.localeCompare(a.fileName);
+        case "day": {
+          const dateA = new Date(a.createdAt);
+          const dateB = new Date(b.createdAt);
+          return dateB.getDate() - dateA.getDate();
+        }
+        case "month": {
+          const dateA = new Date(a.createdAt);
+          const dateB = new Date(b.createdAt);
+          return dateB.getMonth() - dateA.getMonth();
+        }
+        case "year": {
+          const dateA = new Date(a.createdAt);
+          const dateB = new Date(b.createdAt);
+          return dateB.getFullYear() - dateA.getFullYear();
+        }
         default:
           return 0;
       }
@@ -140,7 +152,7 @@ export default function FilesScreen() {
           <Search color={Colors.textLight} size={20} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name or date..."
+            placeholder="Search by name, trip number, or date..."
             placeholderTextColor={Colors.textLight}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -286,10 +298,11 @@ interface SortModalProps {
 
 function SortModal({ visible, currentSort, onClose, onSelect }: SortModalProps) {
   const sortOptions: { label: string; value: SortOption }[] = [
-    { label: "Date (Newest First)", value: "date-newest" },
-    { label: "Date (Oldest First)", value: "date-oldest" },
     { label: "Name (A-Z)", value: "name-az" },
     { label: "Name (Z-A)", value: "name-za" },
+    { label: "Day", value: "day" },
+    { label: "Month", value: "month" },
+    { label: "Year", value: "year" },
   ];
 
   return (

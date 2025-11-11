@@ -69,7 +69,7 @@ export default function PageHeader({
   const menuAnimation = useRef(new Animated.Value(0)).current;
   
   const isSmallScreen = width < 360;
-  const adjustedTopInset = topInset + (isSmallScreen ? 8 : 0);
+  const adjustedTopInset = topInset;
 
   const menuIconOpacity = useMemo(
     () =>
@@ -333,6 +333,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: Colors.text,
+    lineHeight: 28,
   },
   headerSubtitle: {
     fontSize: 14,

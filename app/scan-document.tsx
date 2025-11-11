@@ -40,6 +40,7 @@ export default function ScanDocumentScreen() {
   const { addFile } = useFiles();
 
   const [fileName, setFileName] = useState<string>("");
+  const [tripNumber, setTripNumber] = useState<string>("");
   const [scannedImages, setScannedImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState<boolean>(false);
   const [showScanAnimation, setShowScanAnimation] = useState<boolean>(false);
@@ -128,11 +129,6 @@ export default function ScanDocumentScreen() {
   };
 
   const handleSaveAsPDF = async () => {
-    if (!fileName.trim()) {
-      Alert.alert("File Name Required", "Please enter a file name for your document.");
-      return;
-    }
-
     if (scannedImages.length === 0) {
       Alert.alert("No Images", "Please scan or upload at least one image.");
       return;
@@ -142,7 +138,8 @@ export default function ScanDocumentScreen() {
       setIsSaving(true);
 
       await addFile({
-        fileName: fileName.trim(),
+        fileName: fileName.trim() || `Document_${Date.now()}`,
+        tripNumber: tripNumber.trim() || undefined,
         scanImages: scannedImages,
       });
 
@@ -271,13 +268,24 @@ export default function ScanDocumentScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>File Name</Text>
+          <Text style={styles.sectionLabel}>File Name (Optional)</Text>
           <TextInput
             style={styles.input}
             placeholder="Enter document name..."
             placeholderTextColor={Colors.textLight}
             value={fileName}
             onChangeText={setFileName}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Trip Number (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter trip number..."
+            placeholderTextColor={Colors.textLight}
+            value={tripNumber}
+            onChangeText={setTripNumber}
           />
         </View>
 
