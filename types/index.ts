@@ -130,6 +130,7 @@ export interface FileDocument {
   id: string;
   fileName: string;
   tripNumber?: string;
+  displayField?: 'fileName' | 'tripNumber';
   scanImages: string[];
   pdfUri?: string;
   createdAt: string;

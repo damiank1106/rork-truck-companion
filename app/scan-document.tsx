@@ -41,6 +41,7 @@ export default function ScanDocumentScreen() {
 
   const [fileName, setFileName] = useState<string>("");
   const [tripNumber, setTripNumber] = useState<string>("");
+  const [displayField, setDisplayField] = useState<'fileName' | 'tripNumber'>('fileName');
   const [scannedImages, setScannedImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState<boolean>(false);
   const [showScanAnimation, setShowScanAnimation] = useState<boolean>(false);
@@ -140,6 +141,7 @@ export default function ScanDocumentScreen() {
       await addFile({
         fileName: fileName.trim() || `Document_${Date.now()}`,
         tripNumber: tripNumber.trim() || undefined,
+        displayField,
         scanImages: scannedImages,
       });
 
@@ -254,7 +256,17 @@ export default function ScanDocumentScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>File Name (Optional)</Text>
+          <View style={styles.fieldHeader}>
+            <Text style={styles.sectionLabel}>File Name (Optional)</Text>
+            <TouchableOpacity
+              style={styles.checkbox}
+              onPress={() => setDisplayField('fileName')}
+            >
+              {displayField === 'fileName' && (
+                <View style={styles.checkboxChecked} />
+              )}
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={styles.input}
             placeholder="Enter document name..."
@@ -265,7 +277,17 @@ export default function ScanDocumentScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Trip Number (Optional)</Text>
+          <View style={styles.fieldHeader}>
+            <Text style={styles.sectionLabel}>Trip Number (Optional)</Text>
+            <TouchableOpacity
+              style={styles.checkbox}
+              onPress={() => setDisplayField('tripNumber')}
+            >
+              {displayField === 'tripNumber' && (
+                <View style={styles.checkboxChecked} />
+              )}
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={styles.input}
             placeholder="Enter trip number..."
@@ -351,6 +373,28 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+  },
+  fieldHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    marginBottom: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.primaryLight,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: Colors.white,
+  },
+  checkboxChecked: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    backgroundColor: Colors.primaryLight,
   },
   sectionLabel: {
     fontSize: 16,

@@ -31,7 +31,7 @@ import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
 
 type SortOption = "day" | "month" | "year";
-type DisplayMode = "grid" | "list";
+type DisplayMode = "grid" | "list" | "icon";
 
 export default function FilesScreen() {
   const insets = useSafeAreaInsets();
@@ -134,8 +134,10 @@ export default function FilesScreen() {
             >
               {displayMode === "grid" ? (
                 <Grid3x3 color={Colors.primaryLight} size={20} />
-              ) : (
+              ) : displayMode === "list" ? (
                 <List color={Colors.primaryLight} size={20} />
+              ) : (
+                <FileText color={Colors.primaryLight} size={20} />
               )}
             </TouchableOpacity>
             <TouchableOpacity
@@ -185,6 +187,35 @@ export default function FilesScreen() {
                 ? "Try a different search term"
                 : "Tap + to scan your first document"}
             </Text>
+          </View>
+        ) : displayMode === "icon" ? (
+          <View style={styles.iconContainer}>
+            {filteredAndSortedFiles.map((file) => {
+              const displayText = file.displayField === 'tripNumber' && file.tripNumber 
+                ? file.tripNumber 
+                : file.fileName;
+              return (
+                <TouchableOpacity
+                  key={file.id}
+                  style={styles.iconItem}
+                  onPress={() => router.push(`/file-detail?id=${file.id}`)}
+                >
+                  {file.scanImages.length > 0 ? (
+                    <Image
+                      source={{ uri: file.scanImages[0] }}
+                      style={styles.iconThumbnail}
+                    />
+                  ) : (
+                    <View style={styles.iconPlaceholder}>
+                      <FileText color={Colors.primaryLight} size={28} />
+                    </View>
+                  )}
+                  <Text style={styles.iconText} numberOfLines={2}>
+                    {displayText}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ) : displayMode === "grid" ? (
           <View style={styles.gridContainer}>
@@ -348,6 +379,7 @@ function DisplayModal({ visible, currentMode, onClose, onSelect }: DisplayModalP
   const displayOptions: { label: string; value: DisplayMode; icon: React.ReactNode }[] = [
     { label: "List View", value: "list", icon: <List color={Colors.primaryLight} size={20} /> },
     { label: "Grid View", value: "grid", icon: <Grid3x3 color={Colors.primaryLight} size={20} /> },
+    { label: "Icon View", value: "icon", icon: <FileText color={Colors.primaryLight} size={20} /> },
   ];
 
   return (
@@ -566,6 +598,40 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.error}15`,
     alignItems: "center",
     justifyContent: "center",
+  },
+  iconContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 20,
+    justifyContent: "flex-start",
+  },
+  iconItem: {
+    width: 80,
+    alignItems: "center",
+  },
+  iconThumbnail: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: Colors.white,
+    ...standardShadow,
+  },
+  iconPlaceholder: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: `${Colors.primaryLight}15`,
+    alignItems: "center",
+    justifyContent: "center",
+    ...standardShadow,
+  },
+  iconText: {
+    fontSize: 12,
+    color: Colors.text,
+    textAlign: "center",
+    lineHeight: 16,
   },
   modalOverlay: {
     flex: 1,
