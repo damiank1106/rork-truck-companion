@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
-  ArrowDownUp,
   Grid3x3,
   Plus,
   Search,
@@ -30,8 +29,9 @@ import PageHeader from "@/components/PageHeader";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
+import { FileDocument } from "@/types";
 
-type SortOption = "day" | "month" | "year";
+type SortOption = "all" | "day" | "month" | "year";
 type DisplayMode = "grid" | "list" | "icon";
 
 export default function FilesScreen() {
@@ -41,12 +41,12 @@ export default function FilesScreen() {
   const { files, deleteFile } = useFiles();
 
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortBy, setSortBy] = useState<SortOption>("day");
+  const [sortBy, setSortBy] = useState<SortOption>("all");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("list");
-  const [showSortModal, setShowSortModal] = useState<boolean>(false);
   const [showDisplayModal, setShowDisplayModal] = useState<boolean>(false);
   const [showDateFilterModal, setShowDateFilterModal] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
 
   const isSmallScreen = width < 360;
   const isMediumScreen = width >= 360 && width < 768;
@@ -124,6 +124,50 @@ export default function FilesScreen() {
     ]);
   };
 
+  const handleBulkDelete = (period: 'day' | 'month' | 'year') => {
+    let filesToDelete: FileDocument[] = [];
+    let periodText = '';
+
+    switch (period) {
+      case 'day':
+        filesToDelete = todayFiles;
+        periodText = 'today';
+        break;
+      case 'month':
+        filesToDelete = monthFiles;
+        periodText = 'this month';
+        break;
+      case 'year':
+        filesToDelete = yearFiles;
+        periodText = 'this year';
+        break;
+    }
+
+    if (filesToDelete.length === 0) {
+      Alert.alert('No Files', `There are no files from ${periodText} to delete.`);
+      return;
+    }
+
+    Alert.alert(
+      'Confirm Delete',
+      `Are you sure you want to delete ${filesToDelete.length} file(s) from ${periodText}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          style: 'destructive',
+          onPress: async () => {
+            setShowDeleteModal(false);
+            for (const file of filesToDelete) {
+              await deleteFile(file.id);
+            }
+            Alert.alert('Success', `${filesToDelete.length} file(s) deleted successfully.`);
+          },
+        },
+      ]
+    );
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -132,6 +176,25 @@ export default function FilesScreen() {
       year: "numeric",
     });
   };
+
+  function getDisplayFiles() {
+    if (selectedDate || searchQuery) {
+      return filteredAndSortedFiles;
+    }
+
+    switch (sortBy) {
+      case 'all':
+        return filteredAndSortedFiles;
+      case 'day':
+        return todayFiles;
+      case 'month':
+        return monthFiles;
+      case 'year':
+        return yearFiles;
+      default:
+        return filteredAndSortedFiles;
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -146,6 +209,12 @@ export default function FilesScreen() {
               onPress={() => setShowDateFilterModal(true)}
             >
               <Calendar color={Colors.primaryLight} size={20} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={() => setShowDeleteModal(true)}
+            >
+              <Trash2 color={Colors.error} size={20} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerIconButton}
@@ -187,10 +256,26 @@ export default function FilesScreen() {
           styles.scrollContent,
           { paddingBottom: Math.max(insets.bottom + 12, 24) },
         ]}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
         {!selectedDate && !searchQuery && (
           <View style={styles.sectionTabs}>
+            <TouchableOpacity
+              style={[
+                styles.sectionTab,
+                sortBy === 'all' && styles.sectionTabActive,
+              ]}
+              onPress={() => setSortBy('all')}
+            >
+              <Text
+                style={[
+                  styles.sectionTabText,
+                  sortBy === 'all' && styles.sectionTabTextActive,
+                ]}
+              >
+                All ({filteredAndSortedFiles.length})
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.sectionTab,
@@ -272,25 +357,26 @@ export default function FilesScreen() {
                 ? file.tripNumber 
                 : file.fileName;
               return (
-                <TouchableOpacity
-                  key={file.id}
-                  style={styles.iconItem}
-                  onPress={() => router.push(`/file-detail?id=${file.id}`)}
-                >
-                  {file.scanImages.length > 0 ? (
-                    <Image
-                      source={{ uri: file.scanImages[0] }}
-                      style={styles.iconThumbnail}
-                    />
-                  ) : (
-                    <View style={styles.iconPlaceholder}>
-                      <FileText color={Colors.primaryLight} size={28} />
-                    </View>
-                  )}
+                <View key={file.id} style={styles.iconItemWrapper}>
+                  <TouchableOpacity
+                    style={styles.iconItem}
+                    onPress={() => router.push(`/file-detail?id=${file.id}`)}
+                  >
+                    {file.scanImages.length > 0 ? (
+                      <Image
+                        source={{ uri: file.scanImages[0] }}
+                        style={styles.iconThumbnail}
+                      />
+                    ) : (
+                      <View style={styles.iconPlaceholder}>
+                        <FileText color={Colors.primaryLight} size={28} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
                   <Text style={styles.iconText} numberOfLines={2}>
                     {displayText}
                   </Text>
-                </TouchableOpacity>
+                </View>
               );
             })}
           </View>
@@ -393,25 +479,14 @@ export default function FilesScreen() {
           setShowDateFilterModal(false);
         }}
       />
+
+      <DeleteModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={(period) => handleBulkDelete(period)}
+      />
     </View>
   );
-
-  function getDisplayFiles() {
-    if (selectedDate || searchQuery) {
-      return filteredAndSortedFiles;
-    }
-
-    switch (sortBy) {
-      case 'day':
-        return todayFiles;
-      case 'month':
-        return monthFiles;
-      case 'year':
-        return yearFiles;
-      default:
-        return filteredAndSortedFiles;
-    }
-  }
 }
 
 interface DisplayModalProps {
@@ -453,6 +528,307 @@ function DisplayModal({ visible, currentMode, onClose, onSelect }: DisplayModalP
               </Text>
             </TouchableOpacity>
           ))}
+          <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
+            <Text style={styles.modalCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+interface DateFilterModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSelectDate: (date: Date) => void;
+}
+
+function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProps) {
+  const now = new Date();
+  const [viewMode, setViewMode] = useState<'menu' | 'day' | 'month' | 'year'>('menu');
+  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
+  const [tempDate, setTempDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      const current = new Date();
+      setSelectedMonth(current.getMonth());
+      setSelectedYear(current.getFullYear());
+      setTempDate(null);
+      setViewMode('menu');
+    }
+  }, [visible]);
+
+  const handleDaySelect = (day: number) => {
+    const date = new Date(selectedYear, selectedMonth, day);
+    setTempDate(date);
+  };
+
+  const handleMonthSelect = () => {
+    const date = new Date(selectedYear, selectedMonth, 1);
+    onSelectDate(date);
+  };
+
+  const handleYearSelect = () => {
+    const date = new Date(selectedYear, 0, 1);
+    onSelectDate(date);
+  };
+
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (month: number, year: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
+    const firstDay = getFirstDayOfMonth(selectedMonth, selectedYear);
+    const days = [];
+
+    for (let i = 0; i < firstDay; i++) {
+      days.push(
+        <View key={`empty-${i}`} style={styles.dayButton}>
+          <Text style={[styles.dayText, styles.dayTextDisabled]}></Text>
+        </View>
+      );
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isSelected = tempDate?.getDate() === day && 
+                         tempDate?.getMonth() === selectedMonth &&
+                         tempDate?.getFullYear() === selectedYear;
+      days.push(
+        <TouchableOpacity
+          key={day}
+          style={[styles.dayButton, isSelected && styles.dayButtonActive]}
+          onPress={() => handleDaySelect(day)}
+        >
+          <Text style={[styles.dayText, isSelected && styles.dayTextActive]}>
+            {day}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return days;
+  };
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  return (
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.dateFilterModalContent}>
+          <Text style={styles.dateFilterTitle}>
+            {viewMode === 'menu' ? 'Find Files By Date' : 
+             viewMode === 'day' ? 'Select Day' :
+             viewMode === 'month' ? 'Select Month' : 'Select Year'}
+          </Text>
+
+          {viewMode === 'menu' && (
+            <>
+              <TouchableOpacity 
+                style={styles.dateFilterOption} 
+                onPress={() => setViewMode('day')}
+              >
+                <Text style={styles.dateFilterOptionText}>Specific Day</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.dateFilterOption} 
+                onPress={() => setViewMode('month')}
+              >
+                <Text style={styles.dateFilterOptionText}>Specific Month</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.dateFilterOption} 
+                onPress={() => setViewMode('year')}
+              >
+                <Text style={styles.dateFilterOptionText}>Specific Year</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {viewMode === 'day' && (
+            <View style={styles.calendarContainer}>
+              <View style={styles.monthYearSelector}>
+                <TouchableOpacity 
+                  style={styles.navButton}
+                  onPress={() => {
+                    if (selectedMonth === 0) {
+                      setSelectedMonth(11);
+                      setSelectedYear(selectedYear - 1);
+                    } else {
+                      setSelectedMonth(selectedMonth - 1);
+                    }
+                  }}
+                >
+                  <Text style={styles.monthYearText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.monthYearText}>
+                  {monthNames[selectedMonth]} {selectedYear}
+                </Text>
+                <TouchableOpacity 
+                  style={styles.navButton}
+                  onPress={() => {
+                    if (selectedMonth === 11) {
+                      setSelectedMonth(0);
+                      setSelectedYear(selectedYear + 1);
+                    } else {
+                      setSelectedMonth(selectedMonth + 1);
+                    }
+                  }}
+                >
+                  <Text style={styles.monthYearText}>›</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.daysGrid}>
+                {renderCalendar()}
+              </View>
+              <TouchableOpacity 
+                style={[styles.modalCancelButton, { marginTop: 16 }]} 
+                onPress={() => {
+                  if (tempDate) {
+                    onSelectDate(tempDate);
+                  }
+                }}
+                disabled={!tempDate}
+              >
+                <Text style={styles.modalCancelText}>Select Date</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalCancelButton} 
+                onPress={() => setViewMode('menu')}
+              >
+                <Text style={styles.modalCancelText}>Back</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {viewMode === 'month' && (
+            <ScrollView style={{ maxHeight: 400 }}>
+              <View style={styles.monthYearSelector}>
+                <TouchableOpacity 
+                  style={styles.navButton}
+                  onPress={() => setSelectedYear(selectedYear - 1)}
+                >
+                  <Text style={styles.monthYearText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.monthYearText}>{selectedYear}</Text>
+                <TouchableOpacity 
+                  style={styles.navButton}
+                  onPress={() => setSelectedYear(selectedYear + 1)}
+                >
+                  <Text style={styles.monthYearText}>›</Text>
+                </TouchableOpacity>
+              </View>
+              {monthNames.map((month, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.dateFilterOption}
+                  onPress={() => {
+                    setSelectedMonth(index);
+                    handleMonthSelect();
+                  }}
+                >
+                  <Text style={styles.dateFilterOptionText}>{month} {selectedYear}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity 
+                style={styles.modalCancelButton} 
+                onPress={() => setViewMode('menu')}
+              >
+                <Text style={styles.modalCancelText}>Back</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+
+          {viewMode === 'year' && (
+            <>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.yearScrollContent}
+                style={styles.yearScroll}
+              >
+                {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - 15 + i).map((year) => (
+                  <TouchableOpacity
+                    key={year}
+                    style={[
+                      styles.yearOption,
+                      selectedYear === year && styles.yearOptionActive,
+                    ]}
+                    onPress={() => {
+                      setSelectedYear(year);
+                      handleYearSelect();
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.yearOptionText,
+                        selectedYear === year && styles.yearOptionTextActive,
+                      ]}
+                    >
+                      {year}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TouchableOpacity 
+                style={[styles.modalCancelButton, { marginTop: 16 }]} 
+                onPress={() => setViewMode('menu')}
+              >
+                <Text style={styles.modalCancelText}>Back</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+interface DeleteModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onDelete: (period: 'day' | 'month' | 'year') => void;
+}
+
+function DeleteModal({ visible, onClose, onDelete }: DeleteModalProps) {
+  return (
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.deleteModalContent}>
+          <Text style={styles.deleteModalTitle}>Delete Files</Text>
+          <Text style={styles.deleteModalSubtitle}>
+            Select the time period for files to delete
+          </Text>
+          <TouchableOpacity
+            style={styles.deleteOption}
+            onPress={() => onDelete('day')}
+          >
+            <Text style={styles.deleteOptionText}>Delete files from today</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteOption}
+            onPress={() => onDelete('month')}
+          >
+            <Text style={styles.deleteOptionText}>Delete files from this month</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteOption}
+            onPress={() => onDelete('year')}
+          >
+            <Text style={styles.deleteOptionText}>Delete files from this year</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
             <Text style={styles.modalCancelText}>Cancel</Text>
           </TouchableOpacity>
@@ -651,8 +1027,12 @@ const styles = StyleSheet.create({
     gap: 20,
     justifyContent: "flex-start",
   },
-  iconItem: {
+  iconItemWrapper: {
     width: 80,
+    alignItems: "center",
+  },
+  iconItem: {
+    width: 70,
     alignItems: "center",
   },
   iconThumbnail: {
@@ -661,7 +1041,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
     backgroundColor: Colors.white,
-    ...standardShadow,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   iconPlaceholder: {
     width: 70,
@@ -671,7 +1055,11 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.primaryLight}15`,
     alignItems: "center",
     justifyContent: "center",
-    ...standardShadow,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   iconText: {
     fontSize: 12,
@@ -738,13 +1126,13 @@ const styles = StyleSheet.create({
   },
   sectionTabs: {
     flexDirection: "row" as const,
-    gap: 12,
+    gap: 8,
     marginBottom: 20,
   },
   sectionTab: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     backgroundColor: Colors.white,
     borderRadius: 12,
     alignItems: "center" as const,
@@ -754,7 +1142,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryLight,
   },
   sectionTabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600" as const,
     color: Colors.text,
   },
@@ -848,236 +1236,64 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
     opacity: 0.4,
   },
+  yearScroll: {
+    maxHeight: 400,
+  },
+  yearScrollContent: {
+    gap: 12,
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  },
+  yearOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    minWidth: 80,
+    alignItems: "center" as const,
+  },
+  yearOptionActive: {
+    backgroundColor: Colors.primaryLight,
+  },
+  yearOptionText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  yearOptionTextActive: {
+    color: Colors.white,
+  },
+  deleteModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 24,
+    width: "100%" as const,
+    maxWidth: 400,
+    ...standardShadow,
+  },
+  deleteModalTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: Colors.text,
+    marginBottom: 8,
+    textAlign: "center" as const,
+  },
+  deleteModalSubtitle: {
+    fontSize: 14,
+    color: Colors.textLight,
+    marginBottom: 16,
+    textAlign: "center" as const,
+  },
+  deleteOption: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: Colors.background,
+  },
+  deleteOptionText: {
+    fontSize: 16,
+    fontWeight: "500" as const,
+    color: Colors.text,
+  },
 });
-
-interface DateFilterModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onSelectDate: (date: Date) => void;
-}
-
-function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProps) {
-  const [viewMode, setViewMode] = useState<'menu' | 'day' | 'month' | 'year'>('menu');
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [tempDate, setTempDate] = useState<Date | null>(null);
-
-  const handleDaySelect = (day: number) => {
-    const date = new Date(selectedYear, selectedMonth, day);
-    setTempDate(date);
-  };
-
-  const handleMonthSelect = () => {
-    const date = new Date(selectedYear, selectedMonth, 1);
-    onSelectDate(date);
-  };
-
-  const handleYearSelect = () => {
-    const date = new Date(selectedYear, 0, 1);
-    onSelectDate(date);
-  };
-
-  const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (month: number, year: number) => {
-    return new Date(year, month, 1).getDay();
-  };
-
-  const renderCalendar = () => {
-    const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
-    const firstDay = getFirstDayOfMonth(selectedMonth, selectedYear);
-    const days = [];
-
-    for (let i = 0; i < firstDay; i++) {
-      days.push(
-        <View key={`empty-${i}`} style={styles.dayButton}>
-          <Text style={[styles.dayText, styles.dayTextDisabled]}></Text>
-        </View>
-      );
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const isSelected = tempDate?.getDate() === day && 
-                         tempDate?.getMonth() === selectedMonth &&
-                         tempDate?.getFullYear() === selectedYear;
-      days.push(
-        <TouchableOpacity
-          key={day}
-          style={[styles.dayButton, isSelected && styles.dayButtonActive]}
-          onPress={() => handleDaySelect(day)}
-        >
-          <Text style={[styles.dayText, isSelected && styles.dayTextActive]}>
-            {day}
-          </Text>
-        </TouchableOpacity>
-      );
-    }
-
-    return days;
-  };
-
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.dateFilterModalContent}>
-          <Text style={styles.dateFilterTitle}>
-            {viewMode === 'menu' ? 'Find Files By Date' : 
-             viewMode === 'day' ? 'Select Day' :
-             viewMode === 'month' ? 'Select Month' : 'Select Year'}
-          </Text>
-
-          {viewMode === 'menu' && (
-            <>
-              <TouchableOpacity 
-                style={styles.dateFilterOption} 
-                onPress={() => setViewMode('day')}
-              >
-                <Text style={styles.dateFilterOptionText}>Specific Day</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.dateFilterOption} 
-                onPress={() => setViewMode('month')}
-              >
-                <Text style={styles.dateFilterOptionText}>Specific Month</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.dateFilterOption} 
-                onPress={() => setViewMode('year')}
-              >
-                <Text style={styles.dateFilterOptionText}>Specific Year</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {viewMode === 'day' && (
-            <View style={styles.calendarContainer}>
-              <View style={styles.monthYearSelector}>
-                <TouchableOpacity 
-                  style={styles.navButton}
-                  onPress={() => {
-                    if (selectedMonth === 0) {
-                      setSelectedMonth(11);
-                      setSelectedYear(selectedYear - 1);
-                    } else {
-                      setSelectedMonth(selectedMonth - 1);
-                    }
-                  }}
-                >
-                  <Text style={styles.monthYearText}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.monthYearText}>
-                  {monthNames[selectedMonth]} {selectedYear}
-                </Text>
-                <TouchableOpacity 
-                  style={styles.navButton}
-                  onPress={() => {
-                    if (selectedMonth === 11) {
-                      setSelectedMonth(0);
-                      setSelectedYear(selectedYear + 1);
-                    } else {
-                      setSelectedMonth(selectedMonth + 1);
-                    }
-                  }}
-                >
-                  <Text style={styles.monthYearText}>›</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.daysGrid}>
-                {renderCalendar()}
-              </View>
-              <TouchableOpacity 
-                style={[styles.modalCancelButton, { marginTop: 16 }]} 
-                onPress={() => {
-                  if (tempDate) {
-                    onSelectDate(tempDate);
-                  }
-                }}
-                disabled={!tempDate}
-              >
-                <Text style={styles.modalCancelText}>Select Date</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.modalCancelButton} 
-                onPress={() => setViewMode('menu')}
-              >
-                <Text style={styles.modalCancelText}>Back</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {viewMode === 'month' && (
-            <ScrollView style={{ maxHeight: 400 }}>
-              <View style={styles.monthYearSelector}>
-                <TouchableOpacity 
-                  style={styles.navButton}
-                  onPress={() => setSelectedYear(selectedYear - 1)}
-                >
-                  <Text style={styles.monthYearText}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.monthYearText}>{selectedYear}</Text>
-                <TouchableOpacity 
-                  style={styles.navButton}
-                  onPress={() => setSelectedYear(selectedYear + 1)}
-                >
-                  <Text style={styles.monthYearText}>›</Text>
-                </TouchableOpacity>
-              </View>
-              {monthNames.map((month, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.dateFilterOption}
-                  onPress={() => {
-                    setSelectedMonth(index);
-                    handleMonthSelect();
-                  }}
-                >
-                  <Text style={styles.dateFilterOptionText}>{month} {selectedYear}</Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity 
-                style={styles.modalCancelButton} 
-                onPress={() => setViewMode('menu')}
-              >
-                <Text style={styles.modalCancelText}>Back</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          )}
-
-          {viewMode === 'year' && (
-            <ScrollView style={{ maxHeight: 400 }}>
-              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
-                <TouchableOpacity
-                  key={year}
-                  style={styles.dateFilterOption}
-                  onPress={() => {
-                    setSelectedYear(year);
-                    handleYearSelect();
-                  }}
-                >
-                  <Text style={styles.dateFilterOptionText}>{year}</Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity 
-                style={styles.modalCancelButton} 
-                onPress={() => setViewMode('menu')}
-              >
-                <Text style={styles.modalCancelText}>Back</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          )}
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
