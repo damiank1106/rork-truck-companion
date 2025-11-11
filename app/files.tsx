@@ -23,6 +23,7 @@ import {
   Calendar,
   Trash2,
   X,
+  LayoutGrid,
 } from "lucide-react-native";
 
 import PageHeader from "@/components/PageHeader";
@@ -150,13 +151,7 @@ export default function FilesScreen() {
               style={styles.headerIconButton}
               onPress={() => setShowDisplayModal(true)}
             >
-              {displayMode === "grid" ? (
-                <Grid3x3 color={Colors.primaryLight} size={20} />
-              ) : displayMode === "list" ? (
-                <List color={Colors.primaryLight} size={20} />
-              ) : (
-                <FileText color={Colors.primaryLight} size={20} />
-              )}
+              <LayoutGrid color={Colors.primaryLight} size={20} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.headerIconButton, styles.plusButton]}

@@ -54,6 +54,16 @@ export const [FilesContext, useFiles] = createContextHook(() => {
   }, [files, saveFiles]);
 
   const deleteFile = useCallback(async (id: string) => {
+    const fileToDelete = files.find((file) => file.id === id);
+    if (fileToDelete && fileToDelete.scanImages) {
+      for (const imageUri of fileToDelete.scanImages) {
+        try {
+          await AsyncStorage.removeItem(imageUri);
+        } catch (error) {
+          console.error("Error deleting image from storage:", error);
+        }
+      }
+    }
     const updatedFiles = files.filter((file) => file.id !== id);
     await saveFiles(updatedFiles);
   }, [files, saveFiles]);

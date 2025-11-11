@@ -22,16 +22,19 @@ import PageHeader from "@/components/PageHeader";
 
 import { usePlaces } from "@/contexts/PlacesContext";
 import { useTruck } from "@/contexts/TruckContext";
+import { useFiles } from "@/contexts/FilesContext";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { resetTruckProfile } = useTruck();
   const { places } = usePlaces();
+  const { files } = useFiles();
 
   const [storageSize, setStorageSize] = useState<string>("0 KB");
   const [truckSize, setTruckSize] = useState<string>("0 KB");
   const [placesSize, setPlacesSize] = useState<string>("0 KB");
+  const [filesSize, setFilesSize] = useState<string>("0 KB");
 
   const [showAbout, setShowAbout] = useState<boolean>(false);
   const [showPolicy, setShowPolicy] = useState<boolean>(false);
@@ -43,6 +46,7 @@ export default function SettingsScreen() {
       let totalSize = 0;
       let truckDataSize = 0;
       let placesDataSize = 0;
+      let filesDataSize = 0;
 
       
       for (const key of keys) {
@@ -55,6 +59,8 @@ export default function SettingsScreen() {
             truckDataSize += size;
           } else if (key.includes('places')) {
             placesDataSize += size;
+          } else if (key.includes('files') || key.startsWith('data:image')) {
+            filesDataSize += size;
           }
         }
       }
@@ -62,6 +68,7 @@ export default function SettingsScreen() {
       setStorageSize(formatSize(totalSize));
       setTruckSize(formatSize(truckDataSize));
       setPlacesSize(formatSize(placesDataSize));
+      setFilesSize(formatSize(filesDataSize));
 
     } catch (error) {
       console.error("Error calculating storage size:", error);
@@ -70,7 +77,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     calculateStorageSize();
-  }, [places]);
+  }, [places, files]);
 
   const formatSize = (bytes: number): string => {
     if (bytes === 0) return "0 B";
@@ -298,6 +305,17 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Edit and manage all place details{"\n"}
               • Search and filter saved places{"\n\n"}
 
+              <Text style={styles.modalBoldText}>📁 Files & Documents</Text>{"\n"}
+              • Create and store document files with photos{"\n"}
+              • Take photos using camera{"\n"}
+              • Add optional file name and trip number{"\n"}
+              • Choose display field (file name or trip number){"\n"}
+              • Sort files by day, month, or year{"\n"}
+              • Display modes: List, Grid, and Icon view{"\n"}
+              • Search files by name, trip number, or date{"\n"}
+              • Filter files by specific day, month, or year{"\n"}
+              • Edit file details and add/remove photos{"\n"}
+              • All data stored locally{"\n\n"}
               
               <Text style={styles.modalBoldText}>🏠 Home Dashboard</Text>{"\n"}
               • Real-time date and time display{"\n"}
@@ -366,7 +384,20 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Add multiple photos per place{"\n"}
               • Mark amenities (restroom, parking, etc.){"\n"}
               • Tap photos for full-screen view{"\n"}
-              • Edit place details anytime
+              • Edit place details anytime{"\n\n"}
+              
+              <Text style={styles.modalBoldText}>📁 Files Management</Text>{"\n"}
+              • Tap + button in Files header to create new document{"\n"}
+              • Take photos with camera or upload from device{"\n"}
+              • Add optional file name and trip number{"\n"}
+              • Check box next to field to display on files page{"\n"}
+              • Use Sort tabs (Today, Month, Year) for quick filtering{"\n"}
+              • Tap Calendar icon to filter by specific date{"\n"}
+              • Tap Display icon to switch between List, Grid, and Icon views{"\n"}
+              • Search files by name, trip number, or date{"\n"}
+              • Tap any file to view details and all photos{"\n"}
+              • Edit button to modify file name or trip number{"\n"}
+              • Add or remove photos from existing files
             </Text>
 
             <Text style={styles.modalSectionTitle}>Tips & Tricks</Text>
