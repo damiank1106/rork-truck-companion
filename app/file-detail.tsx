@@ -27,6 +27,7 @@ import {
   Upload,
   FileText,
   X,
+  Edit3,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
@@ -35,6 +36,7 @@ import PageHeader from "@/components/PageHeader";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
+import { TextInput } from "react-native";
 
 export default function FileDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -45,12 +47,22 @@ export default function FileDetailScreen() {
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [showAddPhotoModal, setShowAddPhotoModal] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editFileName, setEditFileName] = useState<string>("");
+  const [editTripNumber, setEditTripNumber] = useState<string>("");
 
   const isSmallScreen = width < 360;
 
   const file = useMemo(() => {
     return files.find((f) => f.id === id);
   }, [files, id]);
+
+  React.useEffect(() => {
+    if (file) {
+      setEditFileName(file.fileName);
+      setEditTripNumber(file.tripNumber || "");
+    }
+  }, [file]);
 
   if (!file) {
     return (
@@ -210,6 +222,25 @@ export default function FileDetailScreen() {
     );
   };
 
+  const handleEditFile = async () => {
+    if (!editFileName.trim()) {
+      Alert.alert("Error", "File name cannot be empty.");
+      return;
+    }
+
+    try {
+      await updateFile(file.id, {
+        fileName: editFileName.trim(),
+        tripNumber: editTripNumber.trim() || undefined,
+      });
+      setShowEditModal(false);
+      Alert.alert("Success", "File updated successfully!");
+    } catch (error) {
+      console.error("Error updating file:", error);
+      Alert.alert("Error", "Failed to update file.");
+    }
+  };
+
 
 
   return (
@@ -230,6 +261,12 @@ export default function FileDetailScreen() {
               onPress={() => setShowAddPhotoModal(true)}
             >
               <Plus color={Colors.white} size={20} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={() => setShowEditModal(true)}
+            >
+              <Edit3 color={Colors.primaryLight} size={20} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerIconButton}
@@ -375,6 +412,47 @@ export default function FileDetailScreen() {
             <TouchableOpacity style={styles.modalButton} onPress={handleAddFromDevice}>
               <Upload color={Colors.secondary} size={24} />
               <Text style={styles.modalButtonText}>Choose from Device</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit File</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <X color={Colors.text} size={24} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.editSection}>
+              <Text style={styles.editLabel}>File Name</Text>
+              <TextInput
+                style={styles.editInput}
+                placeholder="Enter file name..."
+                placeholderTextColor={Colors.textLight}
+                value={editFileName}
+                onChangeText={setEditFileName}
+              />
+            </View>
+            <View style={styles.editSection}>
+              <Text style={styles.editLabel}>Trip Number (Optional)</Text>
+              <TextInput
+                style={styles.editInput}
+                placeholder="Enter trip number..."
+                placeholderTextColor={Colors.textLight}
+                value={editTripNumber}
+                onChangeText={setEditTripNumber}
+              />
+            </View>
+            <TouchableOpacity style={styles.editSaveButton} onPress={handleEditFile}>
+              <Text style={styles.editSaveButtonText}>Save Changes</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -592,5 +670,36 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600" as const,
     color: Colors.text,
+  },
+  editSection: {
+    marginBottom: 16,
+  },
+  editLabel: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  editInput: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  editSaveButton: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  editSaveButtonText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.white,
   },
 });

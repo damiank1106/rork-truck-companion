@@ -235,8 +235,8 @@ export default function ScanDocumentScreen() {
   return (
     <View style={styles.container}>
       <PageHeader
-        title="Scan Document"
-        subtitle="Create a new PDF"
+        title="Create Document"
+        subtitle="Create a new File"
         topInset={insets.top + (isSmallScreen ? 24 : 16)}
         leftAccessory={
           <TouchableOpacity onPress={() => router.back()}>
@@ -276,7 +276,7 @@ export default function ScanDocumentScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Add Pages</Text>
+          <Text style={styles.sectionLabel}>Add Photos</Text>
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton} onPress={handleCameraPress}>
               <View style={styles.actionButtonIcon}>
@@ -296,7 +296,7 @@ export default function ScanDocumentScreen() {
         {scannedImages.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>
-              Scanned Pages ({scannedImages.length})
+              Taken Pictures ({scannedImages.length})
             </Text>
             <View style={styles.imagesGrid}>
               {scannedImages.map((uri, index) => (
