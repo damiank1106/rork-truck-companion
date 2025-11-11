@@ -44,6 +44,8 @@ export default function FilesScreen() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>("list");
   const [showSortModal, setShowSortModal] = useState<boolean>(false);
   const [showDisplayModal, setShowDisplayModal] = useState<boolean>(false);
+  const [showDateFilterModal, setShowDateFilterModal] = useState<boolean>(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const isSmallScreen = width < 360;
   const isMediumScreen = width >= 360 && width < 768;
@@ -62,26 +64,14 @@ export default function FilesScreen() {
       });
     }
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const thisYear = new Date(now.getFullYear(), 0, 1);
-
-    result = result.filter((file) => {
-      const fileDate = new Date(file.createdAt);
-      
-      switch (sortBy) {
-        case "day":
-          const fileDateDay = new Date(fileDate.getFullYear(), fileDate.getMonth(), fileDate.getDate());
-          return fileDateDay.getTime() >= today.getTime();
-        case "month":
-          return fileDate >= thisMonth;
-        case "year":
-          return fileDate >= thisYear;
-        default:
-          return true;
-      }
-    });
+    if (selectedDate) {
+      result = result.filter((file) => {
+        const fileDate = new Date(file.createdAt);
+        const fileDateDay = new Date(fileDate.getFullYear(), fileDate.getMonth(), fileDate.getDate());
+        const selectedDateDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+        return fileDateDay.getTime() === selectedDateDay.getTime();
+      });
+    }
 
     result.sort((a, b) => {
       const dateA = new Date(a.createdAt);
@@ -90,7 +80,35 @@ export default function FilesScreen() {
     });
 
     return result;
-  }, [files, searchQuery, sortBy]);
+  }, [files, searchQuery, selectedDate]);
+
+  const todayFiles = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return filteredAndSortedFiles.filter((file) => {
+      const fileDate = new Date(file.createdAt);
+      const fileDateDay = new Date(fileDate.getFullYear(), fileDate.getMonth(), fileDate.getDate());
+      return fileDateDay.getTime() === today.getTime();
+    });
+  }, [filteredAndSortedFiles]);
+
+  const monthFiles = useMemo(() => {
+    const now = new Date();
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return filteredAndSortedFiles.filter((file) => {
+      const fileDate = new Date(file.createdAt);
+      return fileDate >= thisMonth;
+    });
+  }, [filteredAndSortedFiles]);
+
+  const yearFiles = useMemo(() => {
+    const now = new Date();
+    const thisYear = new Date(now.getFullYear(), 0, 1);
+    return filteredAndSortedFiles.filter((file) => {
+      const fileDate = new Date(file.createdAt);
+      return fileDate >= thisYear;
+    });
+  }, [filteredAndSortedFiles]);
 
   const handleDeleteFile = (id: string, fileName: string) => {
     Alert.alert("Delete File", `Are you sure you want to delete "${fileName}"?`, [
@@ -124,9 +142,9 @@ export default function FilesScreen() {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.headerIconButton}
-              onPress={() => setShowSortModal(true)}
+              onPress={() => setShowDateFilterModal(true)}
             >
-              <ArrowDownUp color={Colors.primaryLight} size={20} />
+              <Calendar color={Colors.primaryLight} size={20} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerIconButton}
@@ -176,21 +194,85 @@ export default function FilesScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {filteredAndSortedFiles.length === 0 ? (
+        {!selectedDate && !searchQuery && (
+          <View style={styles.sectionTabs}>
+            <TouchableOpacity
+              style={[
+                styles.sectionTab,
+                sortBy === 'day' && styles.sectionTabActive,
+              ]}
+              onPress={() => setSortBy('day')}
+            >
+              <Text
+                style={[
+                  styles.sectionTabText,
+                  sortBy === 'day' && styles.sectionTabTextActive,
+                ]}
+              >
+                Today ({todayFiles.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sectionTab,
+                sortBy === 'month' && styles.sectionTabActive,
+              ]}
+              onPress={() => setSortBy('month')}
+            >
+              <Text
+                style={[
+                  styles.sectionTabText,
+                  sortBy === 'month' && styles.sectionTabTextActive,
+                ]}
+              >
+                Month ({monthFiles.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sectionTab,
+                sortBy === 'year' && styles.sectionTabActive,
+              ]}
+              onPress={() => setSortBy('year')}
+            >
+              <Text
+                style={[
+                  styles.sectionTabText,
+                  sortBy === 'year' && styles.sectionTabTextActive,
+                ]}
+              >
+                Year ({yearFiles.length})
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {selectedDate && (
+          <View style={styles.selectedDateBar}>
+            <Text style={styles.selectedDateText}>
+              Files from: {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+            <TouchableOpacity onPress={() => setSelectedDate(null)}>
+              <X color={Colors.error} size={20} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {getDisplayFiles().length === 0 ? (
           <View style={styles.emptyState}>
             <FileText color={Colors.textLight} size={64} />
             <Text style={styles.emptyStateTitle}>
-              {searchQuery ? "No files found" : "No files yet"}
+              {searchQuery || selectedDate ? "No files found" : "No files yet"}
             </Text>
             <Text style={styles.emptyStateText}>
-              {searchQuery
-                ? "Try a different search term"
+              {searchQuery || selectedDate
+                ? "Try a different search or date"
                 : "Tap + to scan your first document"}
             </Text>
           </View>
         ) : displayMode === "icon" ? (
           <View style={styles.iconContainer}>
-            {filteredAndSortedFiles.map((file) => {
+            {getDisplayFiles().map((file) => {
               const displayText = file.displayField === 'tripNumber' && file.tripNumber 
                 ? file.tripNumber 
                 : file.fileName;
@@ -219,7 +301,7 @@ export default function FilesScreen() {
           </View>
         ) : displayMode === "grid" ? (
           <View style={styles.gridContainer}>
-            {filteredAndSortedFiles.map((file) => (
+            {getDisplayFiles().map((file) => (
               <TouchableOpacity
                 key={file.id}
                 style={[
@@ -257,7 +339,7 @@ export default function FilesScreen() {
           </View>
         ) : (
           <View style={styles.listContainer}>
-            {filteredAndSortedFiles.map((file) => (
+            {getDisplayFiles().map((file) => (
               <TouchableOpacity
                 key={file.id}
                 style={styles.listItem}
@@ -298,16 +380,6 @@ export default function FilesScreen() {
         )}
       </ScrollView>
 
-      <SortModal
-        visible={showSortModal}
-        currentSort={sortBy}
-        onClose={() => setShowSortModal(false)}
-        onSelect={(option) => {
-          setSortBy(option);
-          setShowSortModal(false);
-        }}
-      />
-
       <DisplayModal
         visible={showDisplayModal}
         currentMode={displayMode}
@@ -317,55 +389,34 @@ export default function FilesScreen() {
           setShowDisplayModal(false);
         }}
       />
+
+      <DateFilterModal
+        visible={showDateFilterModal}
+        onClose={() => setShowDateFilterModal(false)}
+        onSelectDate={(date) => {
+          setSelectedDate(date);
+          setShowDateFilterModal(false);
+        }}
+      />
     </View>
   );
-}
 
-interface SortModalProps {
-  visible: boolean;
-  currentSort: SortOption;
-  onClose: () => void;
-  onSelect: (option: SortOption) => void;
-}
+  function getDisplayFiles() {
+    if (selectedDate || searchQuery) {
+      return filteredAndSortedFiles;
+    }
 
-function SortModal({ visible, currentSort, onClose, onSelect }: SortModalProps) {
-  const sortOptions: { label: string; value: SortOption }[] = [
-    { label: "Day", value: "day" },
-    { label: "Month", value: "month" },
-    { label: "Year", value: "year" },
-  ];
-
-  return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Sort By</Text>
-          {sortOptions.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.modalOption,
-                currentSort === option.value && styles.modalOptionActive,
-              ]}
-              onPress={() => onSelect(option.value)}
-            >
-              <Text
-                style={[
-                  styles.modalOptionText,
-                  currentSort === option.value && styles.modalOptionTextActive,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
-            <Text style={styles.modalCancelText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
+    switch (sortBy) {
+      case 'day':
+        return todayFiles;
+      case 'month':
+        return monthFiles;
+      case 'year':
+        return yearFiles;
+      default:
+        return filteredAndSortedFiles;
+    }
+  }
 }
 
 interface DisplayModalProps {
@@ -690,4 +741,348 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
     color: Colors.text,
   },
+  sectionTabs: {
+    flexDirection: "row" as const,
+    gap: 12,
+    marginBottom: 20,
+  },
+  sectionTab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    alignItems: "center" as const,
+    ...standardShadow,
+  },
+  sectionTabActive: {
+    backgroundColor: Colors.primaryLight,
+  },
+  sectionTabText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  sectionTabTextActive: {
+    color: Colors.white,
+  },
+  selectedDateBar: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    ...standardShadow,
+  },
+  selectedDateText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  dateFilterModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 24,
+    width: "90%" as const,
+    maxWidth: 400,
+    maxHeight: "80%" as const,
+  },
+  dateFilterTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: Colors.text,
+    marginBottom: 16,
+    textAlign: "center" as const,
+  },
+  dateFilterOption: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: Colors.background,
+  },
+  dateFilterOptionText: {
+    fontSize: 16,
+    fontWeight: "500" as const,
+    color: Colors.text,
+  },
+  calendarContainer: {
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  monthYearSelector: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginBottom: 16,
+  },
+  monthYearText: {
+    fontSize: 18,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  navButton: {
+    padding: 8,
+  },
+  daysGrid: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: 4,
+  },
+  dayButton: {
+    width: "13%" as const,
+    aspectRatio: 1,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    borderRadius: 8,
+  },
+  dayButtonActive: {
+    backgroundColor: Colors.primaryLight,
+  },
+  dayText: {
+    fontSize: 14,
+    color: Colors.text,
+  },
+  dayTextActive: {
+    color: Colors.white,
+    fontWeight: "600" as const,
+  },
+  dayTextDisabled: {
+    color: Colors.textLight,
+    opacity: 0.4,
+  },
 });
+
+interface DateFilterModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSelectDate: (date: Date) => void;
+}
+
+function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProps) {
+  const [viewMode, setViewMode] = useState<'menu' | 'day' | 'month' | 'year'>('menu');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [tempDate, setTempDate] = useState<Date | null>(null);
+
+  const handleDaySelect = (day: number) => {
+    const date = new Date(selectedYear, selectedMonth, day);
+    setTempDate(date);
+  };
+
+  const handleMonthSelect = () => {
+    const date = new Date(selectedYear, selectedMonth, 1);
+    onSelectDate(date);
+  };
+
+  const handleYearSelect = () => {
+    const date = new Date(selectedYear, 0, 1);
+    onSelectDate(date);
+  };
+
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (month: number, year: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
+    const firstDay = getFirstDayOfMonth(selectedMonth, selectedYear);
+    const days = [];
+
+    for (let i = 0; i < firstDay; i++) {
+      days.push(
+        <View key={`empty-${i}`} style={styles.dayButton}>
+          <Text style={[styles.dayText, styles.dayTextDisabled]}></Text>
+        </View>
+      );
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isSelected = tempDate?.getDate() === day && 
+                         tempDate?.getMonth() === selectedMonth &&
+                         tempDate?.getFullYear() === selectedYear;
+      days.push(
+        <TouchableOpacity
+          key={day}
+          style={[styles.dayButton, isSelected && styles.dayButtonActive]}
+          onPress={() => handleDaySelect(day)}
+        >
+          <Text style={[styles.dayText, isSelected && styles.dayTextActive]}>
+            {day}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return days;
+  };
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  return (
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.dateFilterModalContent}>
+          <Text style={styles.dateFilterTitle}>
+            {viewMode === 'menu' ? 'Find Files By Date' : 
+             viewMode === 'day' ? 'Select Day' :
+             viewMode === 'month' ? 'Select Month' : 'Select Year'}
+          </Text>
+
+          {viewMode === 'menu' && (
+            <>
+              <TouchableOpacity 
+                style={styles.dateFilterOption} 
+                onPress={() => setViewMode('day')}
+              >
+                <Text style={styles.dateFilterOptionText}>Specific Day</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.dateFilterOption} 
+                onPress={() => setViewMode('month')}
+              >
+                <Text style={styles.dateFilterOptionText}>Specific Month</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.dateFilterOption} 
+                onPress={() => setViewMode('year')}
+              >
+                <Text style={styles.dateFilterOptionText}>Specific Year</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {viewMode === 'day' && (
+            <View style={styles.calendarContainer}>
+              <View style={styles.monthYearSelector}>
+                <TouchableOpacity 
+                  style={styles.navButton}
+                  onPress={() => {
+                    if (selectedMonth === 0) {
+                      setSelectedMonth(11);
+                      setSelectedYear(selectedYear - 1);
+                    } else {
+                      setSelectedMonth(selectedMonth - 1);
+                    }
+                  }}
+                >
+                  <Text style={styles.monthYearText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.monthYearText}>
+                  {monthNames[selectedMonth]} {selectedYear}
+                </Text>
+                <TouchableOpacity 
+                  style={styles.navButton}
+                  onPress={() => {
+                    if (selectedMonth === 11) {
+                      setSelectedMonth(0);
+                      setSelectedYear(selectedYear + 1);
+                    } else {
+                      setSelectedMonth(selectedMonth + 1);
+                    }
+                  }}
+                >
+                  <Text style={styles.monthYearText}>›</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.daysGrid}>
+                {renderCalendar()}
+              </View>
+              <TouchableOpacity 
+                style={[styles.modalCancelButton, { marginTop: 16 }]} 
+                onPress={() => {
+                  if (tempDate) {
+                    onSelectDate(tempDate);
+                  }
+                }}
+                disabled={!tempDate}
+              >
+                <Text style={styles.modalCancelText}>Select Date</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalCancelButton} 
+                onPress={() => setViewMode('menu')}
+              >
+                <Text style={styles.modalCancelText}>Back</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {viewMode === 'month' && (
+            <ScrollView style={{ maxHeight: 400 }}>
+              <View style={styles.monthYearSelector}>
+                <TouchableOpacity 
+                  style={styles.navButton}
+                  onPress={() => setSelectedYear(selectedYear - 1)}
+                >
+                  <Text style={styles.monthYearText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.monthYearText}>{selectedYear}</Text>
+                <TouchableOpacity 
+                  style={styles.navButton}
+                  onPress={() => setSelectedYear(selectedYear + 1)}
+                >
+                  <Text style={styles.monthYearText}>›</Text>
+                </TouchableOpacity>
+              </View>
+              {monthNames.map((month, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.dateFilterOption}
+                  onPress={() => {
+                    setSelectedMonth(index);
+                    handleMonthSelect();
+                  }}
+                >
+                  <Text style={styles.dateFilterOptionText}>{month} {selectedYear}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity 
+                style={styles.modalCancelButton} 
+                onPress={() => setViewMode('menu')}
+              >
+                <Text style={styles.modalCancelText}>Back</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+
+          {viewMode === 'year' && (
+            <ScrollView style={{ maxHeight: 400 }}>
+              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                <TouchableOpacity
+                  key={year}
+                  style={styles.dateFilterOption}
+                  onPress={() => {
+                    setSelectedYear(year);
+                    handleYearSelect();
+                  }}
+                >
+                  <Text style={styles.dateFilterOptionText}>{year}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity 
+                style={styles.modalCancelButton} 
+                onPress={() => setViewMode('menu')}
+              >
+                <Text style={styles.modalCancelText}>Back</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+

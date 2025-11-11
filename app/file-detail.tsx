@@ -51,6 +51,7 @@ export default function FileDetailScreen() {
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [editFileName, setEditFileName] = useState<string>("");
   const [editTripNumber, setEditTripNumber] = useState<string>("");
+  const [editDisplayField, setEditDisplayField] = useState<'fileName' | 'tripNumber'>('fileName');
 
   const isSmallScreen = width < 360;
 
@@ -62,6 +63,7 @@ export default function FileDetailScreen() {
     if (file) {
       setEditFileName(file.fileName);
       setEditTripNumber(file.tripNumber || "");
+      setEditDisplayField(file.displayField || 'fileName');
     }
   }, [file]);
 
@@ -233,6 +235,7 @@ export default function FileDetailScreen() {
       await updateFile(file.id, {
         fileName: editFileName.trim(),
         tripNumber: editTripNumber.trim() || undefined,
+        displayField: editDisplayField,
       });
       setShowEditModal(false);
       Alert.alert("Success", "File updated successfully!");
@@ -442,7 +445,17 @@ export default function FileDetailScreen() {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.editSection}>
-                  <Text style={styles.editLabel}>File Name</Text>
+                  <View style={styles.fieldHeader}>
+                    <Text style={styles.editLabel}>File Name</Text>
+                    <TouchableOpacity
+                      style={styles.checkbox}
+                      onPress={() => setEditDisplayField('fileName')}
+                    >
+                      {editDisplayField === 'fileName' && (
+                        <View style={styles.checkboxChecked} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                   <TextInput
                     style={styles.editInput}
                     placeholder="Enter file name..."
@@ -452,7 +465,17 @@ export default function FileDetailScreen() {
                   />
                 </View>
                 <View style={styles.editSection}>
-                  <Text style={styles.editLabel}>Trip Number (Optional)</Text>
+                  <View style={styles.fieldHeader}>
+                    <Text style={styles.editLabel}>Trip Number (Optional)</Text>
+                    <TouchableOpacity
+                      style={styles.checkbox}
+                      onPress={() => setEditDisplayField('tripNumber')}
+                    >
+                      {editDisplayField === 'tripNumber' && (
+                        <View style={styles.checkboxChecked} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                   <TextInput
                     style={styles.editInput}
                     placeholder="Enter trip number..."
@@ -686,11 +709,32 @@ const styles = StyleSheet.create({
   editSection: {
     marginBottom: 16,
   },
+  fieldHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    marginBottom: 8,
+  },
   editLabel: {
     fontSize: 14,
     fontWeight: "600" as const,
     color: Colors.text,
-    marginBottom: 8,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.primaryLight,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: Colors.white,
+  },
+  checkboxChecked: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    backgroundColor: Colors.primaryLight,
   },
   editInput: {
     backgroundColor: Colors.background,
