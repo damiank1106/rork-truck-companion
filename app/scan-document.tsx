@@ -304,7 +304,7 @@ export default function ScanDocumentScreen() {
               <View style={styles.actionButtonIcon}>
                 <Camera color={Colors.primaryLight} size={28} />
               </View>
-              <Text style={styles.actionButtonText}>Scan with Camera</Text>
+              <Text style={styles.actionButtonText}>Use Camera</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleUploadPress}>
               <View style={styles.actionButtonIcon}>
