@@ -125,3 +125,11 @@ export interface DriverID {
   backCardUri?: string;
   createdAt: string;
 }
+
+export interface FileDocument {
+  id: string;
+  fileName: string;
+  scanImages: string[];
+  pdfUri?: string;
+  createdAt: string;
+}

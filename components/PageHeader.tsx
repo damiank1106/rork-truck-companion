@@ -9,9 +9,11 @@ import {
   TouchableOpacity,
   View,
   ViewStyle,
+  useWindowDimensions,
 } from "react-native";
 import React, { useMemo, useRef, useState } from "react";
 import {
+  FileText,
   HeartHandshake,
   Home as HomeIcon,
   Image as ImageIcon,
@@ -42,6 +44,7 @@ const MENU_ITEMS = [
   { label: "Home", path: "/(tabs)/home", icon: HomeIcon },
   { label: "My Truck", path: "/(tabs)/truck", icon: Truck },
   { label: "Places", path: "/(tabs)/places", icon: MapPin },
+  { label: "Files", path: "/files", icon: FileText },
   { label: "Daily News", path: "/daily-news", icon: Newspaper },
   { label: "Safety Information", path: "/safety-information", icon: Shield },
   { label: "Settings", path: "/(tabs)/settings", icon: SettingsIcon },
@@ -59,10 +62,14 @@ export default function PageHeader({
 }: PageHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { width } = useWindowDimensions();
   const [isMenuMounted, setIsMenuMounted] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const menuAnimation = useRef(new Animated.Value(0)).current;
+  
+  const isSmallScreen = width < 360;
+  const adjustedTopInset = topInset + (isSmallScreen ? 8 : 0);
 
   const menuIconOpacity = useMemo(
     () =>
@@ -168,7 +175,7 @@ export default function PageHeader({
       <View
         style={StyleSheet.flatten([
           styles.header,
-          { paddingTop: topInset },
+          { paddingTop: adjustedTopInset },
           containerStyle,
         ])}
         onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}

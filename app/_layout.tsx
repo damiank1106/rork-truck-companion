@@ -9,7 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { DriverIDContext } from "@/contexts/DriverIDContext";
 import { EmergencyContactsContext } from "@/contexts/EmergencyContactsContext";
-
+import { FilesContext } from "@/contexts/FilesContext";
 import { HealthInsuranceProvider } from "@/contexts/HealthInsuranceContext";
 import { PlacesProvider } from "@/contexts/PlacesContext";
 import { TrailerProvider } from "@/contexts/TrailerContext";
@@ -90,6 +90,21 @@ function RootLayoutNav() {
           animationDuration: 450,
         }}
       />
+      <Stack.Screen
+        name="files"
+        options={{
+          headerShown: false,
+          animation: "fade",
+          animationDuration: 450,
+        }}
+      />
+      <Stack.Screen
+        name="scan-document"
+        options={{
+          headerShown: false,
+          animation: "slide_from_bottom",
+        }}
+      />
     </Stack>
   );
 }
@@ -131,11 +146,13 @@ export default function RootLayout() {
             <EmergencyContactsContext>
               <HealthInsuranceProvider>
                 <DriverIDContext>
-                  <GestureHandlerRootView style={{ flex: 1 }}>
-                    <SafeAreaProvider>
-                      <RootLayoutNav />
-                    </SafeAreaProvider>
-                  </GestureHandlerRootView>
+                  <FilesContext>
+                    <GestureHandlerRootView style={{ flex: 1 }}>
+                      <SafeAreaProvider>
+                        <RootLayoutNav />
+                      </SafeAreaProvider>
+                    </GestureHandlerRootView>
+                  </FilesContext>
                 </DriverIDContext>
               </HealthInsuranceProvider>
             </EmergencyContactsContext>
