@@ -113,7 +113,7 @@ export default function ScanDocumentScreen() {
         quality: 1,
       });
 
-      if (photo && photo.uri) {
+      if (photo?.uri && photo.uri.trim() !== "") {
         setScannedImages([...scannedImages, photo.uri]);
       }
     } catch (error) {
@@ -204,26 +204,12 @@ export default function ScanDocumentScreen() {
               >
                 <X color={Colors.white} size={24} />
               </TouchableOpacity>
-              <Text style={styles.cameraTitle}>Position document in frame</Text>
-            </View>
-
-            <View style={styles.cameraScanFrame}>
-              {showScanAnimation && (
-                <Animated.View
-                  style={[
-                    styles.scanLine,
-                    {
-                      transform: [{ translateY: scanLineTranslateY }],
-                    },
-                  ]}
-                />
-              )}
             </View>
 
             <View style={styles.cameraControls}>
               <View style={styles.cameraControlsInner}>
                 <Text style={styles.cameraScannedCount}>
-                  {scannedImages.length} page{scannedImages.length !== 1 ? "s" : ""} scanned
+                  {scannedImages.length} photo{scannedImages.length !== 1 ? "s" : ""} taken
                 </Text>
                 <TouchableOpacity
                   style={styles.captureButton}
@@ -317,7 +303,7 @@ export default function ScanDocumentScreen() {
                 <View key={index} style={styles.imageCard}>
                   <Image source={{ uri }} style={styles.imagePreview} />
                   <View style={styles.imageOverlay}>
-                    <Text style={styles.imageNumber}>Page {index + 1}</Text>
+                    <Text style={styles.imageNumber}>Photo {index + 1}</Text>
                     <TouchableOpacity
                       style={styles.imageDeleteButton}
                       onPress={() => handleDeleteImage(index)}
@@ -341,8 +327,8 @@ export default function ScanDocumentScreen() {
               <ActivityIndicator color={Colors.white} />
             ) : (
               <>
-                <FileText color={Colors.white} size={20} />
-                <Text style={styles.saveButtonText}>Save as PDF</Text>
+                <Check color={Colors.white} size={20} />
+                <Text style={styles.saveButtonText}>Save</Text>
               </>
             )}
           </TouchableOpacity>
@@ -482,6 +468,7 @@ const styles = StyleSheet.create({
   cameraOverlay: {
     flex: 1,
     backgroundColor: "transparent",
+    justifyContent: "space-between",
   },
   cameraHeader: {
     paddingTop: Platform.select({ ios: 60, android: 40, default: 40 }),
@@ -489,6 +476,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "flex-start",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   cameraCloseButton: {
@@ -500,35 +488,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  cameraTitle: {
-    fontSize: 18,
-    fontWeight: "600" as const,
-    color: Colors.white,
-  },
-  cameraScanFrame: {
-    flex: 1,
-    marginHorizontal: 40,
-    marginVertical: 60,
-    borderWidth: 2,
-    borderColor: Colors.white,
-    borderRadius: 12,
-    position: "relative",
-    overflow: "hidden",
-  },
-  scanLine: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: Colors.primaryLight,
-    shadowColor: Colors.primaryLight,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
+
   cameraControls: {
-    paddingBottom: Platform.select({ ios: 40, android: 20, default: 20 }),
+    paddingBottom: Platform.select({ ios: 40, android: 30, default: 30 }),
     paddingTop: 20,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },

@@ -30,7 +30,7 @@ import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
 
-type SortOption = "name-az" | "name-za" | "day" | "month" | "year";
+type SortOption = "day" | "month" | "year";
 type DisplayMode = "grid" | "list";
 
 export default function FilesScreen() {
@@ -40,7 +40,7 @@ export default function FilesScreen() {
   const { files, deleteFile } = useFiles();
 
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortBy, setSortBy] = useState<SortOption>("name-az");
+  const [sortBy, setSortBy] = useState<SortOption>("day");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("list");
   const [showSortModal, setShowSortModal] = useState<boolean>(false);
   const [showDisplayModal, setShowDisplayModal] = useState<boolean>(false);
@@ -62,30 +62,31 @@ export default function FilesScreen() {
       });
     }
 
-    result.sort((a, b) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisYear = new Date(now.getFullYear(), 0, 1);
+
+    result = result.filter((file) => {
+      const fileDate = new Date(file.createdAt);
+      
       switch (sortBy) {
-        case "name-az":
-          return a.fileName.localeCompare(b.fileName);
-        case "name-za":
-          return b.fileName.localeCompare(a.fileName);
-        case "day": {
-          const dateA = new Date(a.createdAt);
-          const dateB = new Date(b.createdAt);
-          return dateB.getDate() - dateA.getDate();
-        }
-        case "month": {
-          const dateA = new Date(a.createdAt);
-          const dateB = new Date(b.createdAt);
-          return dateB.getMonth() - dateA.getMonth();
-        }
-        case "year": {
-          const dateA = new Date(a.createdAt);
-          const dateB = new Date(b.createdAt);
-          return dateB.getFullYear() - dateA.getFullYear();
-        }
+        case "day":
+          const fileDateDay = new Date(fileDate.getFullYear(), fileDate.getMonth(), fileDate.getDate());
+          return fileDateDay.getTime() >= today.getTime();
+        case "month":
+          return fileDate >= thisMonth;
+        case "year":
+          return fileDate >= thisYear;
         default:
-          return 0;
+          return true;
       }
+    });
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return dateB.getTime() - dateA.getTime();
     });
 
     return result;
@@ -298,8 +299,6 @@ interface SortModalProps {
 
 function SortModal({ visible, currentSort, onClose, onSelect }: SortModalProps) {
   const sortOptions: { label: string; value: SortOption }[] = [
-    { label: "Name (A-Z)", value: "name-az" },
-    { label: "Name (Z-A)", value: "name-za" },
     { label: "Day", value: "day" },
     { label: "Month", value: "month" },
     { label: "Year", value: "year" },

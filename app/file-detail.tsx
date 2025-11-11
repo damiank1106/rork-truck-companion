@@ -29,10 +29,7 @@ import {
   X,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
-import * as MailComposer from "expo-mail-composer";
+
 
 import PageHeader from "@/components/PageHeader";
 import Colors from "@/constants/colors";
@@ -48,7 +45,6 @@ export default function FileDetailScreen() {
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [showAddPhotoModal, setShowAddPhotoModal] = useState<boolean>(false);
-  const [isConverting, setIsConverting] = useState<boolean>(false);
 
   const isSmallScreen = width < 360;
 
@@ -214,79 +210,7 @@ export default function FileDetailScreen() {
     );
   };
 
-  const handleConvertToPDF = async () => {
-    if (file.scanImages.length === 0) {
-      Alert.alert("No Content", "This file has no pages to convert.");
-      return;
-    }
 
-    try {
-      setIsConverting(true);
-
-      const htmlContent = `
-        <html>
-          <head>
-            <style>
-              body { margin: 0; padding: 0; }
-              img { width: 100%; height: auto; page-break-after: always; }
-            </style>
-          </head>
-          <body>
-            ${file.scanImages.map((uri) => `<img src="${uri}" />`).join("")}
-          </body>
-        </html>
-      `;
-
-      const { uri } = await Print.printToFileAsync({ html: htmlContent });
-
-      if (Platform.OS === "web") {
-        Alert.alert("PDF Created", "PDF has been downloaded to your device.");
-      } else {
-        Alert.alert(
-          "PDF Created",
-          "What would you like to do with the PDF?",
-          [
-            {
-              text: "Save to Device",
-              onPress: async () => {
-                const canShare = await Sharing.isAvailableAsync();
-                if (canShare) {
-                  await Sharing.shareAsync(uri, {
-                    mimeType: "application/pdf",
-                    dialogTitle: "Save PDF",
-                    UTI: "com.adobe.pdf",
-                  });
-                } else {
-                  Alert.alert("Not Available", "Sharing is not available on this device.");
-                }
-              },
-            },
-            {
-              text: "Send by Email",
-              onPress: async () => {
-                const isAvailable = await MailComposer.isAvailableAsync();
-                if (isAvailable) {
-                  await MailComposer.composeAsync({
-                    subject: `${file.fileName}.pdf`,
-                    body: "Please find the attached PDF document.",
-                    attachments: [uri],
-                  });
-                } else {
-                  Alert.alert("Not Available", "Email is not configured on this device.");
-                }
-              },
-            },
-            { text: "Cancel", style: "cancel" },
-          ]
-        );
-      }
-    } catch (error) {
-      console.error("Error converting to PDF:", error);
-      Alert.alert("Error", "Failed to convert to PDF. Please try again.");
-    } finally {
-      setIsConverting(false);
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -302,21 +226,10 @@ export default function FileDetailScreen() {
         rightAccessory={
           <View style={styles.headerActions}>
             <TouchableOpacity
-              style={styles.headerIconButton}
+              style={[styles.headerIconButton, styles.plusButton]}
               onPress={() => setShowAddPhotoModal(true)}
             >
-              <Plus color={Colors.primaryLight} size={20} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.headerIconButton, styles.convertButton]}
-              onPress={handleConvertToPDF}
-              disabled={isConverting}
-            >
-              {isConverting ? (
-                <ActivityIndicator size="small" color={Colors.white} />
-              ) : (
-                <FileText color={Colors.white} size={20} />
-              )}
+              <Plus color={Colors.white} size={20} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerIconButton}
@@ -491,7 +404,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     backgroundColor: `${Colors.error}15`,
   },
-  convertButton: {
+  plusButton: {
     backgroundColor: Colors.primaryLight,
   },
   scrollView: {
