@@ -11,7 +11,6 @@ import {
   Platform,
   Modal,
   TextInput,
-  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -26,7 +25,7 @@ import {
   Edit3,
   Save,
   Download,
-  Mail,
+  FileText,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
@@ -128,43 +127,7 @@ export default function FileDetailScreen() {
     }
   };
 
-  const handleSendToEmail = async () => {
-    if (file.scanImages.length === 0) {
-      Alert.alert("No Content", "This file has no pages to send.");
-      return;
-    }
 
-    try {
-      const emailSubject = encodeURIComponent(
-        `Document: ${file.fileName || file.tripNumber || 'File'}`
-      );
-      const emailBody = encodeURIComponent(
-        `Attached photos from document:\n\nFile Name: ${file.fileName || 'N/A'}\nTrip Number: ${file.tripNumber || 'N/A'}\nCreated: ${new Date(file.createdAt).toLocaleDateString()}\nTotal Photos: ${file.scanImages.length}`
-      );
-
-      if (Platform.OS === 'web') {
-        const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-        window.open(mailtoUrl, '_blank');
-        Alert.alert("Email Client Opened", "Your email client has been opened. Note: Image attachments are not supported on web. Please use the download feature to save images first.");
-      } else {
-        const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-        const canOpen = await Linking.canOpenURL(mailtoUrl);
-        
-        if (canOpen) {
-          await Linking.openURL(mailtoUrl);
-          Alert.alert(
-            "Email Client Opened",
-            `Your email client has been opened with ${file.scanImages.length} photo(s) ready. Note: You may need to manually attach the photos. Use the Share button for direct photo sharing, or use the Download button to save images to your device first.`
-          );
-        } else {
-          Alert.alert("No Email Client", "No email client found on your device.");
-        }
-      }
-    } catch (error) {
-      console.error("Error opening email client:", error);
-      Alert.alert("Error", "Failed to open email client. Please try again.");
-    }
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -540,11 +503,17 @@ export default function FileDetailScreen() {
                   onPress={handleOpenImageModal}
                   activeOpacity={0.7}
                 >
-                  <Image
-                    source={{ uri: file.scanImages[currentPage] }}
-                    style={styles.pageImage}
-                    resizeMode="contain"
-                  />
+                  {file.scanImages[currentPage] && file.scanImages[currentPage].trim() !== "" ? (
+                    <Image
+                      source={{ uri: file.scanImages[currentPage] }}
+                      style={styles.pageImage}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View style={[styles.pageImage, { backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+                      <FileText color={Colors.textLight} size={48} />
+                    </View>
+                  )}
                 </TouchableOpacity>
 
                 {file.scanImages.length > 1 && (
@@ -608,7 +577,13 @@ export default function FileDetailScreen() {
                           style={styles.thumbnailTouchable}
                           onPress={() => setCurrentPage(index)}
                         >
-                          <Image source={{ uri }} style={styles.thumbnailImage} />
+                          {uri && uri.trim() !== "" ? (
+                            <Image source={{ uri }} style={styles.thumbnailImage} />
+                          ) : (
+                            <View style={[styles.thumbnailImage, { backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+                              <FileText color={Colors.textLight} size={24} />
+                            </View>
+                          )}
                           <Text style={styles.thumbnailLabel}>{index + 1}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -623,15 +598,6 @@ export default function FileDetailScreen() {
                 </View>
 
                 <View style={styles.actionButtonsRow}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.emailButton]}
-                    onPress={handleSendToEmail}
-                    activeOpacity={0.7}
-                  >
-                    <Mail color={Colors.white} size={20} />
-                    <Text style={styles.actionButtonText}>Send to Email</Text>
-                  </TouchableOpacity>
-
                   <TouchableOpacity
                     style={[styles.actionButton, styles.deleteActionButton]}
                     onPress={handleDeleteFile}

@@ -201,36 +201,36 @@ export default function FilesScreen() {
       {isSmallScreen ? (
         <View style={[styles.compactHeader, { paddingTop: insets.top + 16 }]}>
           <View style={styles.compactHeaderLine1}>
-            <Text style={styles.compactTitle}>Files</Text>
+            {/* Empty line */}
           </View>
           <View style={styles.compactHeaderLine2}>
-            <Text style={styles.compactSubtitle}>Manage your scanned documents</Text>
-          </View>
-          <View style={styles.compactHeaderLine3}>
-            <TouchableOpacity
-              style={styles.compactIconButton}
-              onPress={() => setShowDateFilterModal(true)}
-            >
-              <Calendar color={Colors.primaryLight} size={18} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.compactIconButton}
-              onPress={() => setShowDeleteModal(true)}
-            >
-              <Trash2 color={Colors.error} size={18} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.compactIconButton}
-              onPress={() => setShowDisplayModal(true)}
-            >
-              <LayoutGrid color={Colors.primaryLight} size={18} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.compactIconButton, styles.compactPlusButton]}
-              onPress={() => router.push("/scan-document")}
-            >
-              <Plus color={Colors.white} size={18} />
-            </TouchableOpacity>
+            <Text style={styles.compactTitle}>Files</Text>
+            <View style={styles.compactHeaderLine2Icons}>
+              <TouchableOpacity
+                style={styles.compactIconButton}
+                onPress={() => setShowDateFilterModal(true)}
+              >
+                <Calendar color={Colors.primaryLight} size={18} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.compactIconButton}
+                onPress={() => setShowDeleteModal(true)}
+              >
+                <Trash2 color={Colors.error} size={18} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.compactIconButton}
+                onPress={() => setShowDisplayModal(true)}
+              >
+                <LayoutGrid color={Colors.primaryLight} size={18} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.compactIconButton, styles.compactPlusButton]}
+                onPress={() => router.push("/scan-document")}
+              >
+                <Plus color={Colors.white} size={18} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       ) : (
@@ -402,7 +402,7 @@ export default function FilesScreen() {
                     style={styles.iconItem}
                     onPress={() => router.push(`/file-detail?id=${file.id}`)}
                   >
-                    {file.scanImages.length > 0 ? (
+                    {file.scanImages.length > 0 && file.scanImages[0] && file.scanImages[0].trim() !== "" ? (
                       <Image
                         source={{ uri: file.scanImages[0] }}
                         style={styles.iconThumbnail}
@@ -434,7 +434,7 @@ export default function FilesScreen() {
                 ]}
                 onPress={() => router.push(`/file-detail?id=${file.id}`)}
               >
-                {file.scanImages.length > 0 ? (
+                {file.scanImages.length > 0 && file.scanImages[0] && file.scanImages[0].trim() !== "" ? (
                   <Image
                     source={{ uri: file.scanImages[0] }}
                     style={styles.gridThumbnail}
@@ -470,7 +470,7 @@ export default function FilesScreen() {
                 style={styles.listItem}
                 onPress={() => router.push(`/file-detail?id=${file.id}`)}
               >
-                {file.scanImages.length > 0 ? (
+                {file.scanImages.length > 0 && file.scanImages[0] && file.scanImages[0].trim() !== "" ? (
                   <Image
                     source={{ uri: file.scanImages[0] }}
                     style={styles.listThumbnail}
@@ -915,25 +915,28 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   compactHeaderLine1: {
+    height: 24,
     marginBottom: 4,
+  },
+  compactHeaderLine2: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginBottom: 12,
+  },
+  compactHeaderLine2Icons: {
+    flexDirection: "row" as const,
+    gap: 8,
+    alignItems: "center" as const,
   },
   compactTitle: {
     fontSize: 24,
     fontWeight: "700" as const,
     color: Colors.text,
   },
-  compactHeaderLine2: {
-    marginBottom: 12,
-  },
   compactSubtitle: {
     fontSize: 14,
     color: Colors.textLight,
-  },
-  compactHeaderLine3: {
-    flexDirection: "row" as const,
-    gap: 8,
-    justifyContent: "flex-start" as const,
-    alignItems: "center" as const,
   },
   compactIconButton: {
     width: 36,
