@@ -831,7 +831,7 @@ const styles = StyleSheet.create({
   },
   pdfDetailImage: {
     width: "100%",
-    aspectRatio: 0.707,
+    height: 180,
     borderRadius: 12,
     backgroundColor: Colors.background,
     marginTop: 8,
@@ -881,19 +881,11 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: Colors.white,
   },
-  pdfDetailActions: {
+  pdfDetailActionsInline: {
     flexDirection: "row",
     gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.white,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    marginTop: 12,
+    marginBottom: 8,
   },
   pdfDetailButton: {
     flex: 1,
@@ -937,9 +929,6 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
   };
 
   const handleSendEmail = async () => {
-    console.log("handleSendEmail called");
-    console.log("Selected pages:", selectedPages);
-    
     if (selectedPages.length === 0) {
       Alert.alert(
         "No Pages Selected",
@@ -959,11 +948,18 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
         `Please find attached the PDF document: ${pdf.name}\n\nCreated: ${new Date(pdf.createdAt).toLocaleDateString()}\nTotal pages: ${pdf.images.length}\nSelected pages: ${selectedPagesList}`
       );
       const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-
-      console.log("Opening mailto URL:", mailtoUrl);
+      
+      const supported = await Linking.canOpenURL(mailtoUrl);
+      
+      if (!supported) {
+        Alert.alert(
+          "Email Not Available",
+          "Please make sure you have an email app configured on your device."
+        );
+        return;
+      }
       
       await Linking.openURL(mailtoUrl);
-      console.log("Email app opened successfully");
       
       setTimeout(() => {
         Alert.alert(
@@ -975,33 +971,26 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
       console.error("Error sending email:", error);
       Alert.alert(
         "Error",
-        "Failed to open email app. Please make sure you have Mail app configured on your device."
+        "Failed to open email app. Please make sure you have an email app configured on your device."
       );
     }
   };
 
   const handleDelete = () => {
-    console.log("handleDelete called");
-    console.log("PDF to delete:", pdf.id, pdf.name);
-    
     Alert.alert(
       "Delete PDF",
       `Are you sure you want to delete "${pdf.name}"?`,
       [
         { 
           text: "Cancel", 
-          style: "cancel",
-          onPress: () => console.log("Delete cancelled")
+          style: "cancel"
         },
         {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
             try {
-              console.log("Deleting PDF:", pdf.id);
               await onDelete(pdf.id);
-              console.log("PDF deleted successfully");
-              Alert.alert("Success", "PDF deleted successfully!");
             } catch (error) {
               console.error("Error deleting PDF:", error);
               Alert.alert("Error", "Failed to delete PDF.");
@@ -1025,7 +1014,7 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
         <ScrollView
           style={styles.pdfDetailScrollView}
           contentContainerStyle={[styles.pdfDetailScrollContent, {
-            paddingBottom: Math.max(insets.bottom + 100, 120)
+            paddingBottom: Math.max(insets.bottom + 12, 24)
           }]}
           showsVerticalScrollIndicator={false}
           bounces={true}
@@ -1082,29 +1071,26 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
               </View>
             ))}
           </View>
-        </ScrollView>
 
-        <View
-          style={[
-            styles.pdfDetailActions,
-            { paddingBottom: Math.max(insets.bottom + 12, 20) },
-          ]}
-        >
-          <TouchableOpacity
-            style={[styles.pdfDetailButton, styles.pdfDetailButtonEmail]}
-            onPress={handleSendEmail}
-          >
-            <Mail color={Colors.white} size={20} />
-            <Text style={styles.pdfDetailButtonText}>Send to Email</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.pdfDetailButton, styles.pdfDetailButtonDelete]}
-            onPress={handleDelete}
-          >
-            <Trash2 color={Colors.white} size={20} />
-            <Text style={styles.pdfDetailButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.pdfDetailActionsInline}>
+            <TouchableOpacity
+              style={[styles.pdfDetailButton, styles.pdfDetailButtonEmail]}
+              onPress={handleSendEmail}
+              activeOpacity={0.7}
+            >
+              <Mail color={Colors.white} size={20} />
+              <Text style={styles.pdfDetailButtonText}>Send to Email</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.pdfDetailButton, styles.pdfDetailButtonDelete]}
+              onPress={handleDelete}
+              activeOpacity={0.7}
+            >
+              <Trash2 color={Colors.white} size={20} />
+              <Text style={styles.pdfDetailButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     </View>
   );
