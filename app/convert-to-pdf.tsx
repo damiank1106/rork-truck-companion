@@ -20,6 +20,7 @@ import {
   Trash2,
   Plus,
   FileText,
+  Mail,
 } from "lucide-react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
@@ -42,6 +43,7 @@ export default function ConvertToPDFScreen() {
 
   const [convertedPDFs, setConvertedPDFs] = useState<ConvertedPDF[]>([]);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [selectedPDF, setSelectedPDF] = useState<ConvertedPDF | null>(null);
 
   const isSmallScreen = width < 360;
 
@@ -99,7 +101,11 @@ export default function ConvertToPDFScreen() {
         ) : (
           <View style={styles.pdfList}>
             {convertedPDFs.map((pdf) => (
-              <View key={pdf.id} style={styles.pdfCard}>
+              <TouchableOpacity
+                key={pdf.id}
+                style={styles.pdfCard}
+                onPress={() => setSelectedPDF(pdf)}
+              >
                 <Image source={{ uri: pdf.originalImage }} style={styles.pdfThumbnail} />
                 <View style={styles.pdfInfo}>
                   <Text style={styles.pdfName}>{pdf.name}</Text>
@@ -113,11 +119,14 @@ export default function ConvertToPDFScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.pdfDeleteButton}
-                  onPress={() => handleDeletePDF(pdf.id, pdf.name)}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleDeletePDF(pdf.id, pdf.name);
+                  }}
                 >
                   <Trash2 color={Colors.error} size={20} />
                 </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}
@@ -130,6 +139,17 @@ export default function ConvertToPDFScreen() {
           onSave={(pdf) => {
             setConvertedPDFs([pdf, ...convertedPDFs]);
             setShowCreateModal(false);
+          }}
+        />
+      )}
+
+      {selectedPDF && (
+        <PDFDetailModal
+          pdf={selectedPDF}
+          onClose={() => setSelectedPDF(null)}
+          onDelete={(id) => {
+            setConvertedPDFs(convertedPDFs.filter((pdf) => pdf.id !== id));
+            setSelectedPDF(null);
           }}
         />
       )}
@@ -147,9 +167,11 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
   const insets = useSafeAreaInsets();
 
   const [fileName, setFileName] = useState<string>("");
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState<boolean>(false);
   const [isConverting, setIsConverting] = useState<boolean>(false);
+  const [scanProgress, setScanProgress] = useState<number>(0);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
   const [permission, requestPermission] = useCameraPermissions();
 
   const cameraRef = useRef<any>(null);
@@ -174,12 +196,13 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        allowsMultipleSelection: false,
+        allowsMultipleSelection: true,
         quality: 1,
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        setUploadedImage(result.assets[0].uri);
+        const newImages = result.assets.map((asset) => asset.uri);
+        setUploadedImages([...uploadedImages, ...newImages]);
       }
     } catch (error) {
       console.error("Error picking image:", error);
@@ -198,7 +221,7 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
       });
 
       if (photo?.uri && photo.uri.trim() !== "") {
-        setUploadedImage(photo.uri);
+        setUploadedImages([...uploadedImages, photo.uri]);
         setShowCamera(false);
       }
     } catch (error) {
@@ -213,23 +236,34 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
       return;
     }
 
-    if (!uploadedImage) {
-      Alert.alert("Missing Image", "Please upload or take a photo first.");
+    if (uploadedImages.length === 0) {
+      Alert.alert("Missing Images", "Please upload or take photos first.");
       return;
     }
 
     try {
       setIsConverting(true);
+      setIsScanning(true);
+      setScanProgress(0);
+
+      for (let i = 0; i < uploadedImages.length; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        setScanProgress(((i + 1) / uploadedImages.length) * 100);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const pdfDataSimulated = `data:application/pdf;base64,${Date.now()}`;
 
       const newPDF: ConvertedPDF = {
         id: Date.now().toString(),
         name: fileName.trim(),
-        originalImage: uploadedImage,
+        originalImage: uploadedImages[0],
         pdfData: pdfDataSimulated,
         createdAt: new Date().toISOString(),
       };
+
+      setIsScanning(false);
 
       Alert.alert("Success", `"${fileName.trim()}" has been converted to PDF!`, [
         {
@@ -237,13 +271,15 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
           onPress: () => {
             onSave(newPDF);
             setFileName("");
-            setUploadedImage(null);
+            setUploadedImages([]);
+            setScanProgress(0);
           },
         },
       ]);
     } catch (error) {
       console.error("Error converting to PDF:", error);
       Alert.alert("Error", "Failed to convert image to PDF. Please try again.");
+      setIsScanning(false);
     } finally {
       setIsConverting(false);
     }
@@ -343,28 +379,53 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
             </View>
           </View>
 
-          {uploadedImage && (
+          {uploadedImages.length > 0 && (
             <View style={styles.modalSection}>
-              <Text style={styles.modalLabel}>Uploaded Image</Text>
-              <View style={styles.imagePreviewContainer}>
-                <Image source={{ uri: uploadedImage }} style={styles.imagePreview} />
-                <TouchableOpacity
-                  style={styles.imageRemoveButton}
-                  onPress={() => setUploadedImage(null)}
-                >
-                  <Trash2 color={Colors.white} size={16} />
-                </TouchableOpacity>
+              <Text style={styles.modalLabel}>
+                Uploaded Images ({uploadedImages.length})
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.imagesScrollContainer}
+              >
+                {uploadedImages.map((imageUri, index) => (
+                  <View key={`${imageUri}-${index}`} style={styles.imagePreviewContainer}>
+                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+                    <TouchableOpacity
+                      style={styles.imageRemoveButton}
+                      onPress={() => {
+                        setUploadedImages(uploadedImages.filter((_, i) => i !== index));
+                      }}
+                    >
+                      <Trash2 color={Colors.white} size={16} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {isScanning && (
+            <View style={styles.modalSection}>
+              <Text style={styles.modalLabel}>Scanning Progress</Text>
+              <View style={styles.progressBarContainer}>
+                <View style={[styles.progressBar, { width: `${scanProgress}%` }]} />
               </View>
+              <Text style={styles.progressText}>
+                {Math.round(scanProgress)}% Complete
+              </Text>
             </View>
           )}
 
           <TouchableOpacity
             style={[
               styles.convertButton,
-              (isConverting || !fileName.trim() || !uploadedImage) && styles.convertButtonDisabled,
+              (isConverting || !fileName.trim() || uploadedImages.length === 0) &&
+                styles.convertButtonDisabled,
             ]}
             onPress={handleConvert}
-            disabled={isConverting || !fileName.trim() || !uploadedImage}
+            disabled={isConverting || !fileName.trim() || uploadedImages.length === 0}
           >
             {isConverting ? (
               <ActivityIndicator color={Colors.white} />
@@ -536,8 +597,8 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   imagePreviewContainer: {
-    width: "100%",
-    aspectRatio: 0.707,
+    width: 120,
+    height: 170,
     borderRadius: 12,
     overflow: "hidden",
     backgroundColor: Colors.background,
@@ -668,4 +729,208 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
     color: Colors.white,
   },
+  imagesScrollContainer: {
+    gap: 12,
+  },
+  progressBarContainer: {
+    width: "100%",
+    height: 8,
+    backgroundColor: Colors.border,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.text,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  pdfDetailContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    zIndex: 1000,
+  },
+  pdfDetailContent: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: "10%",
+  },
+  pdfDetailHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  pdfDetailTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: Colors.text,
+  },
+  pdfDetailScrollView: {
+    flex: 1,
+  },
+  pdfDetailScrollContent: {
+    padding: 20,
+  },
+  pdfDetailSection: {
+    marginBottom: 24,
+  },
+  pdfDetailLabel: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.textLight,
+    marginBottom: 8,
+    textTransform: "uppercase" as const,
+  },
+  pdfDetailValue: {
+    fontSize: 16,
+    color: Colors.text,
+  },
+  pdfDetailImage: {
+    width: "100%",
+    aspectRatio: 0.707,
+    borderRadius: 12,
+    backgroundColor: Colors.background,
+  },
+  pdfDetailActions: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  pdfDetailButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    ...standardShadow,
+  },
+  pdfDetailButtonEmail: {
+    backgroundColor: Colors.primaryLight,
+  },
+  pdfDetailButtonDelete: {
+    backgroundColor: Colors.error,
+  },
+  pdfDetailButtonText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.white,
+  },
 });
+
+interface PDFDetailModalProps {
+  pdf: ConvertedPDF;
+  onClose: () => void;
+  onDelete: (id: string) => void;
+}
+
+function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
+  const insets = useSafeAreaInsets();
+
+  const handleSendEmail = () => {
+    Alert.alert(
+      "Send to Email",
+      `This feature would send "${pdf.name}.pdf" to your email address.`,
+      [{ text: "OK" }]
+    );
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete PDF",
+      `Are you sure you want to delete "${pdf.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => onDelete(pdf.id),
+        },
+      ]
+    );
+  };
+
+  return (
+    <View style={styles.pdfDetailContainer}>
+      <View style={[styles.pdfDetailContent, { paddingTop: insets.top + 20 }]}>
+        <View style={styles.pdfDetailHeader}>
+          <Text style={styles.pdfDetailTitle}>PDF Details</Text>
+          <TouchableOpacity onPress={onClose}>
+            <X color={Colors.textSecondary} size={24} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.pdfDetailScrollView}
+          contentContainerStyle={styles.pdfDetailScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.pdfDetailSection}>
+            <Text style={styles.pdfDetailLabel}>File Name</Text>
+            <Text style={styles.pdfDetailValue}>{pdf.name}</Text>
+          </View>
+
+          <View style={styles.pdfDetailSection}>
+            <Text style={styles.pdfDetailLabel}>Created Date</Text>
+            <Text style={styles.pdfDetailValue}>
+              {new Date(pdf.createdAt).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          </View>
+
+          <View style={styles.pdfDetailSection}>
+            <Text style={styles.pdfDetailLabel}>Preview</Text>
+            <Image source={{ uri: pdf.originalImage }} style={styles.pdfDetailImage} />
+          </View>
+        </ScrollView>
+
+        <View
+          style={[
+            styles.pdfDetailActions,
+            { paddingBottom: Math.max(insets.bottom + 12, 20) },
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.pdfDetailButton, styles.pdfDetailButtonEmail]}
+            onPress={handleSendEmail}
+          >
+            <Mail color={Colors.white} size={20} />
+            <Text style={styles.pdfDetailButtonText}>Send to Email</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.pdfDetailButton, styles.pdfDetailButtonDelete]}
+            onPress={handleDelete}
+          >
+            <Trash2 color={Colors.white} size={20} />
+            <Text style={styles.pdfDetailButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
