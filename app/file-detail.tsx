@@ -29,6 +29,7 @@ import {
   Mail,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
 
 import PageHeader from "@/components/PageHeader";
 import Colors from "@/constants/colors";
@@ -322,7 +323,6 @@ export default function FileDetailScreen() {
       }
     } else {
       try {
-        const MediaLibrary = await import('expo-media-library');
         const { status } = await MediaLibrary.requestPermissionsAsync();
         
         if (status !== 'granted') {
