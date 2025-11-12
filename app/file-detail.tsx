@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
   imageModalImage: {
-    width: width,
+    width: "100%" as const,
     height: "100%" as const,
   },
 });
