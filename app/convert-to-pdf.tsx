@@ -834,6 +834,52 @@ const styles = StyleSheet.create({
     aspectRatio: 0.707,
     borderRadius: 12,
     backgroundColor: Colors.background,
+    marginTop: 8,
+  },
+  pdfDetailSubtext: {
+    fontSize: 14,
+    color: Colors.textLight,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  pdfPageContainer: {
+    marginBottom: 20,
+  },
+  pdfPageHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  pdfPageCheckbox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  pdfPageTitle: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.white,
+  },
+  checkboxSelected: {
+    backgroundColor: Colors.primaryLight,
+    borderColor: Colors.primaryLight,
+  },
+  checkmark: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    backgroundColor: Colors.white,
   },
   pdfDetailActions: {
     flexDirection: "row",
@@ -874,18 +920,44 @@ interface PDFDetailModalProps {
 
 function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
   const insets = useSafeAreaInsets();
+  const [selectedPages, setSelectedPages] = useState<number[]>([]);
+
+  const togglePageSelection = (index: number) => {
+    if (selectedPages.includes(index)) {
+      setSelectedPages(selectedPages.filter((i) => i !== index));
+    } else {
+      setSelectedPages([...selectedPages, index]);
+    }
+  };
 
   const handleSendEmail = async () => {
     try {
+      if (selectedPages.length === 0) {
+        Alert.alert(
+          "No Pages Selected",
+          "Please select at least one page to send via email."
+        );
+        return;
+      }
+
+      const selectedPagesList = selectedPages
+        .sort((a, b) => a - b)
+        .map((i) => i + 1)
+        .join(", ");
+
       const emailSubject = encodeURIComponent(`PDF: ${pdf.name}`);
       const emailBody = encodeURIComponent(
-        `Please find attached the PDF document: ${pdf.name}\n\nCreated: ${new Date(pdf.createdAt).toLocaleDateString()}\nNumber of pages: ${pdf.images.length}`
+        `Please find attached the PDF document: ${pdf.name}\n\nCreated: ${new Date(pdf.createdAt).toLocaleDateString()}\nTotal pages: ${pdf.images.length}\nSelected pages: ${selectedPagesList}`
       );
       const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
 
       const canOpen = await Linking.canOpenURL(mailtoUrl);
       if (canOpen) {
         await Linking.openURL(mailtoUrl);
+        Alert.alert(
+          "Email Opened",
+          "Please attach the selected pages manually in your email app."
+        );
       } else {
         Alert.alert(
           "Email Not Available",
@@ -909,7 +981,6 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
           style: "destructive",
           onPress: async () => {
             await onDelete(pdf.id);
-            onClose();
           },
         },
       ]
@@ -950,8 +1021,38 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
           </View>
 
           <View style={styles.pdfDetailSection}>
-            <Text style={styles.pdfDetailLabel}>Preview</Text>
-            <Image source={{ uri: pdf.originalImage }} style={styles.pdfDetailImage} />
+            <Text style={styles.pdfDetailLabel}>Number of Pages</Text>
+            <Text style={styles.pdfDetailValue}>{pdf.images.length}</Text>
+          </View>
+
+          <View style={styles.pdfDetailSection}>
+            <Text style={styles.pdfDetailLabel}>All Pages</Text>
+            <Text style={styles.pdfDetailSubtext}>
+              Select pages to send via email
+            </Text>
+            {pdf.images.map((imageUri, index) => (
+              <View key={`${imageUri}-${index}`} style={styles.pdfPageContainer}>
+                <View style={styles.pdfPageHeader}>
+                  <TouchableOpacity
+                    style={styles.pdfPageCheckbox}
+                    onPress={() => togglePageSelection(index)}
+                  >
+                    <View
+                      style={[
+                        styles.checkbox,
+                        selectedPages.includes(index) && styles.checkboxSelected,
+                      ]}
+                    >
+                      {selectedPages.includes(index) && (
+                        <View style={styles.checkmark} />
+                      )}
+                    </View>
+                    <Text style={styles.pdfPageTitle}>Page {index + 1}</Text>
+                  </TouchableOpacity>
+                </View>
+                <Image source={{ uri: imageUri }} style={styles.pdfDetailImage} />
+              </View>
+            ))}
           </View>
         </ScrollView>
 
