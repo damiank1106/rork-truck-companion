@@ -126,6 +126,14 @@ export default function FileDetailScreen() {
     }
   };
 
+  const handleSendToEmail = () => {
+    if (file.scanImages.length === 0) {
+      Alert.alert("No Content", "This file has no pages to send.");
+      return;
+    }
+    Alert.alert("Send to Email", "Email functionality will be implemented.");
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -286,18 +294,6 @@ export default function FileDetailScreen() {
                 onPress={() => setIsEditMode(true)}
               >
                 <Edit3 color={Colors.primaryLight} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.headerIconButton}
-                onPress={handleShareFile}
-              >
-                <Share2 color={Colors.primaryLight} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.headerIconButton, styles.deleteButton]}
-                onPress={handleDeleteFile}
-              >
-                <Trash2 color={Colors.error} size={20} />
               </TouchableOpacity>
             </View>
           )
@@ -462,7 +458,7 @@ export default function FileDetailScreen() {
                     >
                       <ChevronLeft
                         color={currentPage === 0 ? Colors.textLight : Colors.primaryLight}
-                        size={24}
+                        size={20}
                       />
                     </TouchableOpacity>
 
@@ -486,14 +482,14 @@ export default function FileDetailScreen() {
                             ? Colors.textLight
                             : Colors.primaryLight
                         }
-                        size={24}
+                        size={20}
                       />
                     </TouchableOpacity>
                   </View>
                 )}
 
                 <View style={styles.thumbnailsContainer}>
-                  <Text style={styles.thumbnailsTitle}>Photos</Text>
+                  <Text style={styles.thumbnailsTitle}>All Photos ({file.scanImages.length})</Text>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -512,17 +508,35 @@ export default function FileDetailScreen() {
                           onPress={() => setCurrentPage(index)}
                         >
                           <Image source={{ uri }} style={styles.thumbnailImage} />
-                          <Text style={styles.thumbnailLabel}>Photo {index + 1}</Text>
+                          <Text style={styles.thumbnailLabel}>{index + 1}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.thumbnailDeleteButton}
                           onPress={() => handleDeletePage(index)}
                         >
-                          <Trash2 color={Colors.white} size={12} />
+                          <Trash2 color={Colors.white} size={10} />
                         </TouchableOpacity>
                       </View>
                     ))}
                   </ScrollView>
+                </View>
+
+                <View style={styles.actionButtonsRow}>
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.emailButton]}
+                    onPress={handleSendToEmail}
+                  >
+                    <Share2 color={Colors.white} size={20} />
+                    <Text style={styles.actionButtonText}>Send to Email</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.deleteActionButton]}
+                    onPress={handleDeleteFile}
+                  >
+                    <Trash2 color={Colors.white} size={20} />
+                    <Text style={styles.actionButtonText}>Delete</Text>
+                  </TouchableOpacity>
                 </View>
               </>
             )}
@@ -676,26 +690,26 @@ const styles = StyleSheet.create({
   pageViewer: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 12,
-    marginBottom: 20,
+    padding: 10,
+    marginBottom: 16,
     ...standardShadow,
   },
   pageImage: {
     width: "100%",
-    aspectRatio: 0.707,
+    height: 250,
     borderRadius: 8,
   },
   pageNavigation: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
   pageNavButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.white,
     alignItems: "center",
     justifyContent: "center",
@@ -706,34 +720,35 @@ const styles = StyleSheet.create({
   },
   pageIndicator: {
     backgroundColor: Colors.white,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
     ...standardShadow,
   },
   pageIndicatorText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600" as const,
     color: Colors.text,
   },
   thumbnailsContainer: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
+    marginBottom: 16,
     ...standardShadow,
   },
   thumbnailsTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600" as const,
     color: Colors.text,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   thumbnails: {
-    gap: 12,
+    gap: 8,
     paddingVertical: 4,
   },
   thumbnail: {
-    width: 100,
+    width: 70,
     borderRadius: 8,
     borderWidth: 2,
     borderColor: "transparent",
@@ -748,27 +763,54 @@ const styles = StyleSheet.create({
   },
   thumbnailImage: {
     width: "100%",
-    aspectRatio: 0.707,
+    height: 90,
     borderRadius: 6,
   },
   thumbnailLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "600" as const,
     color: Colors.text,
     textAlign: "center",
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   thumbnailDeleteButton: {
     position: "absolute",
-    top: 4,
-    right: 4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: 2,
+    right: 2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: Colors.error,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
+  },
+  actionButtonsRow: {
+    flexDirection: "row" as const,
+    gap: 12,
+    marginTop: 4,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+    ...standardShadow,
+  },
+  emailButton: {
+    backgroundColor: Colors.primaryLight,
+  },
+  deleteActionButton: {
+    backgroundColor: Colors.error,
+  },
+  actionButtonText: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: Colors.white,
   },
   modalOverlay: {
     flex: 1,
