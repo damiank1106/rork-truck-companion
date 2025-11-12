@@ -11,6 +11,7 @@ import {
   Alert,
   useWindowDimensions,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -21,6 +22,8 @@ import {
   Plus,
   FileText,
   Mail,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
@@ -814,51 +817,127 @@ const styles = StyleSheet.create({
   pdfDetailScrollContent: {
     padding: 20,
   },
-  pdfDetailSection: {
-    marginBottom: 24,
+  infoCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    ...standardShadow,
   },
-  pdfDetailLabel: {
-    fontSize: 14,
-    fontWeight: "600" as const,
-    color: Colors.textLight,
-    marginBottom: 8,
-    textTransform: "uppercase" as const,
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
   },
-  pdfDetailValue: {
+  infoLabel: {
     fontSize: 16,
+    fontWeight: "600" as const,
     color: Colors.text,
   },
-  pdfDetailImage: {
-    width: "100%",
-    aspectRatio: 1 / 1.4,
-    borderRadius: 12,
-    backgroundColor: Colors.background,
-    marginTop: 8,
-  },
-  pdfDetailSubtext: {
-    fontSize: 14,
+  infoValue: {
+    fontSize: 16,
     color: Colors.textLight,
-    marginTop: 4,
-    marginBottom: 12,
+    flex: 1,
+    textAlign: "right",
+    marginLeft: 16,
   },
-  pdfPageContainer: {
-    marginBottom: 20,
+  pageViewer: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 10,
+    marginBottom: 16,
+    ...standardShadow,
   },
-  pdfPageHeader: {
+  pageImage: {
+    width: "100%",
+    height: 400,
+    borderRadius: 8,
+  },
+  pageNavigation: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
-  pdfPageCheckbox: {
-    flexDirection: "row",
+  pageNavButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.white,
     alignItems: "center",
-    gap: 10,
+    justifyContent: "center",
+    ...standardShadow,
   },
-  pdfPageTitle: {
-    fontSize: 15,
+  pageNavButtonDisabled: {
+    opacity: 0.5,
+  },
+  pageIndicator: {
+    backgroundColor: Colors.white,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    ...standardShadow,
+  },
+  pageIndicatorText: {
+    fontSize: 14,
     fontWeight: "600" as const,
     color: Colors.text,
+  },
+  thumbnailsContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 16,
+    ...standardShadow,
+  },
+  thumbnailsTitle: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  pdfDetailSubtext: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginBottom: 12,
+  },
+  thumbnails: {
+    gap: 8,
+    paddingVertical: 4,
+  },
+  thumbnail: {
+    width: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "transparent",
+    overflow: "hidden",
+    position: "relative",
+  },
+  thumbnailTouchableContainer: {
+    width: "100%",
+  },
+  thumbnailActive: {
+    borderColor: Colors.primaryLight,
+  },
+  thumbnailImage: {
+    width: "100%",
+    height: 100,
+    borderRadius: 6,
+  },
+  thumbnailLabel: {
+    fontSize: 10,
+    fontWeight: "600" as const,
+    color: Colors.text,
+    textAlign: "center",
+    paddingVertical: 4,
+  },
+  thumbnailCheckbox: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    zIndex: 10,
   },
   checkbox: {
     width: 24,
@@ -880,32 +959,59 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: Colors.white,
   },
-  pdfDetailActionsInline: {
-    flexDirection: "row",
+  actionButtonsRow: {
+    flexDirection: "row" as const,
     gap: 12,
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 4,
+    marginBottom: 20,
   },
-  pdfDetailButton: {
+  actionButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: 16,
-    borderRadius: 12,
+    paddingHorizontal: 20,
+    borderRadius: 14,
     gap: 8,
     ...standardShadow,
+    minHeight: 56,
   },
-  pdfDetailButtonEmail: {
+  emailButton: {
     backgroundColor: Colors.primaryLight,
   },
-  pdfDetailButtonDelete: {
+  deleteActionButton: {
     backgroundColor: Colors.error,
   },
-  pdfDetailButtonText: {
+  actionButtonText: {
     fontSize: 16,
-    fontWeight: "600" as const,
+    fontWeight: "700" as const,
     color: Colors.white,
+  },
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.95)",
+  },
+  imageModalCloseButton: {
+    position: "absolute" as const,
+    top: Platform.select({ ios: 60, android: 40, default: 40 }),
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    zIndex: 10,
+  },
+  imageModalContent: {
+    flex: 1,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+  },
+  imageModalImage: {
+    width: "100%" as const,
+    height: "100%" as const,
   },
 });
 
@@ -917,13 +1023,38 @@ interface PDFDetailModalProps {
 
 function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
   const insets = useSafeAreaInsets();
+  const [currentPage, setCurrentPage] = useState<number>(0);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
+  const [showImageModal, setShowImageModal] = useState<boolean>(false);
 
   const togglePageSelection = (index: number) => {
     if (selectedPages.includes(index)) {
       setSelectedPages(selectedPages.filter((i) => i !== index));
     } else {
       setSelectedPages([...selectedPages, index]);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < pdf.images.length - 1) {
+      setCurrentPage(currentPage + 1);
     }
   };
 
@@ -950,6 +1081,7 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
         const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
         
         window.open(mailtoUrl, '_blank');
+        Alert.alert("Success", "Email client opened successfully.");
         return;
       }
 
@@ -1016,6 +1148,10 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
     );
   };
 
+  const handleOpenImageModal = () => {
+    setShowImageModal(true);
+  };
+
   return (
     <View style={styles.pdfDetailContainer}>
       <View style={[styles.pdfDetailContent, { paddingTop: insets.top + 20 }]}>
@@ -1034,79 +1170,168 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
           showsVerticalScrollIndicator={false}
           bounces={true}
         >
-          <View style={styles.pdfDetailSection}>
-            <Text style={styles.pdfDetailLabel}>File Name</Text>
-            <Text style={styles.pdfDetailValue}>{pdf.name}</Text>
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Created:</Text>
+              <Text style={styles.infoValue}>{formatDate(pdf.createdAt)}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>File Name:</Text>
+              <Text style={styles.infoValue}>{pdf.name}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Pages:</Text>
+              <Text style={styles.infoValue}>{pdf.images.length}</Text>
+            </View>
           </View>
 
-          <View style={styles.pdfDetailSection}>
-            <Text style={styles.pdfDetailLabel}>Created Date</Text>
-            <Text style={styles.pdfDetailValue}>
-              {new Date(pdf.createdAt).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
-          </View>
+          {pdf.images.length > 0 && (
+            <>
+              <TouchableOpacity
+                style={styles.pageViewer}
+                onPress={handleOpenImageModal}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={{ uri: pdf.images[currentPage] }}
+                  style={styles.pageImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
 
-          <View style={styles.pdfDetailSection}>
-            <Text style={styles.pdfDetailLabel}>Number of Pages</Text>
-            <Text style={styles.pdfDetailValue}>{pdf.images.length}</Text>
-          </View>
-
-          <View style={styles.pdfDetailSection}>
-            <Text style={styles.pdfDetailLabel}>All Pages</Text>
-            <Text style={styles.pdfDetailSubtext}>
-              Select pages to send via email
-            </Text>
-            {pdf.images.map((imageUri, index) => (
-              <View key={`${imageUri}-${index}`} style={styles.pdfPageContainer}>
-                <View style={styles.pdfPageHeader}>
+              {pdf.images.length > 1 && (
+                <View style={styles.pageNavigation}>
                   <TouchableOpacity
-                    style={styles.pdfPageCheckbox}
-                    onPress={() => togglePageSelection(index)}
+                    style={[
+                      styles.pageNavButton,
+                      currentPage === 0 && styles.pageNavButtonDisabled,
+                    ]}
+                    onPress={goToPreviousPage}
+                    disabled={currentPage === 0}
                   >
-                    <View
-                      style={[
-                        styles.checkbox,
-                        selectedPages.includes(index) && styles.checkboxSelected,
-                      ]}
-                    >
-                      {selectedPages.includes(index) && (
-                        <View style={styles.checkmark} />
-                      )}
-                    </View>
-                    <Text style={styles.pdfPageTitle}>Page {index + 1}</Text>
+                    <ChevronLeft
+                      color={currentPage === 0 ? Colors.textLight : Colors.primaryLight}
+                      size={20}
+                    />
+                  </TouchableOpacity>
+
+                  <View style={styles.pageIndicator}>
+                    <Text style={styles.pageIndicatorText}>
+                      {currentPage + 1} / {pdf.images.length}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.pageNavButton,
+                      currentPage === pdf.images.length - 1 && styles.pageNavButtonDisabled,
+                    ]}
+                    onPress={goToNextPage}
+                    disabled={currentPage === pdf.images.length - 1}
+                  >
+                    <ChevronRight
+                      color={
+                        currentPage === pdf.images.length - 1
+                          ? Colors.textLight
+                          : Colors.primaryLight
+                      }
+                      size={20}
+                    />
                   </TouchableOpacity>
                 </View>
-                <Image source={{ uri: imageUri }} style={styles.pdfDetailImage} />
-              </View>
-            ))}
-          </View>
+              )}
 
-          <View style={styles.pdfDetailActionsInline}>
-            <TouchableOpacity
-              style={[styles.pdfDetailButton, styles.pdfDetailButtonEmail]}
-              onPress={handleSendEmail}
-              activeOpacity={0.7}
-            >
-              <Mail color={Colors.white} size={20} />
-              <Text style={styles.pdfDetailButtonText}>Send to Email</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.pdfDetailButton, styles.pdfDetailButtonDelete]}
-              onPress={handleDelete}
-              activeOpacity={0.7}
-            >
-              <Trash2 color={Colors.white} size={20} />
-              <Text style={styles.pdfDetailButtonText}>Delete</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.thumbnailsContainer}>
+                <Text style={styles.thumbnailsTitle}>All Pages ({pdf.images.length})</Text>
+                <Text style={styles.pdfDetailSubtext}>
+                  Select pages to send via email
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.thumbnails}
+                >
+                  {pdf.images.map((imageUri, index) => (
+                    <View
+                      key={`${imageUri}-${index}`}
+                      style={[
+                        styles.thumbnail,
+                        currentPage === index && styles.thumbnailActive,
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.thumbnailTouchableContainer}
+                        onPress={() => setCurrentPage(index)}
+                      >
+                        <Image source={{ uri: imageUri }} style={styles.thumbnailImage} />
+                        <Text style={styles.thumbnailLabel}>{index + 1}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.thumbnailCheckbox}
+                        onPress={() => togglePageSelection(index)}
+                      >
+                        <View
+                          style={[
+                            styles.checkbox,
+                            selectedPages.includes(index) && styles.checkboxSelected,
+                          ]}
+                        >
+                          {selectedPages.includes(index) && (
+                            <View style={styles.checkmark} />
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={styles.actionButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.emailButton]}
+                  onPress={handleSendEmail}
+                  activeOpacity={0.7}
+                >
+                  <Mail color={Colors.white} size={20} />
+                  <Text style={styles.actionButtonText}>Send to Email</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.deleteActionButton]}
+                  onPress={handleDelete}
+                  activeOpacity={0.7}
+                >
+                  <Trash2 color={Colors.white} size={20} />
+                  <Text style={styles.actionButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </ScrollView>
       </View>
+
+      <Modal
+        visible={showImageModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowImageModal(false)}
+      >
+        <View style={styles.imageModalOverlay}>
+          <TouchableOpacity
+            style={styles.imageModalCloseButton}
+            onPress={() => setShowImageModal(false)}
+          >
+            <X color={Colors.white} size={28} />
+          </TouchableOpacity>
+          <View style={styles.imageModalContent}>
+            <Image
+              source={{ uri: pdf.images[currentPage] }}
+              style={styles.imageModalImage}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
