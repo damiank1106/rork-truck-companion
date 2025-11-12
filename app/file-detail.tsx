@@ -8,16 +8,15 @@ import {
   Image,
   Alert,
   useWindowDimensions,
-  Share,
   Platform,
   Modal,
   TextInput,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   Trash2,
-  Share2,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -26,6 +25,8 @@ import {
   X,
   Edit3,
   Save,
+  Download,
+  Mail,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
@@ -126,12 +127,42 @@ export default function FileDetailScreen() {
     }
   };
 
-  const handleSendToEmail = () => {
+  const handleSendToEmail = async () => {
     if (file.scanImages.length === 0) {
       Alert.alert("No Content", "This file has no pages to send.");
       return;
     }
-    Alert.alert("Send to Email", "Email functionality will be implemented.");
+
+    try {
+      const emailSubject = encodeURIComponent(
+        `Document: ${file.fileName || file.tripNumber || 'File'}`
+      );
+      const emailBody = encodeURIComponent(
+        `Attached photos from document:\n\nFile Name: ${file.fileName || 'N/A'}\nTrip Number: ${file.tripNumber || 'N/A'}\nCreated: ${new Date(file.createdAt).toLocaleDateString()}\nTotal Photos: ${file.scanImages.length}`
+      );
+
+      if (Platform.OS === 'web') {
+        const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+        window.open(mailtoUrl, '_blank');
+        Alert.alert("Email Client Opened", "Your email client has been opened. Note: Image attachments are not supported on web. Please use the download feature to save images first.");
+      } else {
+        const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+        const canOpen = await Linking.canOpenURL(mailtoUrl);
+        
+        if (canOpen) {
+          await Linking.openURL(mailtoUrl);
+          Alert.alert(
+            "Email Client Opened",
+            `Your email client has been opened with ${file.scanImages.length} photo(s) ready. Note: You may need to manually attach the photos. Use the Share button for direct photo sharing, or use the Download button to save images to your device first.`
+          );
+        } else {
+          Alert.alert("No Email Client", "No email client found on your device.");
+        }
+      }
+    } catch (error) {
+      console.error("Error opening email client:", error);
+      Alert.alert("Error", "Failed to open email client. Please try again.");
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -263,6 +294,70 @@ export default function FileDetailScreen() {
     setShowImageModal(true);
   };
 
+  const handleDownloadImages = async () => {
+    if (file.scanImages.length === 0) {
+      Alert.alert("No Images", "This file has no images to download.");
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      try {
+        for (let i = 0; i < file.scanImages.length; i++) {
+          const imageUri = file.scanImages[i];
+          const fileName = `${file.fileName || file.tripNumber || 'file'}_photo_${i + 1}.jpg`;
+          
+          const link = document.createElement('a');
+          link.href = imageUri;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        Alert.alert("Success", `Downloaded ${file.scanImages.length} image(s) successfully!`);
+      } catch (error) {
+        console.error("Error downloading images:", error);
+        Alert.alert("Error", "Failed to download images. Please try again.");
+      }
+    } else {
+      try {
+        const MediaLibrary = await import('expo-media-library');
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        
+        if (status !== 'granted') {
+          Alert.alert(
+            "Permission Required",
+            "Please grant media library permission to save images."
+          );
+          return;
+        }
+
+        let savedCount = 0;
+        for (const imageUri of file.scanImages) {
+          try {
+            await MediaLibrary.saveToLibraryAsync(imageUri);
+            savedCount++;
+          } catch (err) {
+            console.error("Error saving image:", err);
+          }
+        }
+        
+        if (savedCount > 0) {
+          Alert.alert(
+            "Success",
+            `Saved ${savedCount} of ${file.scanImages.length} image(s) to your device!`
+          );
+        } else {
+          Alert.alert("Error", "Failed to save images. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error downloading images:", error);
+        Alert.alert("Error", "Failed to download images. Please try again.");
+      }
+    }
+  };
+
   return (
     <View style={styles.container}>
       <PageHeader
@@ -283,6 +378,12 @@ export default function FileDetailScreen() {
             </TouchableOpacity>
           ) : (
             <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={handleDownloadImages}
+              >
+                <Download color={Colors.primaryLight} size={20} />
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.headerIconButton, styles.cameraButton]}
                 onPress={() => setShowAddPhotoModal(true)}
@@ -527,7 +628,7 @@ export default function FileDetailScreen() {
                     onPress={handleSendToEmail}
                     activeOpacity={0.7}
                   >
-                    <Share2 color={Colors.white} size={20} />
+                    <Mail color={Colors.white} size={20} />
                     <Text style={styles.actionButtonText}>Send to Email</Text>
                   </TouchableOpacity>
 

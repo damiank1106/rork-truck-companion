@@ -198,39 +198,76 @@ export default function FilesScreen() {
 
   return (
     <View style={styles.container}>
-      <PageHeader
-        title="Files"
-        subtitle="Manage your scanned documents"
-        topInset={insets.top + (isSmallScreen ? 24 : 16)}
-        rightAccessory={
-          <View style={styles.headerActions}>
+      {isSmallScreen ? (
+        <View style={[styles.compactHeader, { paddingTop: insets.top + 16 }]}>
+          <View style={styles.compactHeaderLine1}>
+            <Text style={styles.compactTitle}>Files</Text>
+          </View>
+          <View style={styles.compactHeaderLine2}>
+            <Text style={styles.compactSubtitle}>Manage your scanned documents</Text>
+          </View>
+          <View style={styles.compactHeaderLine3}>
             <TouchableOpacity
-              style={styles.headerIconButton}
+              style={styles.compactIconButton}
               onPress={() => setShowDateFilterModal(true)}
             >
-              <Calendar color={Colors.primaryLight} size={20} />
+              <Calendar color={Colors.primaryLight} size={18} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.headerIconButton}
+              style={styles.compactIconButton}
               onPress={() => setShowDeleteModal(true)}
             >
-              <Trash2 color={Colors.error} size={20} />
+              <Trash2 color={Colors.error} size={18} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.headerIconButton}
+              style={styles.compactIconButton}
               onPress={() => setShowDisplayModal(true)}
             >
-              <LayoutGrid color={Colors.primaryLight} size={20} />
+              <LayoutGrid color={Colors.primaryLight} size={18} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.headerIconButton, styles.plusButton]}
+              style={[styles.compactIconButton, styles.compactPlusButton]}
               onPress={() => router.push("/scan-document")}
             >
-              <Plus color={Colors.white} size={20} />
+              <Plus color={Colors.white} size={18} />
             </TouchableOpacity>
           </View>
-        }
-      />
+        </View>
+      ) : (
+        <PageHeader
+          title="Files"
+          subtitle="Manage your scanned documents"
+          topInset={insets.top + 16}
+          rightAccessory={
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => setShowDateFilterModal(true)}
+              >
+                <Calendar color={Colors.primaryLight} size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => setShowDeleteModal(true)}
+              >
+                <Trash2 color={Colors.error} size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => setShowDisplayModal(true)}
+              >
+                <LayoutGrid color={Colors.primaryLight} size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.headerIconButton, styles.plusButton]}
+                onPress={() => router.push("/scan-document")}
+              >
+                <Plus color={Colors.white} size={20} />
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      )}
 
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
@@ -868,6 +905,46 @@ const styles = StyleSheet.create({
     ...standardShadow,
   },
   plusButton: {
+    backgroundColor: Colors.primaryLight,
+  },
+  compactHeader: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  compactHeaderLine1: {
+    marginBottom: 4,
+  },
+  compactTitle: {
+    fontSize: 24,
+    fontWeight: "700" as const,
+    color: Colors.text,
+  },
+  compactHeaderLine2: {
+    marginBottom: 12,
+  },
+  compactSubtitle: {
+    fontSize: 14,
+    color: Colors.textLight,
+  },
+  compactHeaderLine3: {
+    flexDirection: "row" as const,
+    gap: 8,
+    justifyContent: "flex-start" as const,
+    alignItems: "center" as const,
+  },
+  compactIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: Colors.white,
+    ...standardShadow,
+  },
+  compactPlusButton: {
     backgroundColor: Colors.primaryLight,
   },
   searchContainer: {
