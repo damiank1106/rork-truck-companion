@@ -931,15 +931,18 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
   };
 
   const handleSendEmail = async () => {
-    try {
-      if (selectedPages.length === 0) {
-        Alert.alert(
-          "No Pages Selected",
-          "Please select at least one page to send via email."
-        );
-        return;
-      }
+    console.log("handleSendEmail called");
+    console.log("Selected pages:", selectedPages);
+    
+    if (selectedPages.length === 0) {
+      Alert.alert(
+        "No Pages Selected",
+        "Please select at least one page to send via email."
+      );
+      return;
+    }
 
+    try {
       const selectedPagesList = selectedPages
         .sort((a, b) => a - b)
         .map((i) => i + 1)
@@ -951,36 +954,52 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
       );
       const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
 
-      const canOpen = await Linking.canOpenURL(mailtoUrl);
-      if (canOpen) {
-        await Linking.openURL(mailtoUrl);
+      console.log("Opening mailto URL:", mailtoUrl);
+      
+      await Linking.openURL(mailtoUrl);
+      console.log("Email app opened successfully");
+      
+      setTimeout(() => {
         Alert.alert(
           "Email Opened",
           "Please attach the selected pages manually in your email app."
         );
-      } else {
-        Alert.alert(
-          "Email Not Available",
-          "No email app is configured on this device."
-        );
-      }
+      }, 500);
     } catch (error) {
       console.error("Error sending email:", error);
-      Alert.alert("Error", "Failed to open email app.");
+      Alert.alert(
+        "Error",
+        "Failed to open email app. Please make sure you have Mail app configured on your device."
+      );
     }
   };
 
   const handleDelete = () => {
+    console.log("handleDelete called");
+    console.log("PDF to delete:", pdf.id, pdf.name);
+    
     Alert.alert(
       "Delete PDF",
       `Are you sure you want to delete "${pdf.name}"?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Cancel", 
+          style: "cancel",
+          onPress: () => console.log("Delete cancelled")
+        },
         {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            await onDelete(pdf.id);
+            try {
+              console.log("Deleting PDF:", pdf.id);
+              await onDelete(pdf.id);
+              console.log("PDF deleted successfully");
+              Alert.alert("Success", "PDF deleted successfully!");
+            } catch (error) {
+              console.error("Error deleting PDF:", error);
+              Alert.alert("Error", "Failed to delete PDF.");
+            }
           },
         },
       ]
