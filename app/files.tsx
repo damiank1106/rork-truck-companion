@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
   useWindowDimensions,
   Modal,
   Image,
+  Animated,
+  Easing,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -24,6 +27,13 @@ import {
   X,
   LayoutGrid,
   Menu,
+  Home as HomeIcon,
+  Truck,
+  MapPin,
+  Newspaper,
+  Shield,
+  Settings as SettingsIcon,
+  HeartHandshake,
 } from "lucide-react-native";
 
 import PageHeader from "@/components/PageHeader";
@@ -198,12 +208,120 @@ export default function FilesScreen() {
     }
   }
 
-  const [showMainMenu, setShowMainMenu] = useState<boolean>(false);
+  const [isMenuMounted, setIsMenuMounted] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const menuAnimation = useRef(new Animated.Value(0)).current;
+
+  const menuIconOpacity = useMemo(
+    () =>
+      menuAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0],
+      }),
+    [menuAnimation]
+  );
+
+  const closeIconOpacity = useMemo(
+    () =>
+      menuAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+      }),
+    [menuAnimation]
+  );
+
+  const menuIconScale = useMemo(
+    () =>
+      menuAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0.85],
+      }),
+    [menuAnimation]
+  );
+
+  const closeIconScale = useMemo(
+    () =>
+      menuAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.85, 1],
+      }),
+    [menuAnimation]
+  );
+
+  const dropdownTranslateY = useMemo(
+    () =>
+      menuAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-8, 0],
+      }),
+    [menuAnimation]
+  );
+
+  const dropdownScale = useMemo(
+    () =>
+      menuAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.95, 1],
+      }),
+    [menuAnimation]
+  );
+
+  const openMenu = () => {
+    if (isMenuVisible) {
+      return;
+    }
+    setIsMenuMounted(true);
+    setIsMenuVisible(true);
+    Animated.timing(menuAnimation, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = (afterClose?: () => void) => {
+    if (!isMenuMounted && !isMenuVisible) {
+      afterClose?.();
+      return;
+    }
+    Animated.timing(menuAnimation, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.in(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => {
+      setIsMenuVisible(false);
+      setIsMenuMounted(false);
+      afterClose?.();
+    });
+  };
+
+  const handleNavigate = (path: string) => {
+    closeMenu(() => {
+      router.push(path);
+    });
+  };
+
+  const MENU_ITEMS = [
+    { label: "Home", path: "/(tabs)/home", icon: HomeIcon },
+    { label: "My Truck", path: "/(tabs)/truck", icon: Truck },
+    { label: "Places", path: "/(tabs)/places", icon: MapPin },
+    { label: "Files", path: "/files", icon: FileText },
+    { label: "News", path: "/daily-news", icon: Newspaper },
+    { label: "Safety Information", path: "/safety-information", icon: Shield },
+    { label: "Settings", path: "/(tabs)/settings", icon: SettingsIcon },
+    { label: "Donations", path: "/donations", icon: HeartHandshake },
+  ] as const;
 
   return (
     <View style={styles.container}>
       {isSmallScreen ? (
-        <View style={[styles.compactHeader, { paddingTop: insets.top + 16 }]}>
+        <View 
+          style={[styles.compactHeader, { paddingTop: insets.top + 16 }]}
+          onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+        >
           <AnimatedBackground />
           <View style={styles.compactHeaderLine1}>
             {/* Empty line */}
@@ -236,10 +354,41 @@ export default function FilesScreen() {
                 <Plus color={Colors.white} size={18} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.compactIconButton, styles.mainMenuButton]}
-                onPress={() => setShowMainMenu(true)}
+                style={[styles.compactIconButton, styles.mainMenuButton, isMenuVisible && styles.mainMenuButtonActive]}
+                onPress={() => {
+                  if (isMenuVisible) {
+                    closeMenu();
+                  } else {
+                    openMenu();
+                  }
+                }}
               >
-                <Menu color={Colors.primaryLight} size={18} />
+                <View style={styles.menuIconContainer} pointerEvents="none">
+                  <Animated.View
+                    pointerEvents="none"
+                    style={[
+                      styles.menuIconWrapper,
+                      {
+                        opacity: menuIconOpacity,
+                        transform: [{ scale: menuIconScale }],
+                      },
+                    ]}
+                  >
+                    <Menu color={Colors.primaryLight} size={18} />
+                  </Animated.View>
+                  <Animated.View
+                    pointerEvents="none"
+                    style={[
+                      styles.menuIconWrapper,
+                      {
+                        opacity: closeIconOpacity,
+                        transform: [{ scale: closeIconScale }],
+                      },
+                    ]}
+                  >
+                    <X color={Colors.white} size={18} />
+                  </Animated.View>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -545,10 +694,67 @@ export default function FilesScreen() {
         onDelete={(period) => handleBulkDelete(period)}
       />
 
-      <MainMenuModal
-        visible={showMainMenu}
-        onClose={() => setShowMainMenu(false)}
-      />
+      {isMenuMounted && isSmallScreen ? (
+        <View
+          pointerEvents={isMenuVisible ? "box-none" : "none"}
+          style={styles.menuLayer}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.menuDimmer,
+              { opacity: menuAnimation, top: headerHeight },
+            ]}
+          />
+          <Pressable
+            style={[styles.menuBackdrop, { top: headerHeight }]}
+            onPress={() => closeMenu()}
+            accessibilityRole="button"
+            accessibilityLabel="Close menu"
+          />
+          <Animated.View
+            pointerEvents="auto"
+            style={[
+              styles.menuDropdown,
+              {
+                top: headerHeight + 8,
+                opacity: menuAnimation,
+                transform: [{ translateY: dropdownTranslateY }, { scale: dropdownScale }],
+              },
+            ]}
+          >
+            {MENU_ITEMS.map((item, index) => {
+              const IconComponent = item.icon;
+              const isActive = router.canGoBack() ? false : item.path === "/files";
+
+              return (
+                <React.Fragment key={item.path}>
+                  <TouchableOpacity
+                    style={[styles.menuItem, isActive && styles.menuItemActive]}
+                    onPress={() => handleNavigate(item.path)}
+                    accessibilityRole="button"
+                  >
+                    <IconComponent
+                      color={isActive ? Colors.white : Colors.primaryLight}
+                      size={18}
+                      style={styles.menuItemIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.menuItemText,
+                        isActive && styles.menuItemTextActive,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                  {index < MENU_ITEMS.length - 1 ? <View style={styles.menuDivider} /> : null}
+                </React.Fragment>
+              );
+            })}
+          </Animated.View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -902,62 +1108,7 @@ function DeleteModal({ visible, onClose, onDelete }: DeleteModalProps) {
   );
 }
 
-interface MainMenuModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
 
-function MainMenuModal({ visible, onClose }: MainMenuModalProps) {
-  const router = useRouter();
-
-  const handleNavigate = (route: string) => {
-    onClose();
-    router.push(route);
-  };
-
-  return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.mainMenuModalContent}>
-          <Text style={styles.mainMenuModalTitle}>Main Menu</Text>
-          <TouchableOpacity
-            style={styles.mainMenuOption}
-            onPress={() => handleNavigate("/(tabs)/home")}
-          >
-            <Text style={styles.mainMenuOptionText}>Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.mainMenuOption}
-            onPress={() => handleNavigate("/(tabs)/truck")}
-          >
-            <Text style={styles.mainMenuOptionText}>Truck</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.mainMenuOption}
-            onPress={() => handleNavigate("/(tabs)/trailer")}
-          >
-            <Text style={styles.mainMenuOptionText}>Trailer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.mainMenuOption}
-            onPress={() => handleNavigate("/(tabs)/places")}
-          >
-            <Text style={styles.mainMenuOptionText}>Places</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.mainMenuOption}
-            onPress={() => handleNavigate("/(tabs)/settings")}
-          >
-            <Text style={styles.mainMenuOptionText}>Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
-            <Text style={styles.modalCancelText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -1027,6 +1178,84 @@ const styles = StyleSheet.create({
   },
   mainMenuButton: {
     backgroundColor: Colors.white,
+  },
+  mainMenuButtonActive: {
+    backgroundColor: Colors.primary,
+  },
+  menuIconContainer: {
+    width: 18,
+    height: 18,
+  },
+  menuIconWrapper: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  menuLayer: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 40,
+  },
+  menuDimmer: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(15, 23, 42, 0.25)",
+  },
+  menuBackdrop: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  menuDropdown: {
+    position: "absolute" as const,
+    right: 20,
+    borderRadius: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.white,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.10,
+    shadowRadius: 15,
+    elevation: 8,
+    width: 220,
+    zIndex: 2,
+  },
+  menuItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+  },
+  menuItemActive: {
+    backgroundColor: Colors.primary,
+  },
+  menuItemIcon: {
+    marginRight: 12,
+  },
+  menuItemText: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  menuItemTextActive: {
+    color: Colors.white,
+  },
+  menuDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(15, 23, 42, 0.08)",
+    marginHorizontal: 16,
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -1462,31 +1691,5 @@ const styles = StyleSheet.create({
     fontWeight: "500" as const,
     color: Colors.text,
   },
-  mainMenuModalContent: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 24,
-    width: "100%" as const,
-    maxWidth: 400,
-    ...standardShadow,
-  },
-  mainMenuModalTitle: {
-    fontSize: 20,
-    fontWeight: "700" as const,
-    color: Colors.text,
-    marginBottom: 16,
-    textAlign: "center" as const,
-  },
-  mainMenuOption: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    backgroundColor: Colors.background,
-  },
-  mainMenuOptionText: {
-    fontSize: 16,
-    fontWeight: "500" as const,
-    color: Colors.text,
-  },
+
 });
