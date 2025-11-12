@@ -23,9 +23,11 @@ import {
   Trash2,
   X,
   LayoutGrid,
+  Menu,
 } from "lucide-react-native";
 
 import PageHeader from "@/components/PageHeader";
+import AnimatedBackground from "@/components/AnimatedBackground";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
@@ -196,16 +198,25 @@ export default function FilesScreen() {
     }
   }
 
+  const [showMainMenu, setShowMainMenu] = useState<boolean>(false);
+
   return (
     <View style={styles.container}>
       {isSmallScreen ? (
         <View style={[styles.compactHeader, { paddingTop: insets.top + 16 }]}>
+          <AnimatedBackground />
           <View style={styles.compactHeaderLine1}>
             {/* Empty line */}
           </View>
           <View style={styles.compactHeaderLine2}>
             <Text style={styles.compactTitle}>Files</Text>
             <View style={styles.compactHeaderLine2Icons}>
+              <TouchableOpacity
+                style={styles.compactIconButton}
+                onPress={() => router.replace("/(tabs)/home")}
+              >
+                <Menu color={Colors.primaryLight} size={18} />
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.compactIconButton}
                 onPress={() => setShowDateFilterModal(true)}
@@ -910,9 +921,11 @@ const styles = StyleSheet.create({
   compactHeader: {
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: Colors.white,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    position: "relative" as const,
+    overflow: "hidden" as const,
   },
   compactHeaderLine1: {
     height: 24,

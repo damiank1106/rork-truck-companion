@@ -24,7 +24,7 @@ import {
   Shield,
   Truck,
   X,
-  FileCheck,
+
 } from "lucide-react-native";
 
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -46,7 +46,6 @@ const MENU_ITEMS = [
   { label: "My Truck", path: "/(tabs)/truck", icon: Truck },
   { label: "Places", path: "/(tabs)/places", icon: MapPin },
   { label: "Files", path: "/files", icon: FileText },
-  { label: "Convert", path: "/convert-to-pdf", icon: FileCheck },
   { label: "News", path: "/daily-news", icon: Newspaper },
   { label: "Safety Information", path: "/safety-information", icon: Shield },
   { label: "Settings", path: "/(tabs)/settings", icon: SettingsIcon },
@@ -69,9 +68,18 @@ export default function PageHeader({
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const menuAnimation = useRef(new Animated.Value(0)).current;
+  const headerAnimation = useRef(new Animated.Value(0)).current;
   
   const isSmallScreen = width < 360;
   const adjustedTopInset = topInset;
+
+  React.useEffect(() => {
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const menuIconOpacity = useMemo(
     () =>
@@ -174,15 +182,25 @@ export default function PageHeader({
 
   return (
     <>
-      <View
+      <Animated.View
         style={StyleSheet.flatten([
           styles.header,
-          { paddingTop: adjustedTopInset },
+          { 
+            paddingTop: adjustedTopInset,
+            opacity: headerAnimation,
+            transform: [{
+              translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-20, 0],
+              }),
+            }],
+          },
           containerStyle,
         ])}
         onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
       >
         <AnimatedBackground />
+        {isSmallScreen ? <View style={styles.emptyLine} /> : null}
         <View style={styles.headerContent}>
           <View style={styles.leftSection}>
             {leftAccessory ? <View style={styles.leftAccessory}>{leftAccessory}</View> : null}
@@ -235,7 +253,7 @@ export default function PageHeader({
           </View>
         </View>
         {children}
-      </View>
+      </Animated.View>
 
       {isMenuMounted ? (
         <View
@@ -303,6 +321,10 @@ export default function PageHeader({
 }
 
 const styles = StyleSheet.create({
+  emptyLine: {
+    height: 24,
+    marginBottom: 4,
+  },
   header: {
     paddingHorizontal: 20,
     paddingBottom: 16,
