@@ -525,6 +525,7 @@ export default function FileDetailScreen() {
                   <TouchableOpacity
                     style={[styles.actionButton, styles.emailButton]}
                     onPress={handleSendToEmail}
+                    activeOpacity={0.7}
                   >
                     <Share2 color={Colors.white} size={20} />
                     <Text style={styles.actionButtonText}>Send to Email</Text>
@@ -533,6 +534,7 @@ export default function FileDetailScreen() {
                   <TouchableOpacity
                     style={[styles.actionButton, styles.deleteActionButton]}
                     onPress={handleDeleteFile}
+                    activeOpacity={0.7}
                   >
                     <Trash2 color={Colors.white} size={20} />
                     <Text style={styles.actionButtonText}>Delete</Text>
@@ -696,7 +698,7 @@ const styles = StyleSheet.create({
   },
   pageImage: {
     width: "100%",
-    height: 250,
+    height: 200,
     borderRadius: 8,
   },
   pageNavigation: {
@@ -748,7 +750,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   thumbnail: {
-    width: 70,
+    width: 60,
     borderRadius: 8,
     borderWidth: 2,
     borderColor: "transparent",
@@ -763,15 +765,15 @@ const styles = StyleSheet.create({
   },
   thumbnailImage: {
     width: "100%",
-    height: 90,
+    height: 70,
     borderRadius: 6,
   },
   thumbnailLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "600" as const,
     color: Colors.text,
     textAlign: "center",
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   thumbnailDeleteButton: {
     position: "absolute",
@@ -789,17 +791,19 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     gap: 12,
     marginTop: 4,
+    marginBottom: 20,
   },
   actionButton: {
     flex: 1,
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 14,
     gap: 8,
     ...standardShadow,
+    minHeight: 56,
   },
   emailButton: {
     backgroundColor: Colors.primaryLight,
@@ -808,8 +812,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.error,
   },
   actionButtonText: {
-    fontSize: 15,
-    fontWeight: "600" as const,
+    fontSize: 16,
+    fontWeight: "700" as const,
     color: Colors.white,
   },
   modalOverlay: {
