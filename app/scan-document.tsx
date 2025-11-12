@@ -258,14 +258,17 @@ export default function ScanDocumentScreen() {
         <View style={styles.section}>
           <View style={styles.fieldHeader}>
             <Text style={styles.sectionLabel}>File Name (Optional)</Text>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => setDisplayField('fileName')}
-            >
-              {displayField === 'fileName' && (
-                <View style={styles.checkboxChecked} />
-              )}
-            </TouchableOpacity>
+            <View style={styles.checkboxContainer}>
+              <Text style={styles.displayText}>Display</Text>
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => setDisplayField('fileName')}
+              >
+                {displayField === 'fileName' && (
+                  <View style={styles.checkboxChecked} />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
           <TextInput
             style={styles.input}
@@ -279,14 +282,17 @@ export default function ScanDocumentScreen() {
         <View style={styles.section}>
           <View style={styles.fieldHeader}>
             <Text style={styles.sectionLabel}>Trip Number (Optional)</Text>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => setDisplayField('tripNumber')}
-            >
-              {displayField === 'tripNumber' && (
-                <View style={styles.checkboxChecked} />
-              )}
-            </TouchableOpacity>
+            <View style={styles.checkboxContainer}>
+              <Text style={styles.displayText}>Display</Text>
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => setDisplayField('tripNumber')}
+              >
+                {displayField === 'tripNumber' && (
+                  <View style={styles.checkboxChecked} />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
           <TextInput
             style={styles.input}
@@ -395,6 +401,16 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 3,
     backgroundColor: Colors.primaryLight,
+  },
+  checkboxContainer: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  displayText: {
+    fontSize: 12,
+    color: "#6B7280" as const,
+    fontWeight: "500" as const,
   },
   sectionLabel: {
     fontSize: 16,

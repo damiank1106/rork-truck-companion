@@ -268,10 +268,10 @@ export default function FileDetailScreen() {
           ) : (
             <View style={styles.headerActions}>
               <TouchableOpacity
-                style={[styles.headerIconButton, styles.plusButton]}
+                style={[styles.headerIconButton, styles.cameraButton]}
                 onPress={() => setShowAddPhotoModal(true)}
               >
-                <Plus color={Colors.white} size={20} />
+                <Camera color={Colors.white} size={20} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.headerIconButton}
@@ -315,14 +315,17 @@ export default function FileDetailScreen() {
               <View style={styles.editSection}>
                 <View style={styles.fieldHeader}>
                   <Text style={styles.editLabel}>File Name</Text>
-                  <TouchableOpacity
-                    style={styles.checkbox}
-                    onPress={() => setEditDisplayField('fileName')}
-                  >
-                    {editDisplayField === 'fileName' && (
-                      <View style={styles.checkboxChecked} />
-                    )}
-                  </TouchableOpacity>
+                  <View style={styles.checkboxContainer}>
+                    <Text style={styles.displayText}>Display</Text>
+                    <TouchableOpacity
+                      style={styles.checkbox}
+                      onPress={() => setEditDisplayField('fileName')}
+                    >
+                      {editDisplayField === 'fileName' && (
+                        <View style={styles.checkboxChecked} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 <TextInput
                   style={styles.editInput}
@@ -336,14 +339,17 @@ export default function FileDetailScreen() {
               <View style={styles.editSection}>
                 <View style={styles.fieldHeader}>
                   <Text style={styles.editLabel}>Trip Number</Text>
-                  <TouchableOpacity
-                    style={styles.checkbox}
-                    onPress={() => setEditDisplayField('tripNumber')}
-                  >
-                    {editDisplayField === 'tripNumber' && (
-                      <View style={styles.checkboxChecked} />
-                    )}
-                  </TouchableOpacity>
+                  <View style={styles.checkboxContainer}>
+                    <Text style={styles.displayText}>Display</Text>
+                    <TouchableOpacity
+                      style={styles.checkbox}
+                      onPress={() => setEditDisplayField('tripNumber')}
+                    >
+                      {editDisplayField === 'tripNumber' && (
+                        <View style={styles.checkboxChecked} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 <TextInput
                   style={styles.editInput}
@@ -358,6 +364,16 @@ export default function FileDetailScreen() {
                 <Text style={styles.infoLabel}>Photos:</Text>
                 <Text style={styles.infoValue}>{file.scanImages.length}</Text>
               </View>
+            </View>
+
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={styles.addPhotoButton}
+                onPress={() => setShowAddPhotoModal(true)}
+              >
+                <Plus color={Colors.white} size={20} />
+                <Text style={styles.addPhotoButtonText}>Add Photos</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.thumbnailsContainer}>
@@ -550,7 +566,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     backgroundColor: `${Colors.error}15`,
   },
-  plusButton: {
+  cameraButton: {
     backgroundColor: Colors.primaryLight,
   },
   saveButton: {
@@ -766,6 +782,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between" as const,
     marginBottom: 8,
   },
+  checkboxContainer: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  displayText: {
+    fontSize: 12,
+    color: "#6B7280" as const,
+    fontWeight: "500" as const,
+  },
   editLabel: {
     fontSize: 14,
     fontWeight: "600" as const,
@@ -796,5 +822,24 @@ const styles = StyleSheet.create({
     color: Colors.text,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  actionButtons: {
+    marginBottom: 20,
+  },
+  addPhotoButton: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    gap: 8,
+    ...standardShadow,
+  },
+  addPhotoButtonText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.white,
   },
 });

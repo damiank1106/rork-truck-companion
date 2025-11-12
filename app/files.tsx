@@ -946,7 +946,7 @@ const styles = StyleSheet.create({
   },
   gridFileDate: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: Colors.text,
   },
   gridDeleteButton: {
     position: "absolute",
@@ -1006,11 +1006,11 @@ const styles = StyleSheet.create({
   },
   listFileDate: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: Colors.text,
   },
   listFilePages: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: Colors.text,
     marginLeft: 6,
   },
   listDeleteButton: {
