@@ -128,7 +128,7 @@ export interface DriverID {
 
 export interface FileDocument {
   id: string;
-  fileName: string;
+  fileName?: string;
   tripNumber?: string;
   displayField?: 'fileName' | 'tripNumber';
   scanImages: string[];

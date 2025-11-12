@@ -138,9 +138,18 @@ export default function ScanDocumentScreen() {
     try {
       setIsSaving(true);
 
+      const finalFileName = fileName.trim();
+      const finalTripNumber = tripNumber.trim();
+
+      if (!finalFileName && !finalTripNumber) {
+        Alert.alert("Error", "Please provide either a File Name or Trip Number.");
+        setIsSaving(false);
+        return;
+      }
+
       await addFile({
-        fileName: fileName.trim() || `Document_${Date.now()}`,
-        tripNumber: tripNumber.trim() || undefined,
+        fileName: finalFileName || undefined,
+        tripNumber: finalTripNumber || undefined,
         displayField,
         scanImages: scannedImages,
       });

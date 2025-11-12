@@ -57,7 +57,7 @@ export default function FilesScreen() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((file) => {
-        const fileName = file.fileName.toLowerCase();
+        const fileName = file.fileName?.toLowerCase() || "";
         const tripNumber = file.tripNumber?.toLowerCase() || "";
         const date = new Date(file.createdAt);
         const dateStr = date.toLocaleDateString().toLowerCase();
@@ -111,8 +111,8 @@ export default function FilesScreen() {
     });
   }, [filteredAndSortedFiles]);
 
-  const handleDeleteFile = (id: string, fileName: string) => {
-    Alert.alert("Delete File", `Are you sure you want to delete "${fileName}"?`, [
+  const handleDeleteFile = (id: string, fileName?: string) => {
+    Alert.alert("Delete File", `Are you sure you want to delete ${fileName ? `"${fileName}"` : 'this file'}?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -355,7 +355,9 @@ export default function FilesScreen() {
             {getDisplayFiles().map((file) => {
               const displayText = file.displayField === 'tripNumber' && file.tripNumber 
                 ? file.tripNumber 
-                : file.fileName;
+                : file.displayField === 'fileName' && file.fileName
+                ? file.fileName
+                : '';
               return (
                 <View key={file.id} style={styles.iconItemWrapper}>
                   <TouchableOpacity
@@ -373,9 +375,11 @@ export default function FilesScreen() {
                       </View>
                     )}
                   </TouchableOpacity>
-                  <Text style={styles.iconText} numberOfLines={2}>
-                    {displayText}
-                  </Text>
+                  {displayText ? (
+                    <Text style={styles.iconText} numberOfLines={2}>
+                      {displayText}
+                    </Text>
+                  ) : null}
                 </View>
               );
             })}
@@ -402,15 +406,17 @@ export default function FilesScreen() {
                     <FileText color={Colors.primaryLight} size={32} />
                   </View>
                 )}
-                <Text style={styles.gridFileName} numberOfLines={2}>
-                  {file.fileName}
-                </Text>
+                {(file.displayField === 'fileName' && file.fileName) || (file.displayField === 'tripNumber' && file.tripNumber) ? (
+                  <Text style={styles.gridFileName} numberOfLines={2}>
+                    {file.displayField === 'tripNumber' && file.tripNumber ? file.tripNumber : file.fileName}
+                  </Text>
+                ) : null}
                 <Text style={styles.gridFileDate}>{formatDate(file.createdAt)}</Text>
                 <TouchableOpacity
                   style={styles.gridDeleteButton}
                   onPress={(e) => {
                     e.stopPropagation();
-                    handleDeleteFile(file.id, file.fileName);
+                    handleDeleteFile(file.id, file.fileName || file.tripNumber);
                   }}
                 >
                   <Trash2 color={Colors.error} size={16} />
@@ -437,7 +443,11 @@ export default function FilesScreen() {
                   </View>
                 )}
                 <View style={styles.listContent}>
-                  <Text style={styles.listFileName}>{file.fileName}</Text>
+                  {(file.displayField === 'fileName' && file.fileName) || (file.displayField === 'tripNumber' && file.tripNumber) ? (
+                    <Text style={styles.listFileName}>
+                      {file.displayField === 'tripNumber' && file.tripNumber ? file.tripNumber : file.fileName}
+                    </Text>
+                  ) : null}
                   <View style={styles.listMeta}>
                     <Calendar color={Colors.textLight} size={14} />
                     <Text style={styles.listFileDate}>{formatDate(file.createdAt)}</Text>
@@ -450,7 +460,7 @@ export default function FilesScreen() {
                   style={styles.listDeleteButton}
                   onPress={(e) => {
                     e.stopPropagation();
-                    handleDeleteFile(file.id, file.fileName);
+                    handleDeleteFile(file.id, file.fileName || file.tripNumber);
                   }}
                 >
                   <Trash2 color={Colors.error} size={20} />

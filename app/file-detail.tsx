@@ -12,6 +12,8 @@ import {
   Platform,
   Modal,
   TextInput,
+  Animated,
+  PanResponder,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -47,6 +49,10 @@ export default function FileDetailScreen() {
   const [editFileName, setEditFileName] = useState<string>("");
   const [editTripNumber, setEditTripNumber] = useState<string>("");
   const [editDisplayField, setEditDisplayField] = useState<'fileName' | 'tripNumber'>('fileName');
+  const [showImageModal, setShowImageModal] = useState<boolean>(false);
+  const [zoomScale, setZoomScale] = useState<number>(1);
+  const [panX] = useState(new Animated.Value(0));
+  const [panY] = useState(new Animated.Value(0));
 
   const isSmallScreen = width < 360;
 
@@ -56,7 +62,7 @@ export default function FileDetailScreen() {
 
   React.useEffect(() => {
     if (file) {
-      setEditFileName(file.fileName);
+      setEditFileName(file.fileName || "");
       setEditTripNumber(file.tripNumber || "");
       setEditDisplayField(file.displayField || 'fileName');
     }
@@ -221,15 +227,18 @@ export default function FileDetailScreen() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editFileName.trim()) {
-      Alert.alert("Error", "File name cannot be empty.");
+    const finalFileName = editFileName.trim();
+    const finalTripNumber = editTripNumber.trim();
+
+    if (!finalFileName && !finalTripNumber) {
+      Alert.alert("Error", "Please provide either a File Name or Trip Number.");
       return;
     }
 
     try {
       await updateFile(file.id, {
-        fileName: editFileName.trim(),
-        tripNumber: editTripNumber.trim() || undefined,
+        fileName: finalFileName || undefined,
+        tripNumber: finalTripNumber || undefined,
         displayField: editDisplayField,
       });
       setIsEditMode(false);
@@ -241,11 +250,46 @@ export default function FileDetailScreen() {
   };
 
   const handleCancelEdit = () => {
-    setEditFileName(file.fileName);
+    setEditFileName(file.fileName || "");
     setEditTripNumber(file.tripNumber || "");
     setEditDisplayField(file.displayField || 'fileName');
     setIsEditMode(false);
   };
+
+  const handleOpenImageModal = () => {
+    setZoomScale(1);
+    panX.setValue(0);
+    panY.setValue(0);
+    setShowImageModal(true);
+  };
+
+  const handleZoomIn = () => {
+    setZoomScale(prev => Math.min(prev + 0.5, 5));
+  };
+
+  const handleZoomOut = () => {
+    setZoomScale(prev => Math.max(prev - 0.5, 1));
+  };
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => zoomScale > 1,
+    onMoveShouldSetPanResponder: () => zoomScale > 1,
+    onPanResponderGrant: () => {
+      panX.setOffset((panX as any)._value);
+      panY.setOffset((panY as any)._value);
+    },
+    onPanResponderMove: Animated.event(
+      [
+        null,
+        { dx: panX, dy: panY },
+      ],
+      { useNativeDriver: false }
+    ),
+    onPanResponderRelease: () => {
+      panX.flattenOffset();
+      panY.flattenOffset();
+    },
+  });
 
   return (
     <View style={styles.container}>
@@ -410,10 +454,12 @@ export default function FileDetailScreen() {
                 <Text style={styles.infoLabel}>Created:</Text>
                 <Text style={styles.infoValue}>{formatDate(file.createdAt)}</Text>
               </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>File Name:</Text>
-                <Text style={styles.infoValue}>{file.fileName}</Text>
-              </View>
+              {file.fileName && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>File Name:</Text>
+                  <Text style={styles.infoValue}>{file.fileName}</Text>
+                </View>
+              )}
               {file.tripNumber && (
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Trip Number:</Text>
@@ -428,13 +474,17 @@ export default function FileDetailScreen() {
 
             {file.scanImages.length > 0 && (
               <>
-                <View style={styles.pageViewer}>
+                <TouchableOpacity
+                  style={styles.pageViewer}
+                  onPress={handleOpenImageModal}
+                  activeOpacity={0.9}
+                >
                   <Image
                     source={{ uri: file.scanImages[currentPage] }}
                     style={styles.pageImage}
                     resizeMode="contain"
                   />
-                </View>
+                </TouchableOpacity>
 
                 {file.scanImages.length > 1 && (
                   <View style={styles.pageNavigation}>
@@ -538,6 +588,57 @@ export default function FileDetailScreen() {
               <Upload color={Colors.secondary} size={24} />
               <Text style={styles.modalButtonText}>Choose from Device</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showImageModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowImageModal(false)}
+      >
+        <View style={styles.imageModalOverlay}>
+          <View style={styles.imageModalHeader}>
+            <TouchableOpacity
+              style={styles.imageModalButton}
+              onPress={() => setShowImageModal(false)}
+            >
+              <X color={Colors.white} size={24} />
+            </TouchableOpacity>
+            <View style={styles.imageModalZoomControls}>
+              <TouchableOpacity
+                style={styles.imageModalButton}
+                onPress={handleZoomOut}
+                disabled={zoomScale <= 1}
+              >
+                <Text style={styles.imageModalZoomText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.imageModalZoomLabel}>{Math.round(zoomScale * 100)}%</Text>
+              <TouchableOpacity
+                style={styles.imageModalButton}
+                onPress={handleZoomIn}
+                disabled={zoomScale >= 5}
+              >
+                <Text style={styles.imageModalZoomText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.imageModalContent} {...panResponder.panHandlers}>
+            <Animated.Image
+              source={{ uri: file.scanImages[currentPage] }}
+              style={[
+                styles.imageModalImage,
+                {
+                  transform: [
+                    { scale: zoomScale },
+                    { translateX: panX },
+                    { translateY: panY },
+                  ],
+                },
+              ]}
+              resizeMode="contain"
+            />
           </View>
         </View>
       </Modal>
@@ -841,5 +942,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600" as const,
     color: Colors.white,
+  },
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.95)",
+  },
+  imageModalHeader: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    paddingTop: Platform.select({ ios: 60, android: 40, default: 40 }),
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  imageModalButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  imageModalZoomControls: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 16,
+  },
+  imageModalZoomText: {
+    fontSize: 28,
+    fontWeight: "600" as const,
+    color: Colors.white,
+  },
+  imageModalZoomLabel: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.white,
+    minWidth: 60,
+    textAlign: "center" as const,
+  },
+  imageModalContent: {
+    flex: 1,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+  },
+  imageModalImage: {
+    width: width,
+    height: "100%" as const,
   },
 });
