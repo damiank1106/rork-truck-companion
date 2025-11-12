@@ -250,6 +250,75 @@ export default function FilesScreen() {
         </View>
       </View>
 
+      {!selectedDate && !searchQuery && (
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[
+              styles.sectionTab,
+              sortBy === 'all' && styles.sectionTabActive,
+            ]}
+            onPress={() => setSortBy('all')}
+          >
+            <Text
+              style={[
+                styles.sectionTabText,
+                sortBy === 'all' && styles.sectionTabTextActive,
+              ]}
+            >
+              All ({filteredAndSortedFiles.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.sectionTab,
+              sortBy === 'day' && styles.sectionTabActive,
+            ]}
+            onPress={() => setSortBy('day')}
+          >
+            <Text
+              style={[
+                styles.sectionTabText,
+                sortBy === 'day' && styles.sectionTabTextActive,
+              ]}
+            >
+              Today ({todayFiles.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.sectionTab,
+              sortBy === 'month' && styles.sectionTabActive,
+            ]}
+            onPress={() => setSortBy('month')}
+          >
+            <Text
+              style={[
+                styles.sectionTabText,
+                sortBy === 'month' && styles.sectionTabTextActive,
+              ]}
+            >
+              Month ({monthFiles.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.sectionTab,
+              sortBy === 'year' && styles.sectionTabActive,
+            ]}
+            onPress={() => setSortBy('year')}
+          >
+            <Text
+              style={[
+                styles.sectionTabText,
+                sortBy === 'year' && styles.sectionTabTextActive,
+              ]}
+            >
+              Year ({yearFiles.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -258,74 +327,6 @@ export default function FilesScreen() {
         ]}
         showsVerticalScrollIndicator={true}
       >
-        {!selectedDate && !searchQuery && (
-          <View style={styles.sectionTabs}>
-            <TouchableOpacity
-              style={[
-                styles.sectionTab,
-                sortBy === 'all' && styles.sectionTabActive,
-              ]}
-              onPress={() => setSortBy('all')}
-            >
-              <Text
-                style={[
-                  styles.sectionTabText,
-                  sortBy === 'all' && styles.sectionTabTextActive,
-                ]}
-              >
-                All ({filteredAndSortedFiles.length})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.sectionTab,
-                sortBy === 'day' && styles.sectionTabActive,
-              ]}
-              onPress={() => setSortBy('day')}
-            >
-              <Text
-                style={[
-                  styles.sectionTabText,
-                  sortBy === 'day' && styles.sectionTabTextActive,
-                ]}
-              >
-                Today ({todayFiles.length})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.sectionTab,
-                sortBy === 'month' && styles.sectionTabActive,
-              ]}
-              onPress={() => setSortBy('month')}
-            >
-              <Text
-                style={[
-                  styles.sectionTabText,
-                  sortBy === 'month' && styles.sectionTabTextActive,
-                ]}
-              >
-                Month ({monthFiles.length})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.sectionTab,
-                sortBy === 'year' && styles.sectionTabActive,
-              ]}
-              onPress={() => setSortBy('year')}
-            >
-              <Text
-                style={[
-                  styles.sectionTabText,
-                  sortBy === 'year' && styles.sectionTabTextActive,
-                ]}
-              >
-                Year ({yearFiles.length})
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {selectedDate && (
           <View style={styles.selectedDateBar}>
@@ -1127,10 +1128,14 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
     color: Colors.text,
   },
-  sectionTabs: {
+  tabsContainer: {
     flexDirection: "row" as const,
     gap: 8,
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   sectionTab: {
     flex: 1,
