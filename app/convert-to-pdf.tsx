@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Alert,
   useWindowDimensions,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -24,6 +25,7 @@ import {
 } from "lucide-react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import PageHeader from "@/components/PageHeader";
 import Colors from "@/constants/colors";
@@ -35,7 +37,10 @@ interface ConvertedPDF {
   originalImage: string;
   pdfData: string;
   createdAt: string;
+  images: string[];
 }
+
+const PDFS_STORAGE_KEY = "converted_pdfs";
 
 export default function ConvertToPDFScreen() {
   const insets = useSafeAreaInsets();
@@ -47,6 +52,31 @@ export default function ConvertToPDFScreen() {
 
   const isSmallScreen = width < 360;
 
+  useEffect(() => {
+    loadPDFs();
+  }, []);
+
+  const loadPDFs = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(PDFS_STORAGE_KEY);
+      if (stored) {
+        setConvertedPDFs(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error("Error loading PDFs:", error);
+    }
+  };
+
+  const savePDFs = async (pdfs: ConvertedPDF[]) => {
+    try {
+      await AsyncStorage.setItem(PDFS_STORAGE_KEY, JSON.stringify(pdfs));
+      setConvertedPDFs(pdfs);
+    } catch (error) {
+      console.error("Error saving PDFs:", error);
+      Alert.alert("Error", "Failed to save PDF.");
+    }
+  };
+
   const handleDeletePDF = (id: string, name: string) => {
     Alert.alert(
       "Delete PDF",
@@ -56,8 +86,9 @@ export default function ConvertToPDFScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setConvertedPDFs(convertedPDFs.filter((pdf) => pdf.id !== id));
+          onPress: async () => {
+            const updatedPDFs = convertedPDFs.filter((pdf) => pdf.id !== id);
+            await savePDFs(updatedPDFs);
           },
         },
       ]
@@ -136,8 +167,8 @@ export default function ConvertToPDFScreen() {
         <CreatePDFModal
           visible={showCreateModal}
           onClose={() => setShowCreateModal(false)}
-          onSave={(pdf) => {
-            setConvertedPDFs([pdf, ...convertedPDFs]);
+          onSave={async (pdf) => {
+            await savePDFs([pdf, ...convertedPDFs]);
             setShowCreateModal(false);
           }}
         />
@@ -147,8 +178,9 @@ export default function ConvertToPDFScreen() {
         <PDFDetailModal
           pdf={selectedPDF}
           onClose={() => setSelectedPDF(null)}
-          onDelete={(id) => {
-            setConvertedPDFs(convertedPDFs.filter((pdf) => pdf.id !== id));
+          onDelete={async (id) => {
+            const updatedPDFs = convertedPDFs.filter((pdf) => pdf.id !== id);
+            await savePDFs(updatedPDFs);
             setSelectedPDF(null);
           }}
         />
@@ -160,7 +192,7 @@ export default function ConvertToPDFScreen() {
 interface CreatePDFModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (pdf: ConvertedPDF) => void;
+  onSave: (pdf: ConvertedPDF) => Promise<void>;
 }
 
 function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
@@ -261,21 +293,17 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
         originalImage: uploadedImages[0],
         pdfData: pdfDataSimulated,
         createdAt: new Date().toISOString(),
+        images: uploadedImages,
       };
 
       setIsScanning(false);
 
-      Alert.alert("Success", `"${fileName.trim()}" has been converted to PDF!`, [
-        {
-          text: "OK",
-          onPress: () => {
-            onSave(newPDF);
-            setFileName("");
-            setUploadedImages([]);
-            setScanProgress(0);
-          },
-        },
-      ]);
+      await onSave(newPDF);
+      setFileName("");
+      setUploadedImages([]);
+      setScanProgress(0);
+      
+      Alert.alert("Success", `"${fileName.trim()}" has been converted to PDF and saved!`);
     } catch (error) {
       console.error("Error converting to PDF:", error);
       Alert.alert("Error", "Failed to convert image to PDF. Please try again.");
@@ -841,18 +869,33 @@ const styles = StyleSheet.create({
 interface PDFDetailModalProps {
   pdf: ConvertedPDF;
   onClose: () => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
 function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
   const insets = useSafeAreaInsets();
 
-  const handleSendEmail = () => {
-    Alert.alert(
-      "Send to Email",
-      `This feature would send "${pdf.name}.pdf" to your email address.`,
-      [{ text: "OK" }]
-    );
+  const handleSendEmail = async () => {
+    try {
+      const emailSubject = encodeURIComponent(`PDF: ${pdf.name}`);
+      const emailBody = encodeURIComponent(
+        `Please find attached the PDF document: ${pdf.name}\n\nCreated: ${new Date(pdf.createdAt).toLocaleDateString()}\nNumber of pages: ${pdf.images.length}`
+      );
+      const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+
+      const canOpen = await Linking.canOpenURL(mailtoUrl);
+      if (canOpen) {
+        await Linking.openURL(mailtoUrl);
+      } else {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device."
+        );
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      Alert.alert("Error", "Failed to open email app.");
+    }
   };
 
   const handleDelete = () => {
@@ -864,7 +907,10 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => onDelete(pdf.id),
+          onPress: async () => {
+            await onDelete(pdf.id);
+            onClose();
+          },
         },
       ]
     );
