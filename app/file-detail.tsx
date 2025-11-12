@@ -10,34 +10,29 @@ import {
   useWindowDimensions,
   Share,
   Platform,
-  ActivityIndicator,
   Modal,
-  KeyboardAvoidingView,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
-  ArrowLeft,
   Trash2,
   Share2,
-  Download,
   ChevronLeft,
   ChevronRight,
   Plus,
   Camera,
   Upload,
-  FileText,
   X,
   Edit3,
+  Save,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
-
 
 import PageHeader from "@/components/PageHeader";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
-import { TextInput } from "react-native";
 
 export default function FileDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -48,7 +43,7 @@ export default function FileDetailScreen() {
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [showAddPhotoModal, setShowAddPhotoModal] = useState<boolean>(false);
-  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [editFileName, setEditFileName] = useState<string>("");
   const [editTripNumber, setEditTripNumber] = useState<string>("");
   const [editDisplayField, setEditDisplayField] = useState<'fileName' | 'tripNumber'>('fileName');
@@ -75,7 +70,7 @@ export default function FileDetailScreen() {
           topInset={insets.top + (isSmallScreen ? 24 : 16)}
           leftAccessory={
             <TouchableOpacity onPress={() => router.back()}>
-              <ArrowLeft color={Colors.primaryLight} size={24} />
+              <ChevronLeft color={Colors.primaryLight} size={24} />
             </TouchableOpacity>
           }
         />
@@ -198,8 +193,8 @@ export default function FileDetailScreen() {
 
   const handleDeletePage = (index: number) => {
     Alert.alert(
-      "Delete Page",
-      `Are you sure you want to delete page ${index + 1}?`,
+      "Delete Photo",
+      `Are you sure you want to delete photo ${index + 1}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -210,7 +205,7 @@ export default function FileDetailScreen() {
             if (newImages.length === 0) {
               Alert.alert(
                 "Cannot Delete",
-                "You must keep at least one page in the file."
+                "You must keep at least one photo in the file."
               );
               return;
             }
@@ -218,14 +213,14 @@ export default function FileDetailScreen() {
             if (currentPage >= newImages.length) {
               setCurrentPage(newImages.length - 1);
             }
-            Alert.alert("Success", "Page deleted successfully!");
+            Alert.alert("Success", "Photo deleted successfully!");
           },
         },
       ]
     );
   };
 
-  const handleEditFile = async () => {
+  const handleSaveEdit = async () => {
     if (!editFileName.trim()) {
       Alert.alert("Error", "File name cannot be empty.");
       return;
@@ -237,7 +232,7 @@ export default function FileDetailScreen() {
         tripNumber: editTripNumber.trim() || undefined,
         displayField: editDisplayField,
       });
-      setShowEditModal(false);
+      setIsEditMode(false);
       Alert.alert("Success", "File updated successfully!");
     } catch (error) {
       console.error("Error updating file:", error);
@@ -245,46 +240,59 @@ export default function FileDetailScreen() {
     }
   };
 
-
+  const handleCancelEdit = () => {
+    setEditFileName(file.fileName);
+    setEditTripNumber(file.tripNumber || "");
+    setEditDisplayField(file.displayField || 'fileName');
+    setIsEditMode(false);
+  };
 
   return (
     <View style={styles.container}>
       <PageHeader
-        title={file.fileName}
-        subtitle={`${file.scanImages.length} page${file.scanImages.length !== 1 ? "s" : ""}`}
+        title={isEditMode ? "Edit File" : ""}
         topInset={insets.top + (isSmallScreen ? 24 : 16)}
         leftAccessory={
-          <TouchableOpacity onPress={() => router.back()}>
-            <ArrowLeft color={Colors.primaryLight} size={24} />
+          <TouchableOpacity onPress={isEditMode ? handleCancelEdit : () => router.back()}>
+            <ChevronLeft color={Colors.primaryLight} size={24} />
           </TouchableOpacity>
         }
         rightAccessory={
-          <View style={styles.headerActions}>
+          isEditMode ? (
             <TouchableOpacity
-              style={[styles.headerIconButton, styles.plusButton]}
-              onPress={() => setShowAddPhotoModal(true)}
+              style={[styles.headerIconButton, styles.saveButton]}
+              onPress={handleSaveEdit}
             >
-              <Plus color={Colors.white} size={20} />
+              <Save color={Colors.white} size={20} />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={() => setShowEditModal(true)}
-            >
-              <Edit3 color={Colors.primaryLight} size={20} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={handleShareFile}
-            >
-              <Share2 color={Colors.primaryLight} size={20} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.headerIconButton, styles.deleteButton]}
-              onPress={handleDeleteFile}
-            >
-              <Trash2 color={Colors.error} size={20} />
-            </TouchableOpacity>
-          </View>
+          ) : (
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={[styles.headerIconButton, styles.plusButton]}
+                onPress={() => setShowAddPhotoModal(true)}
+              >
+                <Plus color={Colors.white} size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => setIsEditMode(true)}
+              >
+                <Edit3 color={Colors.primaryLight} size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={handleShareFile}
+              >
+                <Share2 color={Colors.primaryLight} size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.headerIconButton, styles.deleteButton]}
+                onPress={handleDeleteFile}
+              >
+                <Trash2 color={Colors.error} size={20} />
+              </TouchableOpacity>
+            </View>
+          )
         }
       />
 
@@ -296,71 +304,64 @@ export default function FileDetailScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Created:</Text>
-            <Text style={styles.infoValue}>{formatDate(file.createdAt)}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Pages:</Text>
-            <Text style={styles.infoValue}>{file.scanImages.length}</Text>
-          </View>
-        </View>
+        {isEditMode ? (
+          <View style={styles.editContainer}>
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Created:</Text>
+                <Text style={styles.infoValue}>{formatDate(file.createdAt)}</Text>
+              </View>
 
-        {file.scanImages.length > 0 && (
-          <>
-            <View style={styles.pageViewer}>
-              <Image
-                source={{ uri: file.scanImages[currentPage] }}
-                style={styles.pageImage}
-                resizeMode="contain"
-              />
+              <View style={styles.editSection}>
+                <View style={styles.fieldHeader}>
+                  <Text style={styles.editLabel}>File Name</Text>
+                  <TouchableOpacity
+                    style={styles.checkbox}
+                    onPress={() => setEditDisplayField('fileName')}
+                  >
+                    {editDisplayField === 'fileName' && (
+                      <View style={styles.checkboxChecked} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={styles.editInput}
+                  placeholder="Enter file name..."
+                  placeholderTextColor={Colors.textLight}
+                  value={editFileName}
+                  onChangeText={setEditFileName}
+                />
+              </View>
+
+              <View style={styles.editSection}>
+                <View style={styles.fieldHeader}>
+                  <Text style={styles.editLabel}>Trip Number</Text>
+                  <TouchableOpacity
+                    style={styles.checkbox}
+                    onPress={() => setEditDisplayField('tripNumber')}
+                  >
+                    {editDisplayField === 'tripNumber' && (
+                      <View style={styles.checkboxChecked} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={styles.editInput}
+                  placeholder="Enter trip number..."
+                  placeholderTextColor={Colors.textLight}
+                  value={editTripNumber}
+                  onChangeText={setEditTripNumber}
+                />
+              </View>
+
+              <View style={[styles.infoRow, styles.lastRow]}>
+                <Text style={styles.infoLabel}>Photos:</Text>
+                <Text style={styles.infoValue}>{file.scanImages.length}</Text>
+              </View>
             </View>
 
-            {file.scanImages.length > 1 && (
-              <View style={styles.pageNavigation}>
-                <TouchableOpacity
-                  style={[
-                    styles.pageNavButton,
-                    currentPage === 0 && styles.pageNavButtonDisabled,
-                  ]}
-                  onPress={goToPreviousPage}
-                  disabled={currentPage === 0}
-                >
-                  <ChevronLeft
-                    color={currentPage === 0 ? Colors.textLight : Colors.primaryLight}
-                    size={24}
-                  />
-                </TouchableOpacity>
-
-                <View style={styles.pageIndicator}>
-                  <Text style={styles.pageIndicatorText}>
-                    {currentPage + 1} / {file.scanImages.length}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={[
-                    styles.pageNavButton,
-                    currentPage === file.scanImages.length - 1 && styles.pageNavButtonDisabled,
-                  ]}
-                  onPress={goToNextPage}
-                  disabled={currentPage === file.scanImages.length - 1}
-                >
-                  <ChevronRight
-                    color={
-                      currentPage === file.scanImages.length - 1
-                        ? Colors.textLight
-                        : Colors.primaryLight
-                    }
-                    size={24}
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
-
             <View style={styles.thumbnailsContainer}>
-              <Text style={styles.thumbnailsTitle}>All Pages</Text>
+              <Text style={styles.thumbnailsTitle}>Photos</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -369,18 +370,12 @@ export default function FileDetailScreen() {
                 {file.scanImages.map((uri, index) => (
                   <View
                     key={index}
-                    style={[
-                      styles.thumbnail,
-                      currentPage === index && styles.thumbnailActive,
-                    ]}
+                    style={styles.thumbnail}
                   >
-                    <TouchableOpacity
-                      style={styles.thumbnailTouchable}
-                      onPress={() => setCurrentPage(index)}
-                    >
+                    <View style={styles.thumbnailTouchable}>
                       <Image source={{ uri }} style={styles.thumbnailImage} />
-                      <Text style={styles.thumbnailLabel}>Page {index + 1}</Text>
-                    </TouchableOpacity>
+                      <Text style={styles.thumbnailLabel}>Photo {index + 1}</Text>
+                    </View>
                     <TouchableOpacity
                       style={styles.thumbnailDeleteButton}
                       onPress={() => handleDeletePage(index)}
@@ -391,6 +386,116 @@ export default function FileDetailScreen() {
                 ))}
               </ScrollView>
             </View>
+          </View>
+        ) : (
+          <>
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Created:</Text>
+                <Text style={styles.infoValue}>{formatDate(file.createdAt)}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>File Name:</Text>
+                <Text style={styles.infoValue}>{file.fileName}</Text>
+              </View>
+              {file.tripNumber && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Trip Number:</Text>
+                  <Text style={styles.infoValue}>{file.tripNumber}</Text>
+                </View>
+              )}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Photos:</Text>
+                <Text style={styles.infoValue}>{file.scanImages.length}</Text>
+              </View>
+            </View>
+
+            {file.scanImages.length > 0 && (
+              <>
+                <View style={styles.pageViewer}>
+                  <Image
+                    source={{ uri: file.scanImages[currentPage] }}
+                    style={styles.pageImage}
+                    resizeMode="contain"
+                  />
+                </View>
+
+                {file.scanImages.length > 1 && (
+                  <View style={styles.pageNavigation}>
+                    <TouchableOpacity
+                      style={[
+                        styles.pageNavButton,
+                        currentPage === 0 && styles.pageNavButtonDisabled,
+                      ]}
+                      onPress={goToPreviousPage}
+                      disabled={currentPage === 0}
+                    >
+                      <ChevronLeft
+                        color={currentPage === 0 ? Colors.textLight : Colors.primaryLight}
+                        size={24}
+                      />
+                    </TouchableOpacity>
+
+                    <View style={styles.pageIndicator}>
+                      <Text style={styles.pageIndicatorText}>
+                        {currentPage + 1} / {file.scanImages.length}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.pageNavButton,
+                        currentPage === file.scanImages.length - 1 && styles.pageNavButtonDisabled,
+                      ]}
+                      onPress={goToNextPage}
+                      disabled={currentPage === file.scanImages.length - 1}
+                    >
+                      <ChevronRight
+                        color={
+                          currentPage === file.scanImages.length - 1
+                            ? Colors.textLight
+                            : Colors.primaryLight
+                        }
+                        size={24}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <View style={styles.thumbnailsContainer}>
+                  <Text style={styles.thumbnailsTitle}>Photos</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.thumbnails}
+                  >
+                    {file.scanImages.map((uri, index) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.thumbnail,
+                          currentPage === index && styles.thumbnailActive,
+                        ]}
+                      >
+                        <TouchableOpacity
+                          style={styles.thumbnailTouchable}
+                          onPress={() => setCurrentPage(index)}
+                        >
+                          <Image source={{ uri }} style={styles.thumbnailImage} />
+                          <Text style={styles.thumbnailLabel}>Photo {index + 1}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.thumbnailDeleteButton}
+                          onPress={() => handleDeletePage(index)}
+                        >
+                          <Trash2 color={Colors.white} size={12} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              </>
+            )}
           </>
         )}
       </ScrollView>
@@ -420,78 +525,6 @@ export default function FileDetailScreen() {
           </View>
         </View>
       </Modal>
-
-      <Modal
-        visible={showEditModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
-        >
-          <TouchableOpacity
-            activeOpacity={1}
-            style={styles.modalOverlay}
-            onPress={() => setShowEditModal(false)}
-          >
-            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Edit File</Text>
-                  <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                    <X color={Colors.text} size={24} />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.editSection}>
-                  <View style={styles.fieldHeader}>
-                    <Text style={styles.editLabel}>File Name</Text>
-                    <TouchableOpacity
-                      style={styles.checkbox}
-                      onPress={() => setEditDisplayField('fileName')}
-                    >
-                      {editDisplayField === 'fileName' && (
-                        <View style={styles.checkboxChecked} />
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                  <TextInput
-                    style={styles.editInput}
-                    placeholder="Enter file name..."
-                    placeholderTextColor={Colors.textLight}
-                    value={editFileName}
-                    onChangeText={setEditFileName}
-                  />
-                </View>
-                <View style={styles.editSection}>
-                  <View style={styles.fieldHeader}>
-                    <Text style={styles.editLabel}>Trip Number (Optional)</Text>
-                    <TouchableOpacity
-                      style={styles.checkbox}
-                      onPress={() => setEditDisplayField('tripNumber')}
-                    >
-                      {editDisplayField === 'tripNumber' && (
-                        <View style={styles.checkboxChecked} />
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                  <TextInput
-                    style={styles.editInput}
-                    placeholder="Enter trip number..."
-                    placeholderTextColor={Colors.textLight}
-                    value={editTripNumber}
-                    onChangeText={setEditTripNumber}
-                  />
-                </View>
-                <TouchableOpacity style={styles.editSaveButton} onPress={handleEditFile}>
-                  <Text style={styles.editSaveButtonText}>Save Changes</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </Modal>
     </View>
   );
 }
@@ -518,6 +551,9 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.error}15`,
   },
   plusButton: {
+    backgroundColor: Colors.primaryLight,
+  },
+  saveButton: {
     backgroundColor: Colors.primaryLight,
   },
   scrollView: {
@@ -550,6 +586,9 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
     color: Colors.white,
   },
+  editContainer: {
+    flex: 1,
+  },
   infoCard: {
     backgroundColor: Colors.white,
     borderRadius: 16,
@@ -563,6 +602,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
   },
+  lastRow: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    marginTop: 8,
+    paddingTop: 16,
+  },
   infoLabel: {
     fontSize: 16,
     fontWeight: "600" as const,
@@ -571,6 +616,9 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 16,
     color: Colors.textLight,
+    flex: 1,
+    textAlign: "right",
+    marginLeft: 16,
   },
   pageViewer: {
     backgroundColor: Colors.white,
@@ -707,7 +755,10 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   editSection: {
-    marginBottom: 16,
+    marginBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 12,
   },
   fieldHeader: {
     flexDirection: "row" as const,
@@ -745,17 +796,5 @@ const styles = StyleSheet.create({
     color: Colors.text,
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  editSaveButton: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  editSaveButtonText: {
-    fontSize: 16,
-    fontWeight: "600" as const,
-    color: Colors.white,
   },
 });
