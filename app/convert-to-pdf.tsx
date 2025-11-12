@@ -11,7 +11,6 @@ import {
   Alert,
   useWindowDimensions,
   ActivityIndicator,
-  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -831,7 +830,7 @@ const styles = StyleSheet.create({
   },
   pdfDetailImage: {
     width: "100%",
-    height: 180,
+    aspectRatio: 1 / 1.4,
     borderRadius: 12,
     backgroundColor: Colors.background,
     marginTop: 8,
@@ -938,40 +937,56 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
     }
 
     try {
+      if (Platform.OS === 'web') {
+        const selectedPagesList = selectedPages
+          .sort((a, b) => a - b)
+          .map((i) => i + 1)
+          .join(", ");
+
+        const emailSubject = encodeURIComponent(`PDF: ${pdf.name}`);
+        const emailBody = encodeURIComponent(
+          `Please find attached the PDF document: ${pdf.name}\n\nCreated: ${new Date(pdf.createdAt).toLocaleDateString()}\nTotal pages: ${pdf.images.length}\nSelected pages: ${selectedPagesList}`
+        );
+        const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+        
+        window.open(mailtoUrl, '_blank');
+        return;
+      }
+
+      const { Share } = await import('react-native');
+      
+      const selectedImages = selectedPages
+        .sort((a, b) => a - b)
+        .map((i) => pdf.images[i]);
+
+      if (selectedImages.length === 0) {
+        Alert.alert("Error", "No images to share.");
+        return;
+      }
+
       const selectedPagesList = selectedPages
         .sort((a, b) => a - b)
         .map((i) => i + 1)
         .join(", ");
 
-      const emailSubject = encodeURIComponent(`PDF: ${pdf.name}`);
-      const emailBody = encodeURIComponent(
-        `Please find attached the PDF document: ${pdf.name}\n\nCreated: ${new Date(pdf.createdAt).toLocaleDateString()}\nTotal pages: ${pdf.images.length}\nSelected pages: ${selectedPagesList}`
-      );
-      const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-      
-      const supported = await Linking.canOpenURL(mailtoUrl);
-      
-      if (!supported) {
+      await Share.share({
+        title: `PDF: ${pdf.name}`,
+        message: `PDF document: ${pdf.name}\n\nCreated: ${new Date(pdf.createdAt).toLocaleDateString()}\nTotal pages: ${pdf.images.length}\nSelected pages: ${selectedPagesList}`,
+        url: selectedImages[0],
+      });
+
+      if (selectedImages.length > 1) {
         Alert.alert(
-          "Email Not Available",
-          "Please make sure you have an email app configured on your device."
+          "Multiple Pages",
+          `You selected ${selectedImages.length} pages. Due to platform limitations, only the first page was attached. To send all pages, please send them one by one or use a file manager app.`,
+          [{ text: "OK" }]
         );
-        return;
       }
-      
-      await Linking.openURL(mailtoUrl);
-      
-      setTimeout(() => {
-        Alert.alert(
-          "Email Opened",
-          "Please attach the selected pages manually in your email app."
-        );
-      }, 500);
     } catch (error) {
       console.error("Error sending email:", error);
       Alert.alert(
         "Error",
-        "Failed to open email app. Please make sure you have an email app configured on your device."
+        "Failed to share PDF. Please try again."
       );
     }
   };
