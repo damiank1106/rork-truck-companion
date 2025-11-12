@@ -888,6 +888,12 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+    backgroundColor: Colors.white,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   pdfDetailButton: {
     flex: 1,
@@ -1018,8 +1024,11 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
 
         <ScrollView
           style={styles.pdfDetailScrollView}
-          contentContainerStyle={styles.pdfDetailScrollContent}
+          contentContainerStyle={[styles.pdfDetailScrollContent, {
+            paddingBottom: Math.max(insets.bottom + 100, 120)
+          }]}
           showsVerticalScrollIndicator={false}
+          bounces={true}
         >
           <View style={styles.pdfDetailSection}>
             <Text style={styles.pdfDetailLabel}>File Name</Text>
