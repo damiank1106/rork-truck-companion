@@ -213,12 +213,6 @@ export default function FilesScreen() {
             <View style={styles.compactHeaderLine2Icons}>
               <TouchableOpacity
                 style={styles.compactIconButton}
-                onPress={() => router.replace("/(tabs)/home")}
-              >
-                <Menu color={Colors.primaryLight} size={18} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.compactIconButton}
                 onPress={() => setShowDateFilterModal(true)}
               >
                 <Calendar color={Colors.primaryLight} size={18} />
@@ -240,6 +234,12 @@ export default function FilesScreen() {
                 onPress={() => router.push("/scan-document")}
               >
                 <Plus color={Colors.white} size={18} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.compactIconButton, styles.mainMenuButton]}
+                onPress={() => setShowMainMenu(true)}
+              >
+                <Menu color={Colors.primaryLight} size={18} />
               </TouchableOpacity>
             </View>
           </View>
@@ -543,6 +543,11 @@ export default function FilesScreen() {
         visible={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onDelete={(period) => handleBulkDelete(period)}
+      />
+
+      <MainMenuModal
+        visible={showMainMenu}
+        onClose={() => setShowMainMenu(false)}
       />
     </View>
   );
@@ -897,6 +902,63 @@ function DeleteModal({ visible, onClose, onDelete }: DeleteModalProps) {
   );
 }
 
+interface MainMenuModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+function MainMenuModal({ visible, onClose }: MainMenuModalProps) {
+  const router = useRouter();
+
+  const handleNavigate = (route: string) => {
+    onClose();
+    router.push(route);
+  };
+
+  return (
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.mainMenuModalContent}>
+          <Text style={styles.mainMenuModalTitle}>Main Menu</Text>
+          <TouchableOpacity
+            style={styles.mainMenuOption}
+            onPress={() => handleNavigate("/(tabs)/home")}
+          >
+            <Text style={styles.mainMenuOptionText}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.mainMenuOption}
+            onPress={() => handleNavigate("/(tabs)/truck")}
+          >
+            <Text style={styles.mainMenuOptionText}>Truck</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.mainMenuOption}
+            onPress={() => handleNavigate("/(tabs)/trailer")}
+          >
+            <Text style={styles.mainMenuOptionText}>Trailer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.mainMenuOption}
+            onPress={() => handleNavigate("/(tabs)/places")}
+          >
+            <Text style={styles.mainMenuOptionText}>Places</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.mainMenuOption}
+            onPress={() => handleNavigate("/(tabs)/settings")}
+          >
+            <Text style={styles.mainMenuOptionText}>Settings</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
+            <Text style={styles.modalCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -962,6 +1024,9 @@ const styles = StyleSheet.create({
   },
   compactPlusButton: {
     backgroundColor: Colors.primaryLight,
+  },
+  mainMenuButton: {
+    backgroundColor: Colors.white,
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -1393,6 +1458,33 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   deleteOptionText: {
+    fontSize: 16,
+    fontWeight: "500" as const,
+    color: Colors.text,
+  },
+  mainMenuModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 24,
+    width: "100%" as const,
+    maxWidth: 400,
+    ...standardShadow,
+  },
+  mainMenuModalTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: Colors.text,
+    marginBottom: 16,
+    textAlign: "center" as const,
+  },
+  mainMenuOption: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: Colors.background,
+  },
+  mainMenuOptionText: {
     fontSize: 16,
     fontWeight: "500" as const,
     color: Colors.text,
