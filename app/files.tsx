@@ -213,36 +213,56 @@ export default function FilesScreen() {
             <View style={styles.compactHeaderLine2Icons}>
               <TouchableOpacity
                 style={styles.compactIconButton}
-                onPress={() => router.replace("/(tabs)/home")}
+                onPress={() => setShowMainMenu(!showMainMenu)}
               >
                 <Menu color={Colors.primaryLight} size={18} />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.compactIconButton}
-                onPress={() => setShowDateFilterModal(true)}
-              >
-                <Calendar color={Colors.primaryLight} size={18} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.compactIconButton}
-                onPress={() => setShowDeleteModal(true)}
-              >
-                <Trash2 color={Colors.error} size={18} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.compactIconButton}
-                onPress={() => setShowDisplayModal(true)}
-              >
-                <LayoutGrid color={Colors.primaryLight} size={18} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.compactIconButton, styles.compactPlusButton]}
-                onPress={() => router.push("/scan-document")}
-              >
-                <Plus color={Colors.white} size={18} />
-              </TouchableOpacity>
             </View>
           </View>
+          {showMainMenu && (
+            <View style={styles.mainMenuDropdown}>
+              <TouchableOpacity
+                style={styles.mainMenuButton}
+                onPress={() => {
+                  setShowDateFilterModal(true);
+                  setShowMainMenu(false);
+                }}
+              >
+                <Calendar color={Colors.primaryLight} size={18} />
+                <Text style={styles.mainMenuButtonText}>Filter by Date</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.mainMenuButton}
+                onPress={() => {
+                  setShowDeleteModal(true);
+                  setShowMainMenu(false);
+                }}
+              >
+                <Trash2 color={Colors.error} size={18} />
+                <Text style={styles.mainMenuButtonText}>Delete Files</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.mainMenuButton}
+                onPress={() => {
+                  setShowDisplayModal(true);
+                  setShowMainMenu(false);
+                }}
+              >
+                <LayoutGrid color={Colors.primaryLight} size={18} />
+                <Text style={styles.mainMenuButtonText}>Display Mode</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.mainMenuButton, styles.mainMenuPlusButton]}
+                onPress={() => {
+                  router.push("/scan-document");
+                  setShowMainMenu(false);
+                }}
+              >
+                <Plus color={Colors.white} size={18} />
+                <Text style={[styles.mainMenuButtonText, styles.mainMenuPlusButtonText]}>Scan Document</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       ) : (
         <PageHeader
@@ -935,12 +955,40 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 12,
   },
   compactHeaderLine2Icons: {
     flexDirection: "row" as const,
     gap: 8,
     alignItems: "center" as const,
+  },
+  mainMenuDropdown: {
+    marginTop: 12,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 8,
+    ...standardShadow,
+  },
+  mainMenuButton: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 12,
+    backgroundColor: Colors.background,
+    marginBottom: 8,
+  },
+  mainMenuPlusButton: {
+    backgroundColor: Colors.primaryLight,
+    marginBottom: 0,
+  },
+  mainMenuButtonText: {
+    fontSize: 16,
+    fontWeight: "500" as const,
+    color: Colors.text,
+  },
+  mainMenuPlusButtonText: {
+    color: Colors.white,
   },
   compactTitle: {
     fontSize: 24,
