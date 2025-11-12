@@ -59,6 +59,7 @@ export default function FilesScreen() {
   const [showDateFilterModal, setShowDateFilterModal] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const headerAnimation = useRef(new Animated.Value(0)).current;
 
   const isSmallScreen = width < 360;
   const isMediumScreen = width >= 360 && width < 768;
@@ -267,6 +268,14 @@ export default function FilesScreen() {
     [menuAnimation]
   );
 
+  useEffect(() => {
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   const openMenu = () => {
     if (isMenuVisible) {
       return;
@@ -318,8 +327,20 @@ export default function FilesScreen() {
   return (
     <View style={styles.container}>
       {isSmallScreen ? (
-        <View 
-          style={[styles.compactHeader, { paddingTop: insets.top + 16 }]}
+        <Animated.View 
+          style={[
+            styles.compactHeader,
+            { 
+              paddingTop: insets.top + 16,
+              opacity: headerAnimation,
+              transform: [{
+                translateY: headerAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              }],
+            }
+          ]}
           onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
         >
           <AnimatedBackground />
@@ -392,7 +413,7 @@ export default function FilesScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </Animated.View>
       ) : (
         <PageHeader
           title="Files"
@@ -1139,6 +1160,9 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
     position: "relative" as const,
     overflow: "hidden" as const,
+    zIndex: 30,
+    elevation: 6,
+    ...standardShadow,
   },
   compactHeaderLine1: {
     height: 24,
