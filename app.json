@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.truck-driver-app",
+      "bundleIdentifier": "app.rork.truck.driver.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
@@ -34,7 +34,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.truck-driver-app",
+      "package": "app.rork.truck.driver.app",
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
