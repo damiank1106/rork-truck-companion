@@ -431,19 +431,21 @@ export default function HomeScreen() {
                 <Text style={styles.locationText}>{location}</Text>
               </View>
               <View style={styles.weatherControls}>
-                <Clickable
-                  style={styles.refreshButton}
-                  onPress={() => {
-                    if (cachedLocation) {
-                      fetchWeather(cachedLocation.lat, cachedLocation.lon);
-                    } else {
-                      loadLocation();
-                    }
-                  }}
-                  disabled={isWeatherLoading}
-                >
-                  <RefreshCw color={Colors.primaryLight} size={16} />
-                </Clickable>
+                {!isSmallScreen && (
+                  <Clickable
+                    style={styles.refreshButton}
+                    onPress={() => {
+                      if (cachedLocation) {
+                        fetchWeather(cachedLocation.lat, cachedLocation.lon);
+                      } else {
+                        loadLocation();
+                      }
+                    }}
+                    disabled={isWeatherLoading}
+                  >
+                    <RefreshCw color={Colors.primaryLight} size={16} />
+                  </Clickable>
+                )}
                 <Clickable
                   style={styles.tempUnitSwitch}
                   onPress={() => setIsCelsius(!isCelsius)}
