@@ -35,12 +35,12 @@ export default function WelcomeScreen() {
     Animated.parallel([
       Animated.timing(blurAnim, {
         toValue: 0,
-        duration: 2500,
+        duration: 3500,
         useNativeDriver: false,
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 2500,
+        duration: 3500,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
