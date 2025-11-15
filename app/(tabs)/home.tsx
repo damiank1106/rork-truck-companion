@@ -1,4 +1,4 @@
-import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard } from "lucide-react-native";
+import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard, RefreshCw } from "lucide-react-native";
 import React, { useState, useEffect, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, Text, View, Platform, Alert, Image, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -79,6 +79,15 @@ export default function HomeScreen() {
     }, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const weatherRefreshInterval = setInterval(() => {
+      if (cachedLocation) {
+        fetchWeather(cachedLocation.lat, cachedLocation.lon);
+      }
+    }, 600000);
+    return () => clearInterval(weatherRefreshInterval);
+  }, [cachedLocation]);
 
   const startSpeedTracking = async () => {
     if (Platform.OS === 'web') {
@@ -421,14 +430,29 @@ export default function HomeScreen() {
                 </Clickable>
                 <Text style={styles.locationText}>{location}</Text>
               </View>
-              <Clickable
-                style={styles.tempUnitSwitch}
-                onPress={() => setIsCelsius(!isCelsius)}
-              >
-                <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
-                <Text style={styles.tempUnitSeparator}>|</Text>
-                <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
-              </Clickable>
+              <View style={styles.weatherControls}>
+                <Clickable
+                  style={styles.refreshButton}
+                  onPress={() => {
+                    if (cachedLocation) {
+                      fetchWeather(cachedLocation.lat, cachedLocation.lon);
+                    } else {
+                      loadLocation();
+                    }
+                  }}
+                  disabled={isWeatherLoading}
+                >
+                  <RefreshCw color={Colors.primaryLight} size={16} />
+                </Clickable>
+                <Clickable
+                  style={styles.tempUnitSwitch}
+                  onPress={() => setIsCelsius(!isCelsius)}
+                >
+                  <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
+                  <Text style={styles.tempUnitSeparator}>|</Text>
+                  <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
+                </Clickable>
+              </View>
             </View>
 
             {(isLoadingLocation || isWeatherLoading) && (
@@ -994,6 +1018,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
+  },
+  weatherControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  refreshButton: {
+    backgroundColor: Colors.background,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   locationRow: {
     flexDirection: "row",

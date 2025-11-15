@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale, Volume2, VolumeX } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import * as Updates from "expo-updates";
+
 import {
   Alert,
   Linking,
@@ -139,10 +139,11 @@ export default function SettingsScreen() {
             text: "Reload",
             onPress: async () => {
               try {
+                const Updates = await import("expo-updates");
                 await Updates.reloadAsync();
               } catch (error) {
-                console.log("Error reloading app:", error);
-                router.replace("/");
+                console.log("Reload not available in development mode");
+                router.replace("/welcome");
               }
             },
           },
