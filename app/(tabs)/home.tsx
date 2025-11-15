@@ -276,8 +276,12 @@ export default function HomeScreen() {
       } else {
         setForecast([]);
       }
-    } catch (error) {
-      console.error('Error fetching weather:', error);
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        console.log('Weather fetch aborted (timeout or unmount)');
+      } else {
+        console.error('Error fetching weather:', error);
+      }
       setWeather(null);
       setForecast([]);
     } finally {
