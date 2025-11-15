@@ -53,6 +53,7 @@ export default function HomeScreen() {
   const [isSpeedKmh, setIsSpeedKmh] = useState<boolean>(false);
   const [lastGeocodeTime, setLastGeocodeTime] = useState<number>(0);
   const [cachedLocation, setCachedLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
+  const geocodeAttemptRef = useRef<number>(0);
   const [isTrailerModalVisible, setIsTrailerModalVisible] = useState<boolean>(false);
   const [trailerNumberInput, setTrailerNumberInput] = useState<string>("");
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
@@ -146,7 +147,7 @@ export default function HomeScreen() {
       const loc = await Location.getCurrentPositionAsync({});
       const currentTime = Date.now();
       const timeSinceLastGeocode = currentTime - lastGeocodeTime;
-      const GEOCODE_COOLDOWN = 60000;
+      const GEOCODE_COOLDOWN = 120000;
 
       if (cachedLocation && !forceRefresh) {
         const distance = Math.sqrt(
@@ -154,7 +155,7 @@ export default function HomeScreen() {
           Math.pow(loc.coords.longitude - cachedLocation.lon, 2)
         );
         
-        if (distance < 0.01 && timeSinceLastGeocode < GEOCODE_COOLDOWN) {
+        if (distance < 0.05) {
           setLocation(cachedLocation.name);
           await fetchWeather(loc.coords.latitude, loc.coords.longitude);
           setIsLoadingLocation(false);
@@ -165,6 +166,30 @@ export default function HomeScreen() {
       if (timeSinceLastGeocode < GEOCODE_COOLDOWN && !forceRefresh) {
         if (cachedLocation) {
           setLocation(cachedLocation.name);
+          await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+          setIsLoadingLocation(false);
+          return;
+        } else {
+          setLocation(`${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`);
+          await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+          setIsLoadingLocation(false);
+          return;
+        }
+      }
+
+      const MAX_GEOCODE_ATTEMPTS = 3;
+      geocodeAttemptRef.current += 1;
+      
+      if (geocodeAttemptRef.current > MAX_GEOCODE_ATTEMPTS) {
+        console.log(`Geocoding limit reached (${MAX_GEOCODE_ATTEMPTS} attempts), using coordinates`);
+        const coordsLocation = `${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`;
+        setLocation(coordsLocation);
+        if (!cachedLocation) {
+          setCachedLocation({
+            lat: loc.coords.latitude,
+            lon: loc.coords.longitude,
+            name: coordsLocation
+          });
         }
         await fetchWeather(loc.coords.latitude, loc.coords.longitude);
         setIsLoadingLocation(false);
@@ -189,20 +214,22 @@ export default function HomeScreen() {
             name: locationName
           });
           setLastGeocodeTime(currentTime);
+          geocodeAttemptRef.current = 0;
         } else {
           setLocation("Unknown Location");
         }
       } catch (geocodeError: any) {
         console.error("Geocoding error:", geocodeError);
-        if (geocodeError?.message?.includes("rate limit")) {
-          if (cachedLocation) {
-            setLocation(cachedLocation.name);
-          } else {
-            setLocation(`${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`);
-          }
-        } else {
-          setLocation("Location unavailable");
+        const coordsLocation = cachedLocation?.name || `${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`;
+        setLocation(coordsLocation);
+        if (!cachedLocation) {
+          setCachedLocation({
+            lat: loc.coords.latitude,
+            lon: loc.coords.longitude,
+            name: coordsLocation
+          });
         }
+        setLastGeocodeTime(currentTime);
       }
 
       await fetchWeather(loc.coords.latitude, loc.coords.longitude);
@@ -288,13 +315,13 @@ export default function HomeScreen() {
 
   const handleLocationPress = () => {
     const timeSinceLastGeocode = Date.now() - lastGeocodeTime;
-    const GEOCODE_COOLDOWN = 60000;
+    const GEOCODE_COOLDOWN = 120000;
     
     if (timeSinceLastGeocode < GEOCODE_COOLDOWN) {
       const remainingSeconds = Math.ceil((GEOCODE_COOLDOWN - timeSinceLastGeocode) / 1000);
       Alert.alert(
         "Please Wait",
-        `Location updates are limited. Please wait ${remainingSeconds} seconds before refreshing again.`,
+        `Location updates are rate-limited. Please wait ${remainingSeconds} seconds before refreshing again.`,
         [{ text: "OK" }]
       );
       return;
