@@ -246,7 +246,7 @@ export default function DailyNewsScreen() {
   return (
     <View style={styles.container}>
       <PageHeader
-        title="Daily News"
+        title="News"
         topInset={insets.top + 12}
         leftAccessory={headerLeft}
         rightAccessory={headerRight}

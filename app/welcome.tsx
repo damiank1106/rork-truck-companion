@@ -1,6 +1,6 @@
 import { Truck } from "lucide-react-native";
 import React, { useEffect, useRef } from "react";
-import { Animated, Dimensions, StyleSheet, Text, View } from "react-native";
+import { Animated, Dimensions, Platform, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -23,7 +23,7 @@ export default function WelcomeScreen() {
   const bgAnim1 = useRef(new Animated.Value(0)).current;
   const bgAnim2 = useRef(new Animated.Value(0)).current;
   const bgAnim3 = useRef(new Animated.Value(0)).current;
-  const pageZoomAnim = useRef(new Animated.Value(0.85)).current;
+  const blurAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
     if (startupSoundEnabled) {
@@ -33,14 +33,14 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(pageZoomAnim, {
-        toValue: 1,
-        duration: 1200,
-        useNativeDriver: true,
+      Animated.timing(blurAnim, {
+        toValue: 0,
+        duration: 2500,
+        useNativeDriver: false,
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 2500,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
@@ -124,34 +124,32 @@ export default function WelcomeScreen() {
         }),
       ])
     ).start();
-  }, [fadeAnim, scaleAnim, slideAnim, rotateAnim, floatAnim, bgAnim1, bgAnim2, bgAnim3, pageZoomAnim]);
+  }, [fadeAnim, scaleAnim, slideAnim, rotateAnim, floatAnim, bgAnim1, bgAnim2, bgAnim3, blurAnim]);
 
   const handleGetStarted = () => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 400,
+        duration: 800,
         useNativeDriver: true,
       }),
-      Animated.timing(pageZoomAnim, {
-        toValue: 0.8,
-        duration: 400,
-        useNativeDriver: true,
+      Animated.timing(blurAnim, {
+        toValue: 20,
+        duration: 800,
+        useNativeDriver: false,
       }),
     ]).start(() => {
       router.replace("/(tabs)/home");
     });
   };
 
+  const blurRadius = blurAnim.interpolate({
+    inputRange: [0, 20],
+    outputRange: [0, 20],
+  });
+
   return (
-    <Animated.View 
-      style={[
-        styles.container,
-        {
-          transform: [{ scale: pageZoomAnim }],
-        },
-      ]}
-    >
+    <View style={styles.container}>
       <View style={styles.backgroundContainer} pointerEvents="none">
         <Animated.View
           style={[
@@ -228,7 +226,11 @@ export default function WelcomeScreen() {
             paddingTop: insets.top,
             paddingBottom: insets.bottom,
           },
+          Platform.OS === 'web' ? {
+            filter: `blur(${blurRadius}px)`,
+          } : {},
         ]}
+        blurRadius={Platform.OS !== 'web' ? blurRadius : undefined}
       >
           <Animated.View
             style={[
@@ -283,7 +285,7 @@ export default function WelcomeScreen() {
             </Clickable>
           </Animated.View>
         </Animated.View>
-    </Animated.View>
+    </View>
   );
 }
 
