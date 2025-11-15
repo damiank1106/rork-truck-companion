@@ -7,12 +7,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { Clickable } from "@/components/Clickable";
 import { playStartupSound } from "@/soundManager";
+import { useSoundSettings } from "@/contexts/SoundSettingsContext";
 
 const { width, height } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { startupSoundEnabled } = useSoundSettings();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -24,8 +26,10 @@ export default function WelcomeScreen() {
   const pageZoomAnim = useRef(new Animated.Value(0.85)).current;
 
   useEffect(() => {
-    void playStartupSound();
-  }, []);
+    if (startupSoundEnabled) {
+      void playStartupSound();
+    }
+  }, [startupSoundEnabled]);
 
   useEffect(() => {
     Animated.parallel([
