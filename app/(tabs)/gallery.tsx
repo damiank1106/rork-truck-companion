@@ -11,7 +11,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +18,7 @@ import { StatusBar } from "expo-status-bar";
 
 import Colors from "@/constants/colors";
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import { useGallery } from "@/contexts/GalleryContext";
 import { GalleryPhoto } from "@/types";
 
@@ -67,9 +67,9 @@ export default function GalleryScreen() {
   }));
 
   const headerRight = (
-    <TouchableOpacity style={styles.addButton} onPress={handleAddPhoto}>
+    <Clickable style={styles.addButton} onPress={handleAddPhoto}>
       <Plus color={Colors.white} size={20} />
-    </TouchableOpacity>
+    </Clickable>
   );
 
   return (
@@ -88,9 +88,9 @@ export default function GalleryScreen() {
           <Text style={styles.emptyStateText}>
             Start documenting your journey with photos
           </Text>
-          <TouchableOpacity style={styles.emptyStateButton} onPress={handleAddPhoto}>
+          <Clickable style={styles.emptyStateButton} onPress={handleAddPhoto}>
             <Text style={styles.emptyStateButtonText}>Add Your First Photo</Text>
-          </TouchableOpacity>
+          </Clickable>
         </View>
       ) : (
         <ScrollView
@@ -104,7 +104,7 @@ export default function GalleryScreen() {
               <View style={styles.photoGrid}>
                 {section.data.map((photo) => (
                   <View key={photo.id} style={styles.photoItem}>
-                    <TouchableOpacity
+                    <Clickable
                       style={styles.photoTouchable}
                       onPress={() => handleViewPhoto(photo)}
                       activeOpacity={0.95}
@@ -130,7 +130,7 @@ export default function GalleryScreen() {
                               </Text>
                             )}
                           </View>
-                          <TouchableOpacity
+                          <Clickable
                             style={styles.photoDeleteButton}
                             onPress={() => {
                               Alert.alert(
@@ -148,10 +148,10 @@ export default function GalleryScreen() {
                             }}
                           >
                             <Trash2 color={Colors.white} size={20} />
-                          </TouchableOpacity>
+                          </Clickable>
                         </View>
                       </View>
-                    </TouchableOpacity>
+                    </Clickable>
                   </View>
                 ))}
               </View>
@@ -279,9 +279,9 @@ function AddPhotoModal({ visible, onClose, onAdd }: AddPhotoModalProps) {
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add Photo</Text>
-            <TouchableOpacity onPress={handleClose}>
+            <Clickable onPress={handleClose}>
               <X color={Colors.text} size={24} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <ScrollView 
@@ -292,27 +292,27 @@ function AddPhotoModal({ visible, onClose, onAdd }: AddPhotoModalProps) {
           >
             {!selectedUri ? (
               <View style={styles.photoPickerContainer}>
-                <TouchableOpacity style={styles.photoPickerButton} onPress={pickImage}>
+                <Clickable style={styles.photoPickerButton} onPress={pickImage}>
                   <ImageIcon color={Colors.primaryLight} size={32} />
                   <Text style={styles.photoPickerText}>Choose from Library</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.photoPickerButton} onPress={takePhoto}>
+                </Clickable>
+                <Clickable style={styles.photoPickerButton} onPress={takePhoto}>
                   <Camera color={Colors.primaryLight} size={32} />
                   <Text style={styles.photoPickerText}>Take Photo</Text>
-                </TouchableOpacity>
+                </Clickable>
               </View>
             ) : (
               <>
                 <Image source={{ uri: selectedUri }} style={styles.previewImage} />
-                <TouchableOpacity style={styles.changePhotoButton} onPress={pickImage}>
+                <Clickable style={styles.changePhotoButton} onPress={pickImage}>
                   <Text style={styles.changePhotoText}>Change Photo</Text>
-                </TouchableOpacity>
+                </Clickable>
 
                 <Text style={styles.inputLabel}>Category</Text>
                 <View style={styles.categoryContainer}>
                   {(["truck", "scenic", "location", "maintenance", "other"] as const).map(
                     (cat) => (
-                      <TouchableOpacity
+                      <Clickable
                         key={cat}
                         style={[
                           styles.categoryButton,
@@ -328,7 +328,7 @@ function AddPhotoModal({ visible, onClose, onAdd }: AddPhotoModalProps) {
                         >
                           {cat.charAt(0).toUpperCase() + cat.slice(1)}
                         </Text>
-                      </TouchableOpacity>
+                      </Clickable>
                     )
                   )}
                 </View>
@@ -351,9 +351,9 @@ function AddPhotoModal({ visible, onClose, onAdd }: AddPhotoModalProps) {
                   numberOfLines={4}
                 />
 
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                <Clickable style={styles.submitButton} onPress={handleSubmit}>
                   <Text style={styles.submitButtonText}>Add Photo</Text>
-                </TouchableOpacity>
+                </Clickable>
               </>
             )}
           </ScrollView>
@@ -380,13 +380,13 @@ function PhotoDetailModal({ photo, visible, onClose, onDelete, onEdit }: PhotoDe
     <Modal visible={visible} animationType="fade" transparent>
       <StatusBar style="light" />
       <View style={styles.photoDetailOverlay}>
-        <TouchableOpacity 
+        <Clickable 
           style={[styles.photoDetailClose, { top: insets.top + 10 }]} 
           onPress={onClose}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <X color={Colors.white} size={32} />
-        </TouchableOpacity>
+        </Clickable>
 
         <Image source={{ uri: photo.uri }} style={styles.photoDetailImage} />
 
@@ -413,15 +413,15 @@ function PhotoDetailModal({ photo, visible, onClose, onDelete, onEdit }: PhotoDe
             </Text>
 
             <View style={styles.photoDetailActions}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.photoDetailEditButton}
                 onPress={onEdit}
               >
                 <Edit2 color={Colors.white} size={20} />
                 <Text style={styles.photoDetailEditText}>Edit</Text>
-              </TouchableOpacity>
+              </Clickable>
 
-              <TouchableOpacity
+              <Clickable
                 style={styles.photoDetailDeleteButton}
                 onPress={() => {
                   Alert.alert(
@@ -440,7 +440,7 @@ function PhotoDetailModal({ photo, visible, onClose, onDelete, onEdit }: PhotoDe
               >
                 <Trash2 color={Colors.white} size={20} />
                 <Text style={styles.photoDetailDeleteText}>Delete</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
         </View>
@@ -489,9 +489,9 @@ function EditPhotoModal({ photo, visible, onClose, onUpdate }: EditPhotoModalPro
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Edit Photo</Text>
-            <TouchableOpacity onPress={onClose}>
+            <Clickable onPress={onClose}>
               <X color={Colors.text} size={24} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <ScrollView 
@@ -506,7 +506,7 @@ function EditPhotoModal({ photo, visible, onClose, onUpdate }: EditPhotoModalPro
             <View style={styles.categoryContainer}>
               {(["truck", "scenic", "location", "maintenance", "other"] as const).map(
                 (cat) => (
-                  <TouchableOpacity
+                  <Clickable
                     key={cat}
                     style={[
                       styles.categoryButton,
@@ -522,7 +522,7 @@ function EditPhotoModal({ photo, visible, onClose, onUpdate }: EditPhotoModalPro
                     >
                       {cat.charAt(0).toUpperCase() + cat.slice(1)}
                     </Text>
-                  </TouchableOpacity>
+                  </Clickable>
                 )
               )}
             </View>
@@ -545,9 +545,9 @@ function EditPhotoModal({ photo, visible, onClose, onUpdate }: EditPhotoModalPro
               numberOfLines={4}
             />
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <Clickable style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>Save Changes</Text>
-            </TouchableOpacity>
+            </Clickable>
           </ScrollView>
         </View>
       </View>

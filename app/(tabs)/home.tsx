@@ -1,6 +1,6 @@
 import { Truck, MapPinIcon, Container, Plus, ShieldPlus, CreditCard } from "lucide-react-native";
 import React, { useState, useEffect, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Alert, Image, ActivityIndicator, useWindowDimensions } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, View, Platform, Alert, Image, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -9,6 +9,7 @@ import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
 import WeatherAnimatedBackground from "@/components/WeatherAnimatedBackground";
+import { Clickable } from "@/components/Clickable";
 import { useDriverID } from "@/contexts/DriverIDContext";
 import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 import { useHealthInsurance } from "@/contexts/HealthInsuranceContext";
@@ -351,7 +352,7 @@ export default function HomeScreen() {
             <Text style={[styles.dateTextSmall, isSmallScreen && styles.dateTextSmallCompact]}>{formatDate(currentTime)}</Text>
             <Text style={[styles.timeTextSmall, isSmallScreen && styles.timeTextSmallCompact]}>{formatTime(currentTime)}</Text>
           </View>
-          <TouchableOpacity
+          <Clickable
             style={styles.speedGauge}
             onPress={() => setIsSpeedKmh(!isSpeedKmh)}
           >
@@ -359,7 +360,7 @@ export default function HomeScreen() {
               {isSpeedKmh ? Math.round(speed * 3.6) : Math.round(speed * 2.23694)}
             </Text>
             <Text style={[styles.speedUnit, isSmallScreen && styles.speedUnitCompact]}>{isSpeedKmh ? 'km/h' : 'mph'}</Text>
-          </TouchableOpacity>
+          </Clickable>
         </View>
 
         <View style={[styles.weatherContainer, isBiggerScreen ? styles.weatherContainerBigScreen : styles.weatherContainerSmallScreen]} testID="weather-widget">
@@ -373,19 +374,19 @@ export default function HomeScreen() {
           <View style={styles.weatherContent}>
             <View style={styles.weatherHeader}>
               <View style={styles.locationRow}>
-                <TouchableOpacity onPress={handleLocationPress} disabled={isLoadingLocation}>
+                <Clickable onPress={handleLocationPress} disabled={isLoadingLocation}>
                   <MapPinIcon color={Colors.primaryLight} size={20} />
-                </TouchableOpacity>
+                </Clickable>
                 <Text style={styles.locationText}>{location}</Text>
               </View>
-              <TouchableOpacity
+              <Clickable
                 style={styles.tempUnitSwitch}
                 onPress={() => setIsCelsius(!isCelsius)}
               >
                 <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
                 <Text style={styles.tempUnitSeparator}>|</Text>
                 <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
 
             {(isLoadingLocation || isWeatherLoading) && (
@@ -444,16 +445,16 @@ export default function HomeScreen() {
         <View style={styles.emergencySection}>
           <View style={styles.emergencySectionHeader}>
             <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleCompact]}>Emergency Contacts</Text>
-            <TouchableOpacity
+            <Clickable
               style={styles.viewAllButton}
               onPress={() => router.push("/emergency-contacts-list")}
             >
               <Text style={[styles.viewAllText, isSmallScreen && styles.viewAllTextCompact]}>View All</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
           <View style={styles.emergencyContactsContainer}>
             {contacts.slice(0, 5).map((contact) => (
-              <TouchableOpacity
+              <Clickable
                 key={contact.id}
                 style={styles.emergencyContactCircle}
                 onPress={() => router.push(`/emergency-contact-detail?id=${contact.id}`)}
@@ -467,18 +468,18 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                 )}
-              </TouchableOpacity>
+              </Clickable>
             ))}
-            <TouchableOpacity
+            <Clickable
               style={styles.addContactCircle}
               onPress={() => router.push("/emergency-contact-detail")}
             >
               <Plus color={Colors.primaryLight} size={24} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
         </View>
 
-        <TouchableOpacity
+        <Clickable
           style={styles.healthInsuranceSection}
           onPress={() => router.push("/health-insurance")}
         >
@@ -493,9 +494,9 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
-        </TouchableOpacity>
+        </Clickable>
 
-        <TouchableOpacity
+        <Clickable
           style={styles.driverIDSection}
           onPress={() => router.push("/driver-id")}
         >
@@ -510,7 +511,7 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
-        </TouchableOpacity>
+        </Clickable>
       </ScrollView>
 
       <Modal
@@ -531,13 +532,13 @@ export default function HomeScreen() {
               autoFocus
             />
             <View style={styles.trailerModalButtons}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.trailerModalCancelButton}
                 onPress={() => setIsTrailerModalVisible(false)}
               >
                 <Text style={styles.trailerModalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={styles.trailerModalConfirmButton}
                 onPress={async () => {
                   await updateTruckProfile({ trailerNumber: trailerNumberInput });
@@ -545,7 +546,7 @@ export default function HomeScreen() {
                 }}
               >
                 <Text style={styles.trailerModalConfirmText}>Confirm</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
         </View>
@@ -569,13 +570,13 @@ export default function HomeScreen() {
               onChangeText={setTruckNumberInput}
             />
             <View style={styles.trailerModalButtons}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.trailerModalCancelButton}
                 onPress={() => setIsTruckModalVisible(false)}
               >
                 <Text style={styles.trailerModalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={styles.trailerModalConfirmButton}
                 onPress={async () => {
                   await updateTruckProfile({
@@ -585,7 +586,7 @@ export default function HomeScreen() {
                 }}
               >
                 <Text style={styles.trailerModalConfirmText}>Confirm</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
         </View>
@@ -630,7 +631,7 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onS
   };
 
   return (
-    <TouchableOpacity
+    <Clickable
       style={styles.statCard}
       onPress={onPress}
       onPressIn={handlePressIn}
@@ -649,7 +650,7 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onS
           {icon}
         </View>
         {showPlusIcon && onPlusPress && (
-          <TouchableOpacity
+          <Clickable
             style={styles.statCardPlusIcon}
             onPress={(e) => {
               e.stopPropagation();
@@ -657,36 +658,36 @@ function StatCard({ icon, title, value, subtitle, thirdLine, color, onPress, onS
             }}
           >
             <Plus color={Colors.secondary} size={28} />
-          </TouchableOpacity>
+          </Clickable>
         )}
         <Text style={[styles.statTitle, compact && styles.statTitleCompact]}>{title}</Text>
         <Text style={[styles.statValue, compact && styles.statValueCompact]}>{value}</Text>
         {subtitle && (
           onSubtitlePress ? (
-            <TouchableOpacity onPress={(e) => {
+            <Clickable onPress={(e) => {
               e.stopPropagation();
               onSubtitlePress();
             }}>
               <Text style={[styles.statSubtitle, styles.touchableText, compact && styles.statSubtitleCompact]}>{subtitle}</Text>
-            </TouchableOpacity>
+            </Clickable>
           ) : (
             <Text style={[styles.statSubtitle, compact && styles.statSubtitleCompact]}>{subtitle}</Text>
           )
         )}
         {thirdLine && (
           onThirdLinePress ? (
-            <TouchableOpacity onPress={(e) => {
+            <Clickable onPress={(e) => {
               e.stopPropagation();
               onThirdLinePress();
             }}>
               <Text style={[styles.statThirdLine, styles.touchableText, compact && styles.statThirdLineCompact]}>{thirdLine}</Text>
-            </TouchableOpacity>
+            </Clickable>
           ) : (
             <Text style={[styles.statThirdLine, compact && styles.statThirdLineCompact]}>{thirdLine}</Text>
           )
         )}
       </Animated.View>
-    </TouchableOpacity>
+    </Clickable>
   );
 }
 
@@ -699,12 +700,12 @@ interface QuickActionButtonProps {
 
 function QuickActionButton({ icon, title, color, onPress }: QuickActionButtonProps) {
   return (
-    <TouchableOpacity style={styles.quickActionButton} onPress={onPress}>
+    <Clickable style={styles.quickActionButton} onPress={onPress}>
       <View style={styles.quickActionGlass}>
         <View style={styles.quickActionIcon}>{icon}</View>
         <Text style={styles.quickActionText}>{title}</Text>
       </View>
-    </TouchableOpacity>
+    </Clickable>
   );
 }
 

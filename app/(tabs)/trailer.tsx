@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
   Alert,
 } from "react-native";
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
+import { Clickable } from "@/components/Clickable";
 import { useTrailers } from "@/contexts/TrailerContext";
 import { Trailer } from "@/types";
 
@@ -73,9 +73,9 @@ export default function TrailerScreen() {
           <Text style={styles.headerTitle}>Trailers</Text>
           <Text style={styles.headerSubtitle}>{trailers.length} trailers saved</Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={handleAddTrailer}>
+        <Clickable style={styles.addButton} onPress={handleAddTrailer}>
           <Plus color={Colors.white} size={20} />
-        </TouchableOpacity>
+        </Clickable>
       </View>
 
       <View style={styles.searchContainer}>
@@ -96,9 +96,9 @@ export default function TrailerScreen() {
           <Text style={styles.emptyStateText}>
             Start tracking your trailers and their specifications
           </Text>
-          <TouchableOpacity style={styles.emptyStateButton} onPress={handleAddTrailer}>
+          <Clickable style={styles.emptyStateButton} onPress={handleAddTrailer}>
             <Text style={styles.emptyStateButtonText}>Add Your First Trailer</Text>
-          </TouchableOpacity>
+          </Clickable>
         </View>
       ) : (
         <FlatList
@@ -148,7 +148,7 @@ interface TrailerCardProps {
 
 function TrailerCard({ trailer, onPress, onEdit }: TrailerCardProps) {
   return (
-    <TouchableOpacity style={styles.trailerCard} onPress={onPress}>
+    <Clickable style={styles.trailerCard} onPress={onPress}>
       <View style={styles.trailerIconContainer}>
         <Container color={Colors.primaryLight} size={24} />
       </View>
@@ -161,10 +161,10 @@ function TrailerCard({ trailer, onPress, onEdit }: TrailerCardProps) {
           </Text>
         )}
       </View>
-      <TouchableOpacity style={styles.editIconButton} onPress={onEdit}>
+      <Clickable style={styles.editIconButton} onPress={onEdit}>
         <Edit3 color={Colors.primaryLight} size={18} />
-      </TouchableOpacity>
-    </TouchableOpacity>
+      </Clickable>
+    </Clickable>
   );
 }
 
@@ -257,9 +257,9 @@ function TrailerFormModal({ visible, onClose, onAdd, onUpdate, trailer, isEditMo
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{isEditMode ? "Edit Trailer" : "Add New Trailer"}</Text>
-            <TouchableOpacity onPress={onClose}>
+            <Clickable onPress={onClose}>
               <X color={Colors.text} size={24} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
@@ -373,9 +373,9 @@ function TrailerFormModal({ visible, onClose, onAdd, onUpdate, trailer, isEditMo
               numberOfLines={4}
             />
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <Clickable style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>{isEditMode ? "Update Trailer" : "Add Trailer"}</Text>
-            </TouchableOpacity>
+            </Clickable>
           </ScrollView>
         </View>
       </View>
@@ -400,9 +400,9 @@ function TrailerDetailModal({ trailer, visible, onClose, onDelete, onEdit }: Tra
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Trailer #{trailer.trailerNumber}</Text>
-            <TouchableOpacity onPress={onClose}>
+            <Clickable onPress={onClose}>
               <X color={Colors.text} size={24} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
@@ -423,7 +423,7 @@ function TrailerDetailModal({ trailer, visible, onClose, onDelete, onEdit }: Tra
             {trailer.notes && <DetailRow label="Notes" value={trailer.notes} />}
 
             <View style={styles.actionButtonsRow}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.editButton}
                 onPress={() => {
                   onClose();
@@ -432,15 +432,15 @@ function TrailerDetailModal({ trailer, visible, onClose, onDelete, onEdit }: Tra
               >
                 <Edit3 color={Colors.white} size={18} />
                 <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
+              </Clickable>
               
-              <TouchableOpacity
+              <Clickable
                 style={styles.deleteButton}
                 onPress={() => onDelete(trailer.id)}
               >
                 <Trash2 color={Colors.white} size={18} />
                 <Text style={styles.deleteButtonText}>Delete</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </ScrollView>
         </View>

@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import { useTruck } from "@/contexts/TruckContext";
 import { TruckProfile } from "@/types";
 
@@ -89,18 +89,18 @@ export default function TruckScreen() {
   const profile = isEditing ? editedProfile : truckProfile;
 
   const headerRight = !isEditing ? (
-    <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+    <Clickable style={styles.editButton} onPress={handleEdit}>
       <Edit3 color={Colors.white} size={20} />
       <Text style={styles.editButtonText}>Edit</Text>
-    </TouchableOpacity>
+    </Clickable>
   ) : (
     <View style={styles.actionButtons}>
-      <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+      <Clickable style={styles.cancelButton} onPress={handleCancel}>
         <X color={Colors.error} size={20} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+      </Clickable>
+      <Clickable style={styles.saveButton} onPress={handleSave}>
         <Save color={Colors.white} size={20} />
-      </TouchableOpacity>
+      </Clickable>
     </View>
   );
 
@@ -511,7 +511,7 @@ function TabButton({ label, isActive, onPress }: TabButtonProps) {
   };
 
   return (
-    <TouchableOpacity
+    <Clickable
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -529,7 +529,7 @@ function TabButton({ label, isActive, onPress }: TabButtonProps) {
           {label}
         </Text>
       </Animated.View>
-    </TouchableOpacity>
+    </Clickable>
   );
 }
 

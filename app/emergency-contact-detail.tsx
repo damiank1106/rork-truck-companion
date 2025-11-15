@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
   Linking,
   Image,
@@ -18,6 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
+import { Clickable } from "@/components/Clickable";
 import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 
 export default function EmergencyContactDetailScreen() {
@@ -205,15 +205,15 @@ export default function EmergencyContactDetailScreen() {
       />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+        <Clickable onPress={() => router.back()} style={styles.headerButton}>
           <X color={Colors.black} size={24} />
-        </TouchableOpacity>
+        </Clickable>
         <Text style={styles.headerTitle}>
           {existingContact ? "Edit Contact" : "New Contact"}
         </Text>
-        <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
+        <Clickable onPress={handleSave} style={styles.headerButton}>
           <Save color={Colors.primaryLight} size={24} />
-        </TouchableOpacity>
+        </Clickable>
       </View>
 
       <KeyboardAvoidingView
@@ -228,16 +228,16 @@ export default function EmergencyContactDetailScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.photoSection}>
-            <TouchableOpacity style={styles.photoCircle} onPress={handlePhotoOptions}>
+            <Clickable style={styles.photoCircle} onPress={handlePhotoOptions}>
               {photoUri ? (
                 <Image source={{ uri: photoUri }} style={styles.photoImage} />
               ) : (
                 <Text style={styles.photoInitials}>{getInitials()}</Text>
               )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.editPhotoButton} onPress={handlePhotoOptions}>
+            </Clickable>
+            <Clickable style={styles.editPhotoButton} onPress={handlePhotoOptions}>
               <Camera color={Colors.white} size={18} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <View style={styles.form}>
@@ -290,9 +290,9 @@ export default function EmergencyContactDetailScreen() {
                   keyboardType="phone-pad"
                 />
                 {phoneNumber.trim() && (
-                  <TouchableOpacity style={styles.callButton} onPress={handleCall}>
+                  <Clickable style={styles.callButton} onPress={handleCall}>
                     <Phone color={Colors.white} size={20} />
-                  </TouchableOpacity>
+                  </Clickable>
                 )}
               </View>
             </View>
@@ -324,10 +324,10 @@ export default function EmergencyContactDetailScreen() {
             </View>
 
             {existingContact && (
-              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+              <Clickable style={styles.deleteButton} onPress={handleDelete}>
                 <Trash2 color={Colors.white} size={20} />
                 <Text style={styles.deleteButtonText}>Delete Contact</Text>
-              </TouchableOpacity>
+              </Clickable>
             )}
           </View>
 

@@ -2,11 +2,9 @@ import { Href, usePathname, useRouter } from "expo-router";
 import {
   Animated,
   Easing,
-  Pressable,
   StyleProp,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   ViewStyle,
   useWindowDimensions,
@@ -28,6 +26,7 @@ import {
 } from "lucide-react-native";
 
 import AnimatedBackground from "@/components/AnimatedBackground";
+import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 
@@ -211,7 +210,7 @@ export default function PageHeader({
           </View>
           <View style={styles.actions}>
             {rightAccessory ? <View style={styles.rightAccessory}>{rightAccessory}</View> : null}
-            <TouchableOpacity
+            <Clickable
               style={[styles.menuButton, isMenuVisible && styles.menuButtonActive]}
               onPress={() => {
                 if (isMenuVisible) {
@@ -249,7 +248,7 @@ export default function PageHeader({
                   <X color={Colors.white} size={20} />
                 </Animated.View>
               </View>
-            </TouchableOpacity>
+            </Clickable>
           </View>
         </View>
         {children}
@@ -267,7 +266,7 @@ export default function PageHeader({
               { opacity: menuAnimation, top: headerHeight },
             ]}
           />
-          <Pressable
+          <Clickable
             style={[styles.menuBackdrop, { top: headerHeight }]}
             onPress={() => closeMenu()}
             accessibilityRole="button"
@@ -290,7 +289,7 @@ export default function PageHeader({
 
               return (
                 <React.Fragment key={item.path}>
-                  <TouchableOpacity
+                  <Clickable
                     style={[styles.menuItem, isActive && styles.menuItemActive]}
                     onPress={() => handleNavigate(item.path)}
                     accessibilityRole="button"
@@ -308,7 +307,7 @@ export default function PageHeader({
                     >
                       {item.label}
                     </Text>
-                  </TouchableOpacity>
+                  </Clickable>
                   {index < MENU_ITEMS.length - 1 ? <View style={styles.menuDivider} /> : null}
                 </React.Fragment>
               );

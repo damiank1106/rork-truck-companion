@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   Linking,
   Image,
@@ -14,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
+import { Clickable } from "@/components/Clickable";
 import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 
 export default function EmergencyContactsListScreen() {
@@ -37,16 +37,16 @@ export default function EmergencyContactsListScreen() {
       />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+        <Clickable onPress={() => router.back()} style={styles.headerButton}>
           <X color={Colors.black} size={24} />
-        </TouchableOpacity>
+        </Clickable>
         <Text style={styles.headerTitle}>Emergency Contacts</Text>
-        <TouchableOpacity
+        <Clickable
           onPress={() => router.push("/emergency-contact-detail")}
           style={styles.headerButton}
         >
           <Plus color={Colors.primaryLight} size={24} />
-        </TouchableOpacity>
+        </Clickable>
       </View>
 
       <ScrollView
@@ -64,7 +64,7 @@ export default function EmergencyContactsListScreen() {
         ) : (
           <View style={styles.contactsList}>
             {contacts.map((contact) => (
-              <TouchableOpacity
+              <Clickable
                 key={contact.id}
                 style={styles.contactCard}
                 onPress={() => router.push(`/emergency-contact-detail?id=${contact.id}`)}
@@ -97,7 +97,7 @@ export default function EmergencyContactsListScreen() {
                     <Text style={styles.contactPhone}>{contact.phoneNumber}</Text>
                   </View>
                 </View>
-                <TouchableOpacity
+                <Clickable
                   style={styles.callButton}
                   onPress={(e) => {
                     e.stopPropagation();
@@ -105,8 +105,8 @@ export default function EmergencyContactsListScreen() {
                   }}
                 >
                   <Phone color={Colors.white} size={20} />
-                </TouchableOpacity>
-              </TouchableOpacity>
+                </Clickable>
+              </Clickable>
             ))}
           </View>
         )}

@@ -6,7 +6,6 @@ import {
   Modal,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -14,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, RefreshCw, X, ExternalLink } from "lucide-react-native";
 
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 import {
   PublishedNewsItem,
@@ -192,7 +192,7 @@ export default function DailyNewsScreen() {
       const publishedLabel = formatDateLabel(item.published_date);
 
       return (
-        <TouchableOpacity
+        <Clickable
           style={styles.newsCard}
           onPress={() => setSelectedNews(item)}
           accessibilityRole="button"
@@ -201,7 +201,7 @@ export default function DailyNewsScreen() {
           <Text style={styles.newsTitle}>{item.title}</Text>
           {tagLabel ? <Text style={styles.newsTag}>{tagLabel}</Text> : null}
           {publishedLabel ? <Text style={styles.newsMeta}>{publishedLabel}</Text> : null}
-        </TouchableOpacity>
+        </Clickable>
       );
     },
     []
@@ -217,18 +217,18 @@ export default function DailyNewsScreen() {
   );
 
   const headerLeft = (
-    <TouchableOpacity
+    <Clickable
       style={styles.headerButton}
       onPress={() => router.replace("/(tabs)/home")}
       accessibilityRole="button"
       accessibilityLabel="Go back to home"
     >
       <ArrowLeft color={Colors.text} size={20} />
-    </TouchableOpacity>
+    </Clickable>
   );
 
   const headerRight = (
-    <TouchableOpacity
+    <Clickable
       style={[styles.headerButton, isRefreshing && styles.headerButtonDisabled]}
       onPress={handleRefresh}
       disabled={isRefreshing}
@@ -240,7 +240,7 @@ export default function DailyNewsScreen() {
       ) : (
         <RefreshCw color={Colors.text} size={20} />
       )}
-    </TouchableOpacity>
+    </Clickable>
   );
 
   return (
@@ -293,14 +293,14 @@ export default function DailyNewsScreen() {
               <Text style={styles.modalTitle} numberOfLines={2}>
                 {selectedNews?.title}
               </Text>
-              <TouchableOpacity
+              <Clickable
                 style={styles.modalCloseButton}
                 onPress={() => setSelectedNews(null)}
                 accessibilityRole="button"
                 accessibilityLabel="Close news details"
               >
                 <X color={Colors.text} size={20} />
-              </TouchableOpacity>
+              </Clickable>
             </View>
             {selectedNews?.summary ? (
               <Text style={styles.modalSummary}>{selectedNews.summary}</Text>
@@ -308,14 +308,14 @@ export default function DailyNewsScreen() {
               <Text style={styles.modalSummary}>No summary is available for this update.</Text>
             )}
             {selectedNews?.source_url ? (
-              <TouchableOpacity
+              <Clickable
                 style={styles.modalLinkButton}
                 onPress={() => openSourceLink(selectedNews.source_url)}
                 accessibilityRole="link"
               >
                 <ExternalLink color={Colors.white} size={18} style={styles.modalLinkIcon} />
                 <Text style={styles.modalLinkText}>Open Source</Text>
-              </TouchableOpacity>
+              </Clickable>
             ) : null}
           </View>
         </View>
