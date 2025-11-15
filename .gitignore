@@ -35,3 +35,5 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 .vercel
+android/app/src/debugOptimized/
+rork-truck-companion/

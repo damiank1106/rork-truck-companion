@@ -1,4 +1,4 @@
-package com.rork.truckdriverapp
+package app.rork.truck.driver.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
