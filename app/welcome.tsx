@@ -24,6 +24,7 @@ export default function WelcomeScreen() {
   const bgAnim2 = useRef(new Animated.Value(0)).current;
   const bgAnim3 = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(20)).current;
+  const contentBlurAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
     if (startupSoundEnabled) {
@@ -32,12 +33,19 @@ export default function WelcomeScreen() {
   }, [startupSoundEnabled]);
 
   useEffect(() => {
+    Animated.timing(blurAnim, {
+      toValue: 0,
+      duration: 3500,
+      useNativeDriver: false,
+    }).start();
+
+    Animated.timing(contentBlurAnim, {
+      toValue: 0,
+      duration: 3500,
+      useNativeDriver: false,
+    }).start();
+
     Animated.parallel([
-      Animated.timing(blurAnim, {
-        toValue: 0,
-        duration: 3500,
-        useNativeDriver: false,
-      }),
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 3500,
@@ -124,26 +132,25 @@ export default function WelcomeScreen() {
         }),
       ])
     ).start();
-  }, [fadeAnim, scaleAnim, slideAnim, rotateAnim, floatAnim, bgAnim1, bgAnim2, bgAnim3, blurAnim]);
+  }, [fadeAnim, scaleAnim, slideAnim, rotateAnim, floatAnim, bgAnim1, bgAnim2, bgAnim3, blurAnim, contentBlurAnim]);
 
   const handleGetStarted = () => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(blurAnim, {
-        toValue: 20,
-        duration: 800,
-        useNativeDriver: false,
-      }),
-    ]).start(() => {
+    Animated.timing(contentBlurAnim, {
+      toValue: 20,
+      duration: 800,
+      useNativeDriver: false,
+    }).start();
+
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 800,
+      useNativeDriver: true,
+    }).start(() => {
       router.replace("/(tabs)/home");
     });
   };
 
-  const blurRadius = blurAnim.interpolate({
+  const contentBlurRadius = contentBlurAnim.interpolate({
     inputRange: [0, 20],
     outputRange: [0, 20],
   });
@@ -218,20 +225,35 @@ export default function WelcomeScreen() {
           ]}
         />
       </View>
-      <Animated.View
+      <View
         style={[
           styles.content,
           {
-            opacity: fadeAnim,
             paddingTop: insets.top,
             paddingBottom: insets.bottom,
           },
-          Platform.OS === 'web' ? {
-            filter: `blur(${blurRadius}px)`,
-          } : {},
         ]}
-        blurRadius={Platform.OS !== 'web' ? blurRadius : undefined}
       >
+        {Platform.OS !== 'web' && (
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: 'rgba(255, 255, 255, 0.01)' },
+            ]}
+            blurRadius={contentBlurRadius}
+          />
+        )}
+        <Animated.View
+          style={[
+            styles.contentInner,
+            {
+              opacity: fadeAnim,
+            },
+            Platform.OS === 'web' ? {
+              filter: `blur(${contentBlurRadius}px)`,
+            } : {},
+          ]}
+        >
           <Animated.View
             style={[
               styles.iconContainer,
@@ -285,6 +307,7 @@ export default function WelcomeScreen() {
             </Clickable>
           </Animated.View>
         </Animated.View>
+      </View>
     </View>
   );
 }
@@ -325,6 +348,9 @@ const styles = StyleSheet.create({
     right: -100,
   },
   content: {
+    flex: 1,
+  },
+  contentInner: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
