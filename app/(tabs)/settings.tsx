@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale, Volume2, VolumeX } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
+import * as Updates from "expo-updates";
 import {
   Alert,
   Linking,
@@ -123,7 +124,7 @@ export default function SettingsScreen() {
     Linking.openURL("mailto:tdcompanionsupport@icloud.com?subject=Support Request");
   };
 
-  const handleReloadApp = () => {
+  const handleReloadApp = async () => {
     if (Platform.OS === "web") {
       if (typeof window !== "undefined") {
         window.location.reload();
@@ -136,8 +137,13 @@ export default function SettingsScreen() {
           { text: "Cancel", style: "cancel" },
           {
             text: "Reload",
-            onPress: () => {
-              router.replace("/");
+            onPress: async () => {
+              try {
+                await Updates.reloadAsync();
+              } catch (error) {
+                console.log("Error reloading app:", error);
+                router.replace("/");
+              }
             },
           },
         ]
