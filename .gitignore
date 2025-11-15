@@ -37,3 +37,5 @@ yarn-error.*
 .vercel
 android/app/src/debugOptimized/
 rork-truck-companion/
+android/app/src/debugOptimized/
+rork-truck-companion/
