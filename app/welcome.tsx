@@ -21,6 +21,7 @@ export default function WelcomeScreen() {
   const bgAnim1 = useRef(new Animated.Value(0)).current;
   const bgAnim2 = useRef(new Animated.Value(0)).current;
   const bgAnim3 = useRef(new Animated.Value(0)).current;
+  const pageZoomAnim = useRef(new Animated.Value(0.85)).current;
 
   useEffect(() => {
     void playStartupSound();
@@ -28,6 +29,11 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     Animated.parallel([
+      Animated.timing(pageZoomAnim, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 1000,
@@ -114,20 +120,34 @@ export default function WelcomeScreen() {
         }),
       ])
     ).start();
-  }, [fadeAnim, scaleAnim, slideAnim, rotateAnim, floatAnim, bgAnim1, bgAnim2, bgAnim3]);
+  }, [fadeAnim, scaleAnim, slideAnim, rotateAnim, floatAnim, bgAnim1, bgAnim2, bgAnim3, pageZoomAnim]);
 
   const handleGetStarted = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pageZoomAnim, {
+        toValue: 0.8,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       router.replace("/(tabs)/home");
     });
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View 
+      style={[
+        styles.container,
+        {
+          transform: [{ scale: pageZoomAnim }],
+        },
+      ]}
+    >
       <View style={styles.backgroundContainer} pointerEvents="none">
         <Animated.View
           style={[
@@ -259,7 +279,7 @@ export default function WelcomeScreen() {
             </Clickable>
           </Animated.View>
         </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 

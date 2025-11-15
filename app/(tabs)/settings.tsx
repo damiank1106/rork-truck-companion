@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale } from "lucide-react-native";
+import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale, Volume2, VolumeX } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
   Animated,
@@ -21,6 +22,7 @@ import PageHeader from "@/components/PageHeader";
 import { Clickable } from "@/components/Clickable";
 
 import { usePlaces } from "@/contexts/PlacesContext";
+import { useSoundSettings } from "@/contexts/SoundSettingsContext";
 import { useTruck } from "@/contexts/TruckContext";
 import { useFiles } from "@/contexts/FilesContext";
 
@@ -30,6 +32,12 @@ export default function SettingsScreen() {
   const { resetTruckProfile } = useTruck();
   const { places } = usePlaces();
   const { files } = useFiles();
+  const {
+    startupSoundEnabled,
+    clickSoundEnabled,
+    setStartupSoundEnabled,
+    setClickSoundEnabled,
+  } = useSoundSettings();
 
   const [storageSize, setStorageSize] = useState<string>("0 KB");
   const [truckSize, setTruckSize] = useState<string>("0 KB");
@@ -188,6 +196,43 @@ export default function SettingsScreen() {
               </View>
               <ChevronRight color={Colors.textLight} size={20} />
             </Clickable>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sounds</Text>
+          <View style={styles.card}>
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: `${Colors.success}15` }]}>
+                  {startupSoundEnabled ? <Volume2 color={Colors.success} size={20} /> : <VolumeX color={Colors.success} size={20} />}
+                </View>
+                <Text style={styles.menuItemText}>Welcome Sound</Text>
+              </View>
+              <Switch
+                value={startupSoundEnabled}
+                onValueChange={setStartupSoundEnabled}
+                trackColor={{ false: "#D1D5DB", true: Colors.success }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: `${Colors.primaryLight}15` }]}>
+                  {clickSoundEnabled ? <Volume2 color={Colors.primaryLight} size={20} /> : <VolumeX color={Colors.primaryLight} size={20} />}
+                </View>
+                <Text style={styles.menuItemText}>Click Sound</Text>
+              </View>
+              <Switch
+                value={clickSoundEnabled}
+                onValueChange={setClickSoundEnabled}
+                trackColor={{ false: "#D1D5DB", true: Colors.primaryLight }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
           </View>
         </View>
 

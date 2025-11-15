@@ -265,13 +265,24 @@ export default function HomeScreen() {
       }
 
       if (Array.isArray(data?.daily?.time) && Array.isArray(data?.daily?.temperature_2m_max) && Array.isArray(data?.daily?.temperature_2m_min) && Array.isArray(data?.daily?.weather_code)) {
-        const forecastData: ForecastDay[] = data.daily.time.map((date: string, index: number) => ({
-          date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-          tempMax: Math.round(Number(data.daily.temperature_2m_max[index] ?? 0)),
-          tempMin: Math.round(Number(data.daily.temperature_2m_min[index] ?? 0)),
-          condition: getWeatherCondition(Number(data.daily.weather_code[index] ?? 0)),
-          icon: getWeatherIcon(Number(data.daily.weather_code[index] ?? 0)),
-        }));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const forecastData: ForecastDay[] = data.daily.time.map((date: string, index: number) => {
+          const forecastDate = new Date(date);
+          forecastDate.setHours(0, 0, 0, 0);
+          
+          const isToday = forecastDate.getTime() === today.getTime();
+          const dayLabel = isToday ? 'Today' : forecastDate.toLocaleDateString('en-US', { weekday: 'short' });
+          
+          return {
+            date: dayLabel,
+            tempMax: Math.round(Number(data.daily.temperature_2m_max[index] ?? 0)),
+            tempMin: Math.round(Number(data.daily.temperature_2m_min[index] ?? 0)),
+            condition: getWeatherCondition(Number(data.daily.weather_code[index] ?? 0)),
+            icon: getWeatherIcon(Number(data.daily.weather_code[index] ?? 0)),
+          };
+        });
         setForecast(forecastData);
       } else {
         setForecast([]);

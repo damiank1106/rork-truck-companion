@@ -12,6 +12,7 @@ import { EmergencyContactsContext } from "@/contexts/EmergencyContactsContext";
 import { FilesContext } from "@/contexts/FilesContext";
 import { HealthInsuranceProvider } from "@/contexts/HealthInsuranceContext";
 import { PlacesProvider } from "@/contexts/PlacesContext";
+import { SoundSettingsProvider } from "@/contexts/SoundSettingsContext";
 import { TrailerProvider } from "@/contexts/TrailerContext";
 import { TruckProvider } from "@/contexts/TruckContext";
 import { trpc, trpcClient } from "@/lib/trpc";
@@ -140,25 +141,27 @@ export default function RootLayout() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <TruckProvider>
-        <TrailerProvider>
-          <PlacesProvider>
-            <EmergencyContactsContext>
-              <HealthInsuranceProvider>
-                <DriverIDContext>
-                  <FilesContext>
-                    <GestureHandlerRootView style={{ flex: 1 }}>
-                      <SafeAreaProvider>
-                        <RootLayoutNav />
-                      </SafeAreaProvider>
-                    </GestureHandlerRootView>
-                  </FilesContext>
-                </DriverIDContext>
-              </HealthInsuranceProvider>
-            </EmergencyContactsContext>
-          </PlacesProvider>
-        </TrailerProvider>
-      </TruckProvider>
+        <SoundSettingsProvider>
+          <TruckProvider>
+          <TrailerProvider>
+            <PlacesProvider>
+              <EmergencyContactsContext>
+                <HealthInsuranceProvider>
+                  <DriverIDContext>
+                    <FilesContext>
+                      <GestureHandlerRootView style={{ flex: 1 }}>
+                        <SafeAreaProvider>
+                          <RootLayoutNav />
+                        </SafeAreaProvider>
+                      </GestureHandlerRootView>
+                    </FilesContext>
+                  </DriverIDContext>
+                </HealthInsuranceProvider>
+              </EmergencyContactsContext>
+            </PlacesProvider>
+          </TrailerProvider>
+        </TruckProvider>
+        </SoundSettingsProvider>
       </QueryClientProvider>
     </trpc.Provider>
   );
