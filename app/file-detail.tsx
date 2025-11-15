@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Image,
   Alert,
   useWindowDimensions,
@@ -31,6 +30,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
@@ -71,16 +71,16 @@ export default function FileDetailScreen() {
           title="File Not Found"
           topInset={insets.top + (isSmallScreen ? 24 : 16)}
           leftAccessory={
-            <TouchableOpacity onPress={() => router.back()}>
+            <Clickable onPress={() => router.back()}>
               <ChevronLeft color={Colors.primaryLight} size={24} />
-            </TouchableOpacity>
+            </Clickable>
           }
         />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>The requested file could not be found.</Text>
-          <TouchableOpacity style={styles.errorButton} onPress={() => router.back()}>
+          <Clickable style={styles.errorButton} onPress={() => router.back()}>
             <Text style={styles.errorButtonText}>Go Back</Text>
-          </TouchableOpacity>
+          </Clickable>
         </View>
       </View>
     );
@@ -327,38 +327,38 @@ export default function FileDetailScreen() {
         title={isEditMode ? "Edit File" : ""}
         topInset={insets.top + (isSmallScreen ? 24 : 16)}
         leftAccessory={
-          <TouchableOpacity onPress={isEditMode ? handleCancelEdit : () => router.back()}>
+          <Clickable onPress={isEditMode ? handleCancelEdit : () => router.back()}>
             <ChevronLeft color={Colors.primaryLight} size={24} />
-          </TouchableOpacity>
+          </Clickable>
         }
         rightAccessory={
           isEditMode ? (
-            <TouchableOpacity
+            <Clickable
               style={[styles.headerIconButton, styles.saveButton]}
               onPress={handleSaveEdit}
             >
               <Save color={Colors.white} size={20} />
-            </TouchableOpacity>
+            </Clickable>
           ) : (
             <View style={styles.headerActions}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.headerIconButton}
                 onPress={handleDownloadImages}
               >
                 <Download color={Colors.primaryLight} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={[styles.headerIconButton, styles.cameraButton]}
                 onPress={() => setShowAddPhotoModal(true)}
               >
                 <Camera color={Colors.white} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={styles.headerIconButton}
                 onPress={() => setIsEditMode(true)}
               >
                 <Edit3 color={Colors.primaryLight} size={20} />
-              </TouchableOpacity>
+              </Clickable>
             </View>
           )
         }
@@ -385,14 +385,14 @@ export default function FileDetailScreen() {
                   <Text style={styles.editLabel}>File Name</Text>
                   <View style={styles.checkboxContainer}>
                     <Text style={styles.displayText}>Display</Text>
-                    <TouchableOpacity
+                    <Clickable
                       style={styles.checkbox}
                       onPress={() => setEditDisplayField('fileName')}
                     >
                       {editDisplayField === 'fileName' && (
                         <View style={styles.checkboxChecked} />
                       )}
-                    </TouchableOpacity>
+                    </Clickable>
                   </View>
                 </View>
                 <TextInput
@@ -409,14 +409,14 @@ export default function FileDetailScreen() {
                   <Text style={styles.editLabel}>Trip Number</Text>
                   <View style={styles.checkboxContainer}>
                     <Text style={styles.displayText}>Display</Text>
-                    <TouchableOpacity
+                    <Clickable
                       style={styles.checkbox}
                       onPress={() => setEditDisplayField('tripNumber')}
                     >
                       {editDisplayField === 'tripNumber' && (
                         <View style={styles.checkboxChecked} />
                       )}
-                    </TouchableOpacity>
+                    </Clickable>
                   </View>
                 </View>
                 <TextInput
@@ -435,13 +435,13 @@ export default function FileDetailScreen() {
             </View>
 
             <View style={styles.actionButtons}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.addPhotoButton}
                 onPress={() => setShowAddPhotoModal(true)}
               >
                 <Plus color={Colors.white} size={20} />
                 <Text style={styles.addPhotoButtonText}>Add Photos</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
 
             <View style={styles.thumbnailsContainer}>
@@ -460,12 +460,12 @@ export default function FileDetailScreen() {
                       <Image source={{ uri }} style={styles.thumbnailImage} />
                       <Text style={styles.thumbnailLabel}>Photo {index + 1}</Text>
                     </View>
-                    <TouchableOpacity
+                    <Clickable
                       style={styles.thumbnailDeleteButton}
                       onPress={() => handleDeletePage(index)}
                     >
                       <Trash2 color={Colors.white} size={12} />
-                    </TouchableOpacity>
+                    </Clickable>
                   </View>
                 ))}
               </ScrollView>
@@ -498,7 +498,7 @@ export default function FileDetailScreen() {
 
             {file.scanImages.length > 0 && (
               <>
-                <TouchableOpacity
+                <Clickable
                   style={styles.pageViewer}
                   onPress={handleOpenImageModal}
                   activeOpacity={0.7}
@@ -514,11 +514,11 @@ export default function FileDetailScreen() {
                       <FileText color={Colors.textLight} size={48} />
                     </View>
                   )}
-                </TouchableOpacity>
+                </Clickable>
 
                 {file.scanImages.length > 1 && (
                   <View style={styles.pageNavigation}>
-                    <TouchableOpacity
+                    <Clickable
                       style={[
                         styles.pageNavButton,
                         currentPage === 0 && styles.pageNavButtonDisabled,
@@ -530,7 +530,7 @@ export default function FileDetailScreen() {
                         color={currentPage === 0 ? Colors.textLight : Colors.primaryLight}
                         size={20}
                       />
-                    </TouchableOpacity>
+                    </Clickable>
 
                     <View style={styles.pageIndicator}>
                       <Text style={styles.pageIndicatorText}>
@@ -538,7 +538,7 @@ export default function FileDetailScreen() {
                       </Text>
                     </View>
 
-                    <TouchableOpacity
+                    <Clickable
                       style={[
                         styles.pageNavButton,
                         currentPage === file.scanImages.length - 1 && styles.pageNavButtonDisabled,
@@ -554,7 +554,7 @@ export default function FileDetailScreen() {
                         }
                         size={20}
                       />
-                    </TouchableOpacity>
+                    </Clickable>
                   </View>
                 )}
 
@@ -573,7 +573,7 @@ export default function FileDetailScreen() {
                           currentPage === index && styles.thumbnailActive,
                         ]}
                       >
-                        <TouchableOpacity
+                        <Clickable
                           style={styles.thumbnailTouchable}
                           onPress={() => setCurrentPage(index)}
                         >
@@ -585,27 +585,27 @@ export default function FileDetailScreen() {
                             </View>
                           )}
                           <Text style={styles.thumbnailLabel}>{index + 1}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                        </Clickable>
+                        <Clickable
                           style={styles.thumbnailDeleteButton}
                           onPress={() => handleDeletePage(index)}
                         >
                           <Trash2 color={Colors.white} size={10} />
-                        </TouchableOpacity>
+                        </Clickable>
                       </View>
                     ))}
                   </ScrollView>
                 </View>
 
                 <View style={styles.actionButtonsRow}>
-                  <TouchableOpacity
+                  <Clickable
                     style={[styles.actionButton, styles.deleteActionButton]}
                     onPress={handleDeleteFile}
                     activeOpacity={0.7}
                   >
                     <Trash2 color={Colors.white} size={20} />
                     <Text style={styles.actionButtonText}>Delete</Text>
-                  </TouchableOpacity>
+                  </Clickable>
                 </View>
               </>
             )}
@@ -623,18 +623,18 @@ export default function FileDetailScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Add Photos</Text>
-              <TouchableOpacity onPress={() => setShowAddPhotoModal(false)}>
+              <Clickable onPress={() => setShowAddPhotoModal(false)}>
                 <X color={Colors.text} size={24} />
-              </TouchableOpacity>
+              </Clickable>
             </View>
-            <TouchableOpacity style={styles.modalButton} onPress={handleAddFromCamera}>
+            <Clickable style={styles.modalButton} onPress={handleAddFromCamera}>
               <Camera color={Colors.primaryLight} size={24} />
               <Text style={styles.modalButtonText}>Take Photo</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={handleAddFromDevice}>
+            </Clickable>
+            <Clickable style={styles.modalButton} onPress={handleAddFromDevice}>
               <Upload color={Colors.secondary} size={24} />
               <Text style={styles.modalButtonText}>Choose from Device</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
         </View>
       </Modal>
@@ -646,12 +646,12 @@ export default function FileDetailScreen() {
         onRequestClose={() => setShowImageModal(false)}
       >
         <View style={styles.imageModalOverlay}>
-          <TouchableOpacity
+          <Clickable
             style={styles.imageModalCloseButton}
             onPress={() => setShowImageModal(false)}
           >
             <X color={Colors.white} size={28} />
-          </TouchableOpacity>
+          </Clickable>
           <View style={styles.imageModalContent}>
             <Image
               source={{ uri: file.scanImages[currentPage] }}

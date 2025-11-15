@@ -1,10 +1,11 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 
 const INTRO_TITLE =
@@ -264,13 +265,13 @@ export default function SafetyTipsScreen() {
   const router = useRouter();
 
   const headerLeft = (
-    <TouchableOpacity
+    <Clickable
       style={styles.headerButton}
       onPress={() => router.replace("/(tabs)/home")}
       accessibilityLabel="Go back"
     >
       <ArrowLeft color={Colors.black} size={22} />
-    </TouchableOpacity>
+    </Clickable>
   );
 
   return (

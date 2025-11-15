@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +16,7 @@ import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import Colors from "@/constants/colors";
+import { Clickable } from "@/components/Clickable";
 import { CATEGORY_OPTIONS, CategoryOption, resetCategoryState } from "@/constants/placeCategories";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { Place } from "@/types";
@@ -57,9 +57,9 @@ export default function PlaceDetailScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Clickable onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft color={Colors.text} size={24} />
-          </TouchableOpacity>
+          </Clickable>
           <Text style={styles.headerTitle}>Place Not Found</Text>
         </View>
       </View>
@@ -197,24 +197,24 @@ export default function PlaceDetailScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <Clickable onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft color={Colors.text} size={24} />
-        </TouchableOpacity>
+        </Clickable>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {editedPlace.companyName}
         </Text>
         {!isEditing ? (
-          <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.editButton}>
+          <Clickable onPress={() => setIsEditing(true)} style={styles.editButton}>
             <Text style={styles.editButtonText}>Edit</Text>
-          </TouchableOpacity>
+          </Clickable>
         ) : (
           <View style={styles.editActions}>
-            <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
+            <Clickable onPress={handleCancel} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+            </Clickable>
+            <Clickable onPress={handleSave} style={styles.saveButton}>
               <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
         )}
       </View>
@@ -228,16 +228,16 @@ export default function PlaceDetailScreen() {
                 <View style={styles.photosRow}>
                   {editedPlace.photos.map((uri, index) => (
                     <View key={index} style={styles.photoContainer}>
-                      <TouchableOpacity onPress={() => setFullScreenPhoto(uri)}>
+                      <Clickable onPress={() => setFullScreenPhoto(uri)}>
                         <Image source={{ uri }} style={styles.photo} />
-                      </TouchableOpacity>
+                      </Clickable>
                       {isEditing && (
-                        <TouchableOpacity
+                        <Clickable
                           style={styles.photoRemoveButton}
                           onPress={() => removePhoto(index)}
                         >
                           <X color={Colors.white} size={16} />
-                        </TouchableOpacity>
+                        </Clickable>
                       )}
                     </View>
                   ))}
@@ -250,14 +250,14 @@ export default function PlaceDetailScreen() {
             <View style={styles.addPhotosSection}>
               <Text style={styles.sectionTitle}>Add Photos ({editedPlace.photos.length}/5)</Text>
               <View style={styles.photoButtonsRow}>
-                <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
+                <Clickable style={styles.photoButton} onPress={takePhoto}>
                   <Camera color={Colors.white} size={20} />
                   <Text style={styles.photoButtonText}>Take Photo</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
+                </Clickable>
+                <Clickable style={styles.photoButton} onPress={pickImage}>
                   <ImageIcon color={Colors.white} size={20} />
                   <Text style={styles.photoButtonText}>Choose Photo</Text>
-                </TouchableOpacity>
+                </Clickable>
               </View>
             </View>
           )}
@@ -377,7 +377,7 @@ export default function PlaceDetailScreen() {
                 <View>
                   <View style={styles.categoryOptionsRow}>
                     {CATEGORY_OPTIONS.map((option) => (
-                      <TouchableOpacity
+                      <Clickable
                         key={option}
                         style={[
                           styles.categoryOption,
@@ -393,7 +393,7 @@ export default function PlaceDetailScreen() {
                         >
                           {option}
                         </Text>
-                      </TouchableOpacity>
+                      </Clickable>
                     ))}
                   </View>
                   {categorySelection === "Other" && (
@@ -434,7 +434,7 @@ export default function PlaceDetailScreen() {
             </View>
 
             <View style={styles.checkboxContainer}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.checkbox}
                 onPress={() => isEditing && setEditedPlace({ ...editedPlace, hasRestroom: !editedPlace.hasRestroom })}
                 disabled={!isEditing}
@@ -446,11 +446,11 @@ export default function PlaceDetailScreen() {
                   ]}
                 />
                 <Text style={styles.checkboxLabel}>Has Restroom</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
 
             <View style={styles.checkboxContainer}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.checkbox}
                 onPress={() => isEditing && setEditedPlace({ ...editedPlace, overnightParking: !editedPlace.overnightParking })}
                 disabled={!isEditing}
@@ -462,14 +462,14 @@ export default function PlaceDetailScreen() {
                   ]}
                 />
                 <Text style={styles.checkboxLabel}>Overnight Parking</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
 
           {!isEditing && (
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Clickable style={styles.deleteButton} onPress={handleDelete}>
               <Text style={styles.deleteButtonText}>Delete Place</Text>
-            </TouchableOpacity>
+            </Clickable>
           )}
         </View>
       </ScrollView>
@@ -556,9 +556,9 @@ function FullScreenPhotoModal({ photoUri, visible, onClose }: FullScreenPhotoMod
   return (
     <Modal visible={visible} animationType="fade" transparent>
       <View style={styles.fullScreenPhotoOverlay}>
-        <TouchableOpacity style={styles.fullScreenPhotoCloseButton} onPress={handleClose}>
+        <Clickable style={styles.fullScreenPhotoCloseButton} onPress={handleClose}>
           <X color={Colors.white} size={32} />
-        </TouchableOpacity>
+        </Clickable>
         <View style={styles.fullScreenPhotoContainer} {...panResponder.panHandlers}>
           <Image 
             source={{ uri: photoUri }} 

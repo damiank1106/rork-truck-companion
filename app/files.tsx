@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   TextInput,
   Alert,
   useWindowDimensions,
@@ -12,7 +11,6 @@ import {
   Image,
   Animated,
   Easing,
-  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -38,6 +36,7 @@ import {
 
 import PageHeader from "@/components/PageHeader";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
@@ -350,31 +349,31 @@ export default function FilesScreen() {
           <View style={styles.compactHeaderLine2}>
             <Text style={styles.compactTitle}>Files</Text>
             <View style={styles.compactHeaderLine2Icons}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.compactIconButton}
                 onPress={() => setShowDateFilterModal(true)}
               >
                 <Calendar color={Colors.primaryLight} size={18} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={styles.compactIconButton}
                 onPress={() => setShowDeleteModal(true)}
               >
                 <Trash2 color={Colors.error} size={18} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={styles.compactIconButton}
                 onPress={() => setShowDisplayModal(true)}
               >
                 <LayoutGrid color={Colors.primaryLight} size={18} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={[styles.compactIconButton, styles.compactPlusButton]}
                 onPress={() => router.push("/scan-document")}
               >
                 <Plus color={Colors.white} size={18} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={[styles.compactIconButton, styles.mainMenuButton, isMenuVisible && styles.mainMenuButtonActive]}
                 onPress={() => {
                   if (isMenuVisible) {
@@ -410,7 +409,7 @@ export default function FilesScreen() {
                     <X color={Colors.white} size={18} />
                   </Animated.View>
                 </View>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
         </Animated.View>
@@ -421,30 +420,30 @@ export default function FilesScreen() {
           topInset={insets.top + 16}
           rightAccessory={
             <View style={styles.headerActions}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.headerIconButton}
                 onPress={() => setShowDateFilterModal(true)}
               >
                 <Calendar color={Colors.primaryLight} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={styles.headerIconButton}
                 onPress={() => setShowDeleteModal(true)}
               >
                 <Trash2 color={Colors.error} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={styles.headerIconButton}
                 onPress={() => setShowDisplayModal(true)}
               >
                 <LayoutGrid color={Colors.primaryLight} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Clickable>
+              <Clickable
                 style={[styles.headerIconButton, styles.plusButton]}
                 onPress={() => router.push("/scan-document")}
               >
                 <Plus color={Colors.white} size={20} />
-              </TouchableOpacity>
+              </Clickable>
             </View>
           }
         />
@@ -461,16 +460,16 @@ export default function FilesScreen() {
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
+            <Clickable onPress={() => setSearchQuery("")}>
               <X color={Colors.textLight} size={18} />
-            </TouchableOpacity>
+            </Clickable>
           )}
         </View>
       </View>
 
       {!selectedDate && !searchQuery && (
         <View style={styles.tabsContainer}>
-          <TouchableOpacity
+          <Clickable
             style={[
               styles.sectionTab,
               sortBy === 'all' && styles.sectionTabActive,
@@ -485,8 +484,8 @@ export default function FilesScreen() {
             >
               All ({filteredAndSortedFiles.length})
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Clickable>
+          <Clickable
             style={[
               styles.sectionTab,
               sortBy === 'day' && styles.sectionTabActive,
@@ -501,8 +500,8 @@ export default function FilesScreen() {
             >
               Today ({todayFiles.length})
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Clickable>
+          <Clickable
             style={[
               styles.sectionTab,
               sortBy === 'month' && styles.sectionTabActive,
@@ -517,8 +516,8 @@ export default function FilesScreen() {
             >
               Month ({monthFiles.length})
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Clickable>
+          <Clickable
             style={[
               styles.sectionTab,
               sortBy === 'year' && styles.sectionTabActive,
@@ -533,7 +532,7 @@ export default function FilesScreen() {
             >
               Year ({yearFiles.length})
             </Text>
-          </TouchableOpacity>
+          </Clickable>
         </View>
       )}
 
@@ -551,9 +550,9 @@ export default function FilesScreen() {
             <Text style={styles.selectedDateText}>
               Files from: {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </Text>
-            <TouchableOpacity onPress={() => setSelectedDate(null)}>
+            <Clickable onPress={() => setSelectedDate(null)}>
               <X color={Colors.error} size={20} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
         )}
 
@@ -579,7 +578,7 @@ export default function FilesScreen() {
                 : '';
               return (
                 <View key={file.id} style={styles.iconItemWrapper}>
-                  <TouchableOpacity
+                  <Clickable
                     style={styles.iconItem}
                     onPress={() => router.push(`/file-detail?id=${file.id}`)}
                   >
@@ -593,7 +592,7 @@ export default function FilesScreen() {
                         <FileText color={Colors.primaryLight} size={28} />
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </Clickable>
                   {displayText ? (
                     <Text style={styles.iconText} numberOfLines={2}>
                       {displayText}
@@ -606,7 +605,7 @@ export default function FilesScreen() {
         ) : displayMode === "grid" ? (
           <View style={styles.gridContainer}>
             {getDisplayFiles().map((file) => (
-              <TouchableOpacity
+              <Clickable
                 key={file.id}
                 style={[
                   styles.gridItem,
@@ -631,7 +630,7 @@ export default function FilesScreen() {
                   </Text>
                 ) : null}
                 <Text style={styles.gridFileDate}>{formatDate(file.createdAt)}</Text>
-                <TouchableOpacity
+                <Clickable
                   style={styles.gridDeleteButton}
                   onPress={(e) => {
                     e.stopPropagation();
@@ -639,14 +638,14 @@ export default function FilesScreen() {
                   }}
                 >
                   <Trash2 color={Colors.error} size={16} />
-                </TouchableOpacity>
-              </TouchableOpacity>
+                </Clickable>
+              </Clickable>
             ))}
           </View>
         ) : (
           <View style={styles.listContainer}>
             {getDisplayFiles().map((file) => (
-              <TouchableOpacity
+              <Clickable
                 key={file.id}
                 style={styles.listItem}
                 onPress={() => router.push(`/file-detail?id=${file.id}`)}
@@ -675,7 +674,7 @@ export default function FilesScreen() {
                     </Text>
                   </View>
                 </View>
-                <TouchableOpacity
+                <Clickable
                   style={styles.listDeleteButton}
                   onPress={(e) => {
                     e.stopPropagation();
@@ -683,8 +682,8 @@ export default function FilesScreen() {
                   }}
                 >
                   <Trash2 color={Colors.error} size={20} />
-                </TouchableOpacity>
-              </TouchableOpacity>
+                </Clickable>
+              </Clickable>
             ))}
           </View>
         )}
@@ -727,7 +726,7 @@ export default function FilesScreen() {
               { opacity: menuAnimation, top: headerHeight },
             ]}
           />
-          <Pressable
+          <Clickable
             style={[styles.menuBackdrop, { top: headerHeight }]}
             onPress={() => closeMenu()}
             accessibilityRole="button"
@@ -750,7 +749,7 @@ export default function FilesScreen() {
 
               return (
                 <React.Fragment key={item.path}>
-                  <TouchableOpacity
+                  <Clickable
                     style={[styles.menuItem, isActive && styles.menuItemActive]}
                     onPress={() => handleNavigate(item.path)}
                     accessibilityRole="button"
@@ -768,7 +767,7 @@ export default function FilesScreen() {
                     >
                       {item.label}
                     </Text>
-                  </TouchableOpacity>
+                  </Clickable>
                   {index < MENU_ITEMS.length - 1 ? <View style={styles.menuDivider} /> : null}
                 </React.Fragment>
               );
@@ -800,7 +799,7 @@ function DisplayModal({ visible, currentMode, onClose, onSelect }: DisplayModalP
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Display Mode</Text>
           {displayOptions.map((option) => (
-            <TouchableOpacity
+            <Clickable
               key={option.value}
               style={[
                 styles.modalOption,
@@ -817,11 +816,11 @@ function DisplayModal({ visible, currentMode, onClose, onSelect }: DisplayModalP
               >
                 {option.label}
               </Text>
-            </TouchableOpacity>
+            </Clickable>
           ))}
-          <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
+          <Clickable style={styles.modalCancelButton} onPress={onClose}>
             <Text style={styles.modalCancelText}>Cancel</Text>
-          </TouchableOpacity>
+          </Clickable>
         </View>
       </View>
     </Modal>
@@ -892,7 +891,7 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
                          tempDate?.getMonth() === selectedMonth &&
                          tempDate?.getFullYear() === selectedYear;
       days.push(
-        <TouchableOpacity
+        <Clickable
           key={day}
           style={[styles.dayButton, isSelected && styles.dayButtonActive]}
           onPress={() => handleDaySelect(day)}
@@ -900,7 +899,7 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
           <Text style={[styles.dayText, isSelected && styles.dayTextActive]}>
             {day}
           </Text>
-        </TouchableOpacity>
+        </Clickable>
       );
     }
 
@@ -924,34 +923,34 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
 
           {viewMode === 'menu' && (
             <>
-              <TouchableOpacity 
+              <Clickable 
                 style={styles.dateFilterOption} 
                 onPress={() => setViewMode('day')}
               >
                 <Text style={styles.dateFilterOptionText}>Specific Day</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
+              </Clickable>
+              <Clickable 
                 style={styles.dateFilterOption} 
                 onPress={() => setViewMode('month')}
               >
                 <Text style={styles.dateFilterOptionText}>Specific Month</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
+              </Clickable>
+              <Clickable 
                 style={styles.dateFilterOption} 
                 onPress={() => setViewMode('year')}
               >
                 <Text style={styles.dateFilterOptionText}>Specific Year</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
+              </Clickable>
+              <Clickable style={styles.modalCancelButton} onPress={onClose}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
+              </Clickable>
             </>
           )}
 
           {viewMode === 'day' && (
             <View style={styles.calendarContainer}>
               <View style={styles.monthYearSelector}>
-                <TouchableOpacity 
+                <Clickable 
                   style={styles.navButton}
                   onPress={() => {
                     if (selectedMonth === 0) {
@@ -963,11 +962,11 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
                   }}
                 >
                   <Text style={styles.monthYearText}>‹</Text>
-                </TouchableOpacity>
+                </Clickable>
                 <Text style={styles.monthYearText}>
                   {monthNames[selectedMonth]} {selectedYear}
                 </Text>
-                <TouchableOpacity 
+                <Clickable 
                   style={styles.navButton}
                   onPress={() => {
                     if (selectedMonth === 11) {
@@ -979,12 +978,12 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
                   }}
                 >
                   <Text style={styles.monthYearText}>›</Text>
-                </TouchableOpacity>
+                </Clickable>
               </View>
               <View style={styles.daysGrid}>
                 {renderCalendar()}
               </View>
-              <TouchableOpacity 
+              <Clickable 
                 style={[styles.modalCancelButton, { marginTop: 16 }]} 
                 onPress={() => {
                   if (tempDate) {
@@ -994,35 +993,35 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
                 disabled={!tempDate}
               >
                 <Text style={styles.modalCancelText}>Select Date</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
+              </Clickable>
+              <Clickable 
                 style={styles.modalCancelButton} 
                 onPress={() => setViewMode('menu')}
               >
                 <Text style={styles.modalCancelText}>Back</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           )}
 
           {viewMode === 'month' && (
             <ScrollView style={{ maxHeight: 400 }}>
               <View style={styles.monthYearSelector}>
-                <TouchableOpacity 
+                <Clickable 
                   style={styles.navButton}
                   onPress={() => setSelectedYear(selectedYear - 1)}
                 >
                   <Text style={styles.monthYearText}>‹</Text>
-                </TouchableOpacity>
+                </Clickable>
                 <Text style={styles.monthYearText}>{selectedYear}</Text>
-                <TouchableOpacity 
+                <Clickable 
                   style={styles.navButton}
                   onPress={() => setSelectedYear(selectedYear + 1)}
                 >
                   <Text style={styles.monthYearText}>›</Text>
-                </TouchableOpacity>
+                </Clickable>
               </View>
               {monthNames.map((month, index) => (
-                <TouchableOpacity
+                <Clickable
                   key={index}
                   style={styles.dateFilterOption}
                   onPress={() => {
@@ -1031,14 +1030,14 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
                   }}
                 >
                   <Text style={styles.dateFilterOptionText}>{month} {selectedYear}</Text>
-                </TouchableOpacity>
+                </Clickable>
               ))}
-              <TouchableOpacity 
+              <Clickable 
                 style={styles.modalCancelButton} 
                 onPress={() => setViewMode('menu')}
               >
                 <Text style={styles.modalCancelText}>Back</Text>
-              </TouchableOpacity>
+              </Clickable>
             </ScrollView>
           )}
 
@@ -1051,7 +1050,7 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
                 style={styles.yearScroll}
               >
                 {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - 15 + i).map((year) => (
-                  <TouchableOpacity
+                  <Clickable
                     key={year}
                     style={[
                       styles.yearOption,
@@ -1070,15 +1069,15 @@ function DateFilterModal({ visible, onClose, onSelectDate }: DateFilterModalProp
                     >
                       {year}
                     </Text>
-                  </TouchableOpacity>
+                  </Clickable>
                 ))}
               </ScrollView>
-              <TouchableOpacity 
+              <Clickable 
                 style={[styles.modalCancelButton, { marginTop: 16 }]} 
                 onPress={() => setViewMode('menu')}
               >
                 <Text style={styles.modalCancelText}>Back</Text>
-              </TouchableOpacity>
+              </Clickable>
             </>
           )}
         </View>
@@ -1102,27 +1101,27 @@ function DeleteModal({ visible, onClose, onDelete }: DeleteModalProps) {
           <Text style={styles.deleteModalSubtitle}>
             Select the time period for files to delete
           </Text>
-          <TouchableOpacity
+          <Clickable
             style={styles.deleteOption}
             onPress={() => onDelete('day')}
           >
             <Text style={styles.deleteOptionText}>Delete files from today</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Clickable>
+          <Clickable
             style={styles.deleteOption}
             onPress={() => onDelete('month')}
           >
             <Text style={styles.deleteOptionText}>Delete files from this month</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Clickable>
+          <Clickable
             style={styles.deleteOption}
             onPress={() => onDelete('year')}
           >
             <Text style={styles.deleteOptionText}>Delete files from this year</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
+          </Clickable>
+          <Clickable style={styles.modalCancelButton} onPress={onClose}>
             <Text style={styles.modalCancelText}>Cancel</Text>
-          </TouchableOpacity>
+          </Clickable>
         </View>
       </View>
     </Modal>

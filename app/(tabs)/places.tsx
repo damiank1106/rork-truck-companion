@@ -16,7 +16,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
   Image,
   Alert,
@@ -30,6 +29,7 @@ import * as ImagePicker from "expo-image-picker";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { Place } from "@/types";
 import {
@@ -195,7 +195,7 @@ export default function PlacesScreen() {
 
   const headerRight = (
     <View style={styles.headerActions}>
-      <TouchableOpacity
+      <Clickable
         style={styles.sortButton}
         onPress={() => setIsSortMenuVisible((prev) => !prev)}
         activeOpacity={0.8}
@@ -203,10 +203,10 @@ export default function PlacesScreen() {
         <Animated.View style={rotationStyle}>
           <ArrowUpDown color={Colors.primary} size={20} />
         </Animated.View>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.addButton} onPress={handleAddPlace}>
+      </Clickable>
+      <Clickable style={styles.addButton} onPress={handleAddPlace}>
         <Plus color={Colors.white} size={20} />
-      </TouchableOpacity>
+      </Clickable>
     </View>
   );
 
@@ -237,9 +237,9 @@ export default function PlacesScreen() {
           <Text style={styles.emptyStateText}>
             Start logging the places you visit on your routes
           </Text>
-          <TouchableOpacity style={styles.emptyStateButton} onPress={handleAddPlace}>
+          <Clickable style={styles.emptyStateButton} onPress={handleAddPlace}>
             <Text style={styles.emptyStateButtonText}>Add Your First Place</Text>
-          </TouchableOpacity>
+          </Clickable>
         </View>
       ) : (
         <FlatList
@@ -255,7 +255,7 @@ export default function PlacesScreen() {
 
       <Modal visible={isSortMenuVisible} animationType="fade" transparent>
         <View style={[styles.sortModalOverlay, { paddingTop: insets.top + 90 }]}> 
-          <TouchableOpacity
+          <Clickable
             style={styles.sortModalBackdrop}
             activeOpacity={1}
             onPress={() => setIsSortMenuVisible(false)}
@@ -265,7 +265,7 @@ export default function PlacesScreen() {
             {SORT_OPTIONS.map((option) => {
               const isActive = option.value === sortOption;
               return (
-                <TouchableOpacity
+                <Clickable
                   key={option.value}
                   style={[styles.sortMenuOption, isActive && styles.sortMenuOptionActive]}
                   onPress={() => {
@@ -279,7 +279,7 @@ export default function PlacesScreen() {
                   >
                     {option.label}
                   </Text>
-                </TouchableOpacity>
+                </Clickable>
               );
             })}
           </View>
@@ -325,11 +325,11 @@ function PlaceCard({ place, onPress }: PlaceCardProps) {
   
   return (
     <>
-      <TouchableOpacity style={styles.placeCard} onPress={onPress}>
+      <Clickable style={styles.placeCard} onPress={onPress}>
         {place.photos.length > 0 ? (
-          <TouchableOpacity onPress={handlePhotoPress}>
+          <Clickable onPress={handlePhotoPress}>
             <Image source={{ uri: place.photos[0] }} style={styles.placeCardImage} />
-          </TouchableOpacity>
+          </Clickable>
         ) : (
           <View style={styles.placeIconContainer}>
             <MapPin color={Colors.primaryLight} size={24} />
@@ -358,7 +358,7 @@ function PlaceCard({ place, onPress }: PlaceCardProps) {
             )}
           </View>
         </View>
-      </TouchableOpacity>
+      </Clickable>
       
       <FullScreenPhotoModal
         photoUri={fullScreenPhoto}
@@ -522,9 +522,9 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add New Place</Text>
-            <TouchableOpacity onPress={handleClose}>
+            <Clickable onPress={handleClose}>
               <X color={Colors.text} size={24} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
@@ -617,7 +617,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
               <Text style={styles.modalSectionLabel}>Category</Text>
               <View style={styles.categoryOptionsRow}>
                 {CATEGORY_OPTIONS.map((option) => (
-                  <TouchableOpacity
+                  <Clickable
                     key={option}
                     style={[
                       styles.categoryOption,
@@ -633,7 +633,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                     >
                       {option}
                     </Text>
-                  </TouchableOpacity>
+                  </Clickable>
                 ))}
               </View>
               {categorySelection === "Other" && (
@@ -668,7 +668,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
             />
 
             <View style={styles.checkboxContainer}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.checkbox}
                 onPress={() => setFormData({ ...formData, hasRestroom: !formData.hasRestroom })}
               >
@@ -679,11 +679,11 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                   ]}
                 />
                 <Text style={styles.checkboxLabel}>Has Restroom</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
 
             <View style={styles.checkboxContainer}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.checkbox}
                 onPress={() => setFormData({ ...formData, overnightParking: !formData.overnightParking })}
               >
@@ -694,21 +694,21 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                   ]}
                 />
                 <Text style={styles.checkboxLabel}>Overnight Parking</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
 
             <View style={styles.photosSection}>
               <Text style={styles.photosSectionTitle}>Photos ({formData.photos.length}/5)</Text>
               
               <View style={styles.photoButtonsRow}>
-                <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
+                <Clickable style={styles.photoButton} onPress={takePhoto}>
                   <Camera color={Colors.white} size={20} />
                   <Text style={styles.photoButtonText}>Take Photo</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
+                </Clickable>
+                <Clickable style={styles.photoButton} onPress={pickImage}>
                   <ImageIcon color={Colors.white} size={20} />
                   <Text style={styles.photoButtonText}>Choose Photo</Text>
-                </TouchableOpacity>
+                </Clickable>
               </View>
 
               {formData.photos.length > 0 && (
@@ -716,21 +716,21 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                   {formData.photos.map((uri, index) => (
                     <View key={index} style={styles.photoItem}>
                       <Image source={{ uri }} style={styles.photoImage} />
-                      <TouchableOpacity
+                      <Clickable
                         style={styles.photoRemoveButton}
                         onPress={() => removePhoto(index)}
                       >
                         <X color={Colors.white} size={16} />
-                      </TouchableOpacity>
+                      </Clickable>
                     </View>
                   ))}
                 </View>
               )}
             </View>
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <Clickable style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>Add Place</Text>
-            </TouchableOpacity>
+            </Clickable>
           </ScrollView>
         </View>
       </View>
@@ -757,9 +757,9 @@ function PlaceDetailModal({ place, visible, onClose, onDelete }: PlaceDetailModa
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{place.companyName}</Text>
-              <TouchableOpacity onPress={onClose}>
+              <Clickable onPress={onClose}>
                 <X color={Colors.text} size={24} />
-              </TouchableOpacity>
+              </Clickable>
             </View>
 
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
@@ -789,21 +789,21 @@ function PlaceDetailModal({ place, visible, onClose, onDelete }: PlaceDetailModa
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={styles.detailPhotosRow}>
                       {place.photos.map((uri, index) => (
-                        <TouchableOpacity key={index} onPress={() => setFullScreenPhoto(uri)}>
+                        <Clickable key={index} onPress={() => setFullScreenPhoto(uri)}>
                           <Image source={{ uri }} style={styles.detailPhoto} />
-                        </TouchableOpacity>
+                        </Clickable>
                       ))}
                     </View>
                   </ScrollView>
                 </View>
               )}
 
-              <TouchableOpacity
+              <Clickable
                 style={styles.deleteButton}
                 onPress={() => onDelete(place.id)}
               >
                 <Text style={styles.deleteButtonText}>Delete Place</Text>
-              </TouchableOpacity>
+              </Clickable>
             </ScrollView>
           </View>
         </View>
@@ -905,9 +905,9 @@ function FullScreenPhotoModal({ photoUri, visible, onClose }: FullScreenPhotoMod
   return (
     <Modal visible={visible} animationType="fade" transparent>
       <View style={styles.fullScreenPhotoOverlay}>
-        <TouchableOpacity style={styles.fullScreenPhotoCloseButton} onPress={handleClose}>
+        <Clickable style={styles.fullScreenPhotoCloseButton} onPress={handleClose}>
           <X color={Colors.white} size={32} />
-        </TouchableOpacity>
+        </Clickable>
         <View style={styles.fullScreenPhotoContainer} {...panResponder.panHandlers}>
           <Image 
             source={{ uri: photoUri }} 

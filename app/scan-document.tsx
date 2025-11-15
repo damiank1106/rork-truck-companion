@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
   ScrollView,
   Image,
@@ -29,6 +28,7 @@ import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import { useFiles } from "@/contexts/FilesContext";
@@ -181,9 +181,9 @@ export default function ScanDocumentScreen() {
             title="Camera Permission"
             topInset={insets.top + (isSmallScreen ? 24 : 16)}
             leftAccessory={
-              <TouchableOpacity onPress={() => setShowCamera(false)}>
+              <Clickable onPress={() => setShowCamera(false)}>
                 <ArrowLeft color={Colors.primaryLight} size={24} />
-              </TouchableOpacity>
+              </Clickable>
             }
           />
           <View style={styles.permissionContainer}>
@@ -192,9 +192,9 @@ export default function ScanDocumentScreen() {
             <Text style={styles.permissionText}>
               We need access to your camera to scan documents.
             </Text>
-            <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+            <Clickable style={styles.permissionButton} onPress={requestPermission}>
               <Text style={styles.permissionButtonText}>Grant Permission</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
         </View>
       );
@@ -209,12 +209,12 @@ export default function ScanDocumentScreen() {
         >
           <View style={styles.cameraOverlay}>
             <View style={styles.cameraHeader}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.cameraCloseButton}
                 onPress={() => setShowCamera(false)}
               >
                 <X color={Colors.white} size={24} />
-              </TouchableOpacity>
+              </Clickable>
             </View>
 
             <View style={styles.cameraControls}>
@@ -222,19 +222,19 @@ export default function ScanDocumentScreen() {
                 <Text style={styles.cameraScannedCount}>
                   {scannedImages.length} photo{scannedImages.length !== 1 ? "s" : ""} taken
                 </Text>
-                <TouchableOpacity
+                <Clickable
                   style={styles.captureButton}
                   onPress={handleTakePicture}
                   disabled={showScanAnimation}
                 >
                   <View style={styles.captureButtonInner} />
-                </TouchableOpacity>
-                <TouchableOpacity
+                </Clickable>
+                <Clickable
                   style={styles.cameraDoneButton}
                   onPress={() => setShowCamera(false)}
                 >
                   <Check color={Colors.white} size={24} />
-                </TouchableOpacity>
+                </Clickable>
               </View>
             </View>
           </View>
@@ -250,9 +250,9 @@ export default function ScanDocumentScreen() {
         subtitle="Create a new File"
         topInset={insets.top + (isSmallScreen ? 24 : 16)}
         leftAccessory={
-          <TouchableOpacity onPress={() => router.back()}>
+          <Clickable onPress={() => router.back()}>
             <ArrowLeft color={Colors.primaryLight} size={24} />
-          </TouchableOpacity>
+          </Clickable>
         }
       />
 
@@ -269,14 +269,14 @@ export default function ScanDocumentScreen() {
             <Text style={styles.sectionLabel}>File Name (Optional)</Text>
             <View style={styles.checkboxContainer}>
               <Text style={styles.displayText}>Display</Text>
-              <TouchableOpacity
+              <Clickable
                 style={styles.checkbox}
                 onPress={() => setDisplayField('fileName')}
               >
                 {displayField === 'fileName' && (
                   <View style={styles.checkboxChecked} />
                 )}
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
           <TextInput
@@ -293,14 +293,14 @@ export default function ScanDocumentScreen() {
             <Text style={styles.sectionLabel}>Trip Number (Optional)</Text>
             <View style={styles.checkboxContainer}>
               <Text style={styles.displayText}>Display</Text>
-              <TouchableOpacity
+              <Clickable
                 style={styles.checkbox}
                 onPress={() => setDisplayField('tripNumber')}
               >
                 {displayField === 'tripNumber' && (
                   <View style={styles.checkboxChecked} />
                 )}
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
           <TextInput
@@ -315,18 +315,18 @@ export default function ScanDocumentScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Add Photos</Text>
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleCameraPress}>
+            <Clickable style={styles.actionButton} onPress={handleCameraPress}>
               <View style={styles.actionButtonIcon}>
                 <Camera color={Colors.primaryLight} size={28} />
               </View>
               <Text style={styles.actionButtonText}>Use Camera</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleUploadPress}>
+            </Clickable>
+            <Clickable style={styles.actionButton} onPress={handleUploadPress}>
               <View style={styles.actionButtonIcon}>
                 <Upload color={Colors.secondary} size={28} />
               </View>
               <Text style={styles.actionButtonText}>Upload from Device</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
         </View>
 
@@ -341,12 +341,12 @@ export default function ScanDocumentScreen() {
                   <Image source={{ uri }} style={styles.imagePreview} />
                   <View style={styles.imageOverlay}>
                     <Text style={styles.imageNumber}>Photo {index + 1}</Text>
-                    <TouchableOpacity
+                    <Clickable
                       style={styles.imageDeleteButton}
                       onPress={() => handleDeleteImage(index)}
                     >
                       <Trash2 color={Colors.white} size={16} />
-                    </TouchableOpacity>
+                    </Clickable>
                   </View>
                 </View>
               ))}
@@ -355,7 +355,7 @@ export default function ScanDocumentScreen() {
         )}
 
         {scannedImages.length > 0 && (
-          <TouchableOpacity
+          <Clickable
             style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
             onPress={handleSaveAsPDF}
             disabled={isSaving}
@@ -368,7 +368,7 @@ export default function ScanDocumentScreen() {
                 <Text style={styles.saveButtonText}>Save</Text>
               </>
             )}
-          </TouchableOpacity>
+          </Clickable>
         )}
       </ScrollView>
     </View>

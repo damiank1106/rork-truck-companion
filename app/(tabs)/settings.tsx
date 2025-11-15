@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   Animated,
   Platform,
@@ -19,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 
 import { usePlaces } from "@/contexts/PlacesContext";
 import { useTruck } from "@/contexts/TruckContext";
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Information</Text>
           <View style={styles.card}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => setShowAbout(true)}>
+            <Clickable style={styles.menuItem} onPress={() => setShowAbout(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIcon, { backgroundColor: `${Colors.primaryLight}15` }]}>
                   <Info color={Colors.primaryLight} size={20} />
@@ -161,13 +161,13 @@ export default function SettingsScreen() {
                 <Text style={styles.menuItemText}>About</Text>
               </View>
               <ChevronRight color={Colors.textLight} size={20} />
-            </TouchableOpacity>
+            </Clickable>
 
             <View style={styles.divider} />
 
 
 
-            <TouchableOpacity style={styles.menuItem} onPress={handleSupport}>
+            <Clickable style={styles.menuItem} onPress={handleSupport}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIcon, { backgroundColor: `${Colors.success}15` }]}>
                   <FileText color={Colors.success} size={20} />
@@ -175,11 +175,11 @@ export default function SettingsScreen() {
                 <Text style={styles.menuItemText}>Support</Text>
               </View>
               <ChevronRight color={Colors.textLight} size={20} />
-            </TouchableOpacity>
+            </Clickable>
 
             <View style={styles.divider} />
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => setShowLegal(true)}>
+            <Clickable style={styles.menuItem} onPress={() => setShowLegal(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIcon, { backgroundColor: `${Colors.primaryLight}15` }]}>
                   <Scale color={Colors.primaryLight} size={20} />
@@ -187,14 +187,14 @@ export default function SettingsScreen() {
                 <Text style={styles.menuItemText}>Legal</Text>
               </View>
               <ChevronRight color={Colors.textLight} size={20} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>App Actions</Text>
           <View style={styles.card}>
-            <TouchableOpacity style={styles.menuItem} onPress={handleReloadApp}>
+            <Clickable style={styles.menuItem} onPress={handleReloadApp}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIcon, { backgroundColor: `${Colors.primaryLight}15` }]}>
                   <RefreshCw color={Colors.primaryLight} size={20} />
@@ -202,7 +202,7 @@ export default function SettingsScreen() {
                 <Text style={styles.menuItemText}>Reload App</Text>
               </View>
               <ChevronRight color={Colors.textLight} size={20} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
         </View>
 
@@ -261,9 +261,9 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>About TD Companion</Text>
-            <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Clickable onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <ScrollView 
@@ -491,9 +491,9 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Privacy Policy</Text>
-            <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Clickable onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <ScrollView 
@@ -583,9 +583,9 @@ function LegalModal({ visible, onClose }: LegalModalProps) {
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Legal</Text>
-            <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Clickable onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
 
           <ScrollView 

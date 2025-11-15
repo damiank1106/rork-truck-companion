@@ -1,8 +1,9 @@
 import React from "react";
-import { Linking, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import { Linking, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 
 export default function DonationsScreen() {
@@ -37,7 +38,7 @@ export default function DonationsScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
+        <Clickable
           style={styles.donateButton}
           onPress={() => {
             Linking.openURL("https://www.paypal.com/donate?hosted_button_id=8YCU6SXJ59BW4");
@@ -46,7 +47,7 @@ export default function DonationsScreen() {
           accessibilityLabel="Donate with PayPal"
         >
           <Text style={styles.donateButtonText}>Donate with PayPal</Text>
-        </TouchableOpacity>
+        </Clickable>
       </View>
     </View>
   );

@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
   ScrollView,
   Modal,
@@ -19,6 +18,7 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import Colors from "@/constants/colors";
+import { Clickable } from "@/components/Clickable";
 import { useDriverID } from "@/contexts/DriverIDContext";
 
 const { width } = Dimensions.get("window");
@@ -132,13 +132,13 @@ export default function DriverIDScreen() {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Clickable onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft color={Colors.black} size={24} />
-          </TouchableOpacity>
+          </Clickable>
           <Text style={styles.headerTitle}>DL. NO.</Text>
-          <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+          <Clickable onPress={() => router.back()} style={styles.closeButton}>
             <X color={Colors.black} size={24} />
-          </TouchableOpacity>
+          </Clickable>
         </View>
         <ScrollView
           style={styles.scrollView}
@@ -149,7 +149,7 @@ export default function DriverIDScreen() {
             <Text style={styles.sectionTitle}>ID Cards</Text>
             <View style={styles.cardsGrid}>
               {frontCardUri && (
-                <TouchableOpacity
+                <Clickable
                   style={styles.cardThumbnail}
                   onPress={() => setSelectedImage(frontCardUri)}
                 >
@@ -157,10 +157,10 @@ export default function DriverIDScreen() {
                   <View style={styles.cardLabel}>
                     <Text style={styles.cardLabelText}>Front</Text>
                   </View>
-                </TouchableOpacity>
+                </Clickable>
               )}
               {backCardUri && (
-                <TouchableOpacity
+                <Clickable
                   style={styles.cardThumbnail}
                   onPress={() => setSelectedImage(backCardUri)}
                 >
@@ -168,21 +168,21 @@ export default function DriverIDScreen() {
                   <View style={styles.cardLabel}>
                     <Text style={styles.cardLabelText}>Back</Text>
                   </View>
-                </TouchableOpacity>
+                </Clickable>
               )}
             </View>
           </View>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
+            <Clickable style={styles.editButton} onPress={() => setIsEditing(true)}>
               <Edit2 color={Colors.white} size={20} />
               <Text style={styles.editButtonText}>Edit Driver ID</Text>
-            </TouchableOpacity>
+            </Clickable>
 
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Clickable style={styles.deleteButton} onPress={handleDelete}>
               <Trash2 color={Colors.white} size={20} />
               <Text style={styles.deleteButtonText}>Delete</Text>
-            </TouchableOpacity>
+            </Clickable>
           </View>
         </ScrollView>
 
@@ -193,12 +193,12 @@ export default function DriverIDScreen() {
           onRequestClose={() => setSelectedImage(null)}
         >
           <View style={styles.fullScreenOverlay}>
-            <TouchableOpacity
+            <Clickable
               style={[styles.fullScreenCloseButton, { top: insets.top + 10 }]}
               onPress={() => setSelectedImage(null)}
             >
               <X color={Colors.white} size={32} />
-            </TouchableOpacity>
+            </Clickable>
             {selectedImage && (
               <Image
                 source={{ uri: selectedImage }}
@@ -217,7 +217,7 @@ export default function DriverIDScreen() {
                   <Text style={styles.glassLabel}>State:</Text>
                   <Text style={styles.glassValue}>{driverID.state}</Text>
                 </View>
-                <TouchableOpacity
+                <Clickable
                   style={styles.glassEditButton}
                   onPress={() => {
                     setSelectedImage(null);
@@ -226,7 +226,7 @@ export default function DriverIDScreen() {
                 >
                   <Edit2 color={Colors.white} size={18} />
                   <Text style={styles.glassEditText}>Edit</Text>
-                </TouchableOpacity>
+                </Clickable>
               </View>
             </View>
           </View>
@@ -242,13 +242,13 @@ export default function DriverIDScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <TouchableOpacity onPress={() => driverID ? setIsEditing(false) : router.back()} style={styles.backButton}>
+        <Clickable onPress={() => driverID ? setIsEditing(false) : router.back()} style={styles.backButton}>
           <ArrowLeft color={Colors.black} size={24} />
-        </TouchableOpacity>
+        </Clickable>
         <Text style={styles.headerTitle}>Driver ID</Text>
-        <TouchableOpacity onPress={() => driverID ? setIsEditing(false) : router.back()} style={styles.closeButton}>
+        <Clickable onPress={() => driverID ? setIsEditing(false) : router.back()} style={styles.closeButton}>
           <X color={Colors.black} size={24} />
-        </TouchableOpacity>
+        </Clickable>
       </View>
       <ScrollView
         style={styles.scrollView}
@@ -263,52 +263,52 @@ export default function DriverIDScreen() {
             <View style={styles.cardContainer}>
               <Text style={styles.cardLabel}>Front</Text>
               {frontCardUri ? (
-                <TouchableOpacity
+                <Clickable
                   style={styles.cardImageContainer}
                   onPress={() => setSelectedImage(frontCardUri)}
                 >
                   <Image source={{ uri: frontCardUri }} style={styles.cardImage} />
-                  <TouchableOpacity
+                  <Clickable
                     style={styles.removeImageButton}
                     onPress={() => removeImage("front")}
                   >
                     <Trash2 color={Colors.white} size={16} />
-                  </TouchableOpacity>
-                </TouchableOpacity>
+                  </Clickable>
+                </Clickable>
               ) : (
-                <TouchableOpacity
+                <Clickable
                   style={styles.addCardButton}
                   onPress={() => pickImage("front")}
                 >
                   <Camera color={Colors.primaryLight} size={32} />
                   <Text style={styles.addCardText}>Add Front</Text>
-                </TouchableOpacity>
+                </Clickable>
               )}
             </View>
 
             <View style={styles.cardContainer}>
               <Text style={styles.cardLabel}>Back</Text>
               {backCardUri ? (
-                <TouchableOpacity
+                <Clickable
                   style={styles.cardImageContainer}
                   onPress={() => setSelectedImage(backCardUri)}
                 >
                   <Image source={{ uri: backCardUri }} style={styles.cardImage} />
-                  <TouchableOpacity
+                  <Clickable
                     style={styles.removeImageButton}
                     onPress={() => removeImage("back")}
                   >
                     <Trash2 color={Colors.white} size={16} />
-                  </TouchableOpacity>
-                </TouchableOpacity>
+                  </Clickable>
+                </Clickable>
               ) : (
-                <TouchableOpacity
+                <Clickable
                   style={styles.addCardButton}
                   onPress={() => pickImage("back")}
                 >
                   <Camera color={Colors.primaryLight} size={32} />
                   <Text style={styles.addCardText}>Add Back</Text>
-                </TouchableOpacity>
+                </Clickable>
               )}
             </View>
           </View>
@@ -351,15 +351,15 @@ export default function DriverIDScreen() {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Clickable style={styles.saveButton} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
+          </Clickable>
 
           {driverID && (
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Clickable style={styles.deleteButton} onPress={handleDelete}>
               <Trash2 color={Colors.white} size={20} />
               <Text style={styles.deleteButtonText}>Delete</Text>
-            </TouchableOpacity>
+            </Clickable>
           )}
         </View>
       </ScrollView>

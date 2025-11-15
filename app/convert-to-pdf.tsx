@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
   ScrollView,
   Image,
@@ -30,6 +29,7 @@ import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import PageHeader from "@/components/PageHeader";
+import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 
@@ -105,12 +105,12 @@ export default function ConvertToPDFScreen() {
         topInset={insets.top + (isSmallScreen ? 24 : 16)}
         rightAccessory={
           <View style={styles.headerActions}>
-            <TouchableOpacity
+            <Clickable
               style={[styles.headerIconButton, styles.plusButton]}
               onPress={() => setShowCreateModal(true)}
             >
               <Plus color={Colors.white} size={20} />
-            </TouchableOpacity>
+            </Clickable>
           </View>
         }
       />
@@ -134,7 +134,7 @@ export default function ConvertToPDFScreen() {
         ) : (
           <View style={styles.pdfList}>
             {convertedPDFs.map((pdf) => (
-              <TouchableOpacity
+              <Clickable
                 key={pdf.id}
                 style={styles.pdfCard}
                 onPress={() => setSelectedPDF(pdf)}
@@ -150,7 +150,7 @@ export default function ConvertToPDFScreen() {
                     })}
                   </Text>
                 </View>
-                <TouchableOpacity
+                <Clickable
                   style={styles.pdfDeleteButton}
                   onPress={(e) => {
                     e.stopPropagation();
@@ -158,8 +158,8 @@ export default function ConvertToPDFScreen() {
                   }}
                 >
                   <Trash2 color={Colors.error} size={20} />
-                </TouchableOpacity>
-              </TouchableOpacity>
+                </Clickable>
+              </Clickable>
             ))}
           </View>
         )}
@@ -322,9 +322,9 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
           <View style={[styles.modalContent, { paddingTop: insets.top + 20 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Camera Permission</Text>
-              <TouchableOpacity onPress={() => setShowCamera(false)}>
+              <Clickable onPress={() => setShowCamera(false)}>
                 <X color={Colors.textSecondary} size={24} />
-              </TouchableOpacity>
+              </Clickable>
             </View>
             <View style={styles.permissionContainer}>
               <Camera color={Colors.textLight} size={64} />
@@ -332,9 +332,9 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
               <Text style={styles.permissionText}>
                 We need access to your camera to scan documents.
               </Text>
-              <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+              <Clickable style={styles.permissionButton} onPress={requestPermission}>
                 <Text style={styles.permissionButtonText}>Grant Permission</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
         </View>
@@ -346,20 +346,20 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
         <CameraView ref={cameraRef} style={styles.camera} facing="back">
           <View style={styles.cameraOverlay}>
             <View style={styles.cameraHeader}>
-              <TouchableOpacity
+              <Clickable
                 style={styles.cameraCloseButton}
                 onPress={() => setShowCamera(false)}
               >
                 <X color={Colors.white} size={24} />
-              </TouchableOpacity>
+              </Clickable>
             </View>
 
             <View style={styles.cameraControls}>
               <View style={styles.cameraControlsInner}>
                 <View style={{ width: 56 }} />
-                <TouchableOpacity style={styles.captureButton} onPress={handleTakePicture}>
+                <Clickable style={styles.captureButton} onPress={handleTakePicture}>
                   <View style={styles.captureButtonInner} />
-                </TouchableOpacity>
+                </Clickable>
                 <View style={{ width: 56 }} />
               </View>
             </View>
@@ -374,9 +374,9 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
       <View style={[styles.modalContent, { paddingTop: insets.top + 20 }]}>
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>Create PDF</Text>
-          <TouchableOpacity onPress={onClose}>
+          <Clickable onPress={onClose}>
             <X color={Colors.textSecondary} size={24} />
-          </TouchableOpacity>
+          </Clickable>
         </View>
 
         <ScrollView
@@ -398,14 +398,14 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
           <View style={styles.modalSection}>
             <Text style={styles.modalLabel}>Upload Image</Text>
             <View style={styles.uploadButtons}>
-              <TouchableOpacity style={styles.uploadButton} onPress={handleCameraPress}>
+              <Clickable style={styles.uploadButton} onPress={handleCameraPress}>
                 <Camera color={Colors.primaryLight} size={24} />
                 <Text style={styles.uploadButtonText}>Use Camera</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.uploadButton} onPress={handleUploadPress}>
+              </Clickable>
+              <Clickable style={styles.uploadButton} onPress={handleUploadPress}>
                 <Upload color={Colors.secondary} size={24} />
                 <Text style={styles.uploadButtonText}>Upload from Device</Text>
-              </TouchableOpacity>
+              </Clickable>
             </View>
           </View>
 
@@ -422,14 +422,14 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
                 {uploadedImages.map((imageUri, index) => (
                   <View key={`${imageUri}-${index}`} style={styles.imagePreviewContainer}>
                     <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-                    <TouchableOpacity
+                    <Clickable
                       style={styles.imageRemoveButton}
                       onPress={() => {
                         setUploadedImages(uploadedImages.filter((_, i) => i !== index));
                       }}
                     >
                       <Trash2 color={Colors.white} size={16} />
-                    </TouchableOpacity>
+                    </Clickable>
                   </View>
                 ))}
               </ScrollView>
@@ -448,7 +448,7 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
             </View>
           )}
 
-          <TouchableOpacity
+          <Clickable
             style={[
               styles.convertButton,
               (isConverting || !fileName.trim() || uploadedImages.length === 0) &&
@@ -462,7 +462,7 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
             ) : (
               <Text style={styles.convertButtonText}>Convert to PDF</Text>
             )}
-          </TouchableOpacity>
+          </Clickable>
         </ScrollView>
       </View>
     </View>
@@ -1157,9 +1157,9 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
       <View style={[styles.pdfDetailContent, { paddingTop: insets.top + 20 }]}>
         <View style={styles.pdfDetailHeader}>
           <Text style={styles.pdfDetailTitle}>PDF Details</Text>
-          <TouchableOpacity onPress={onClose}>
+          <Clickable onPress={onClose}>
             <X color={Colors.textSecondary} size={24} />
-          </TouchableOpacity>
+          </Clickable>
         </View>
 
         <ScrollView
@@ -1187,7 +1187,7 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
 
           {pdf.images.length > 0 && (
             <>
-              <TouchableOpacity
+              <Clickable
                 style={styles.pageViewer}
                 onPress={handleOpenImageModal}
                 activeOpacity={0.7}
@@ -1197,11 +1197,11 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
                   style={styles.pageImage}
                   resizeMode="contain"
                 />
-              </TouchableOpacity>
+              </Clickable>
 
               {pdf.images.length > 1 && (
                 <View style={styles.pageNavigation}>
-                  <TouchableOpacity
+                  <Clickable
                     style={[
                       styles.pageNavButton,
                       currentPage === 0 && styles.pageNavButtonDisabled,
@@ -1213,7 +1213,7 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
                       color={currentPage === 0 ? Colors.textLight : Colors.primaryLight}
                       size={20}
                     />
-                  </TouchableOpacity>
+                  </Clickable>
 
                   <View style={styles.pageIndicator}>
                     <Text style={styles.pageIndicatorText}>
@@ -1221,7 +1221,7 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
                     </Text>
                   </View>
 
-                  <TouchableOpacity
+                  <Clickable
                     style={[
                       styles.pageNavButton,
                       currentPage === pdf.images.length - 1 && styles.pageNavButtonDisabled,
@@ -1237,7 +1237,7 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
                       }
                       size={20}
                     />
-                  </TouchableOpacity>
+                  </Clickable>
                 </View>
               )}
 
@@ -1259,14 +1259,14 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
                         currentPage === index && styles.thumbnailActive,
                       ]}
                     >
-                      <TouchableOpacity
+                      <Clickable
                         style={styles.thumbnailTouchableContainer}
                         onPress={() => setCurrentPage(index)}
                       >
                         <Image source={{ uri: imageUri }} style={styles.thumbnailImage} />
                         <Text style={styles.thumbnailLabel}>{index + 1}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
+                      </Clickable>
+                      <Clickable
                         style={styles.thumbnailCheckbox}
                         onPress={() => togglePageSelection(index)}
                       >
@@ -1280,30 +1280,30 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
                             <View style={styles.checkmark} />
                           )}
                         </View>
-                      </TouchableOpacity>
+                      </Clickable>
                     </View>
                   ))}
                 </ScrollView>
               </View>
 
               <View style={styles.actionButtonsRow}>
-                <TouchableOpacity
+                <Clickable
                   style={[styles.actionButton, styles.emailButton]}
                   onPress={handleSendEmail}
                   activeOpacity={0.7}
                 >
                   <Mail color={Colors.white} size={20} />
                   <Text style={styles.actionButtonText}>Send to Email</Text>
-                </TouchableOpacity>
+                </Clickable>
 
-                <TouchableOpacity
+                <Clickable
                   style={[styles.actionButton, styles.deleteActionButton]}
                   onPress={handleDelete}
                   activeOpacity={0.7}
                 >
                   <Trash2 color={Colors.white} size={20} />
                   <Text style={styles.actionButtonText}>Delete</Text>
-                </TouchableOpacity>
+                </Clickable>
               </View>
             </>
           )}
@@ -1317,12 +1317,12 @@ function PDFDetailModal({ pdf, onClose, onDelete }: PDFDetailModalProps) {
         onRequestClose={() => setShowImageModal(false)}
       >
         <View style={styles.imageModalOverlay}>
-          <TouchableOpacity
+          <Clickable
             style={styles.imageModalCloseButton}
             onPress={() => setShowImageModal(false)}
           >
             <X color={Colors.white} size={28} />
-          </TouchableOpacity>
+          </Clickable>
           <View style={styles.imageModalContent}>
             <Image
               source={{ uri: pdf.images[currentPage] }}

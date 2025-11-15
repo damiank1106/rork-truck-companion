@@ -1,10 +1,12 @@
 import { Truck } from "lucide-react-native";
 import React, { useEffect, useRef } from "react";
-import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Dimensions, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
+import { Clickable } from "@/components/Clickable";
+import { playStartupSound } from "@/soundManager";
 
 const { width, height } = Dimensions.get("window");
 
@@ -19,6 +21,10 @@ export default function WelcomeScreen() {
   const bgAnim1 = useRef(new Animated.Value(0)).current;
   const bgAnim2 = useRef(new Animated.Value(0)).current;
   const bgAnim3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    void playStartupSound();
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -248,9 +254,9 @@ export default function WelcomeScreen() {
               },
             ]}
           >
-            <TouchableOpacity style={styles.button} onPress={handleGetStarted}>
+            <Clickable style={styles.button} onPress={handleGetStarted}>
               <Text style={styles.buttonText}>Get Started</Text>
-            </TouchableOpacity>
+            </Clickable>
           </Animated.View>
         </Animated.View>
     </View>
