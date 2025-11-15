@@ -369,7 +369,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = app.rork.truck.driver.app;
-				PRODUCT_NAME = TruckDriverApp;
+				PRODUCT_NAME = "TruckDriverApp";
 				SWIFT_OBJC_BRIDGING_HEADER = "TruckDriverApp/TruckDriverApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -402,8 +402,8 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.rork.truckdriverapp;
-				PRODUCT_NAME = TruckDriverApp;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.rork.truck.driver.app";
+				PRODUCT_NAME = "TruckDriverApp";
 				SWIFT_OBJC_BRIDGING_HEADER = "TruckDriverApp/TruckDriverApp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
