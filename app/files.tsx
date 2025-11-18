@@ -180,6 +180,42 @@ export default function FilesScreen() {
     );
   };
 
+  const handleCustomDelete = (month: number, year: number) => {
+    const filesToDelete = files.filter((file) => {
+      const fileDate = new Date(file.createdAt);
+      return fileDate.getMonth() === month && fileDate.getFullYear() === year;
+    });
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const periodText = `${monthNames[month]} ${year}`;
+
+    if (filesToDelete.length === 0) {
+      Alert.alert('No Files', `There are no files from ${periodText} to delete.`);
+      return;
+    }
+
+    Alert.alert(
+      'Confirm Delete',
+      `Are you sure you want to delete ${filesToDelete.length} file(s) from ${periodText}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          style: 'destructive',
+          onPress: async () => {
+            for (const file of filesToDelete) {
+              await deleteFile(file.id);
+            }
+            Alert.alert('Success', `${filesToDelete.length} file(s) deleted successfully from ${periodText}.`);
+          },
+        },
+      ]
+    );
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -712,6 +748,7 @@ export default function FilesScreen() {
         visible={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onDelete={(period) => handleBulkDelete(period)}
+        onCustomDelete={(month, year) => handleCustomDelete(month, year)}
       />
 
       {isMenuMounted && isSmallScreen ? (
@@ -1090,38 +1127,140 @@ interface DeleteModalProps {
   visible: boolean;
   onClose: () => void;
   onDelete: (period: 'day' | 'month' | 'year') => void;
+  onCustomDelete: (month: number, year: number) => void;
 }
 
-function DeleteModal({ visible, onClose, onDelete }: DeleteModalProps) {
+function DeleteModal({ visible, onClose, onDelete, onCustomDelete }: DeleteModalProps) {
+  const [viewMode, setViewMode] = useState<'menu' | 'custom'>('menu');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { width } = useWindowDimensions();
+
+  useEffect(() => {
+    if (visible) {
+      setViewMode('menu');
+      const now = new Date();
+      setSelectedMonth(now.getMonth());
+      setSelectedYear(now.getFullYear());
+    }
+  }, [visible]);
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const isSmallScreen = width < 360;
+
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={styles.deleteModalContent}>
-          <Text style={styles.deleteModalTitle}>Delete Files</Text>
-          <Text style={styles.deleteModalSubtitle}>
-            Select the time period for files to delete
-          </Text>
-          <Clickable
-            style={styles.deleteOption}
-            onPress={() => onDelete('day')}
-          >
-            <Text style={styles.deleteOptionText}>Delete files from today</Text>
-          </Clickable>
-          <Clickable
-            style={styles.deleteOption}
-            onPress={() => onDelete('month')}
-          >
-            <Text style={styles.deleteOptionText}>Delete files from this month</Text>
-          </Clickable>
-          <Clickable
-            style={styles.deleteOption}
-            onPress={() => onDelete('year')}
-          >
-            <Text style={styles.deleteOptionText}>Delete files from this year</Text>
-          </Clickable>
-          <Clickable style={styles.modalCancelButton} onPress={onClose}>
-            <Text style={styles.modalCancelText}>Cancel</Text>
-          </Clickable>
+        <View style={[styles.deleteModalContent, isSmallScreen && { width: '95%', paddingHorizontal: 16 }]}>
+          {viewMode === 'menu' ? (
+            <>
+              <Text style={[styles.deleteModalTitle, isSmallScreen && { fontSize: 18 }]}>Delete Files</Text>
+              <Text style={[styles.deleteModalSubtitle, isSmallScreen && { fontSize: 13 }]}>
+                Select the time period for files to delete
+              </Text>
+              <Clickable
+                style={styles.deleteOption}
+                onPress={() => onDelete('day')}
+              >
+                <Text style={[styles.deleteOptionText, isSmallScreen && { fontSize: 14 }]}>Delete files from today</Text>
+              </Clickable>
+              <Clickable
+                style={styles.deleteOption}
+                onPress={() => onDelete('month')}
+              >
+                <Text style={[styles.deleteOptionText, isSmallScreen && { fontSize: 14 }]}>Delete files from this month</Text>
+              </Clickable>
+              <Clickable
+                style={styles.deleteOption}
+                onPress={() => onDelete('year')}
+              >
+                <Text style={[styles.deleteOptionText, isSmallScreen && { fontSize: 14 }]}>Delete files from this year</Text>
+              </Clickable>
+              <Clickable
+                style={styles.deleteOption}
+                onPress={() => setViewMode('custom')}
+              >
+                <Text style={[styles.deleteOptionText, isSmallScreen && { fontSize: 14 }]}>Delete files - custom</Text>
+              </Clickable>
+              <Clickable style={styles.modalCancelButton} onPress={onClose}>
+                <Text style={[styles.modalCancelText, isSmallScreen && { fontSize: 14 }]}>Cancel</Text>
+              </Clickable>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.deleteModalTitle, isSmallScreen && { fontSize: 18 }]}>Select Custom Period</Text>
+              <Text style={[styles.deleteModalSubtitle, isSmallScreen && { fontSize: 13, marginBottom: 12 }]}>
+                Choose month and year
+              </Text>
+              
+              <View style={styles.customDeleteContainer}>
+                <Text style={[styles.customDeleteLabel, isSmallScreen && { fontSize: 14 }]}>Year</Text>
+                <View style={styles.monthYearSelector}>
+                  <Clickable 
+                    style={[styles.navButton, isSmallScreen && { padding: 4 }]}
+                    onPress={() => setSelectedYear(selectedYear - 1)}
+                  >
+                    <Text style={[styles.monthYearText, isSmallScreen && { fontSize: 16 }]}>‹</Text>
+                  </Clickable>
+                  <Text style={[styles.monthYearText, isSmallScreen && { fontSize: 16 }]}>{selectedYear}</Text>
+                  <Clickable 
+                    style={[styles.navButton, isSmallScreen && { padding: 4 }]}
+                    onPress={() => setSelectedYear(selectedYear + 1)}
+                  >
+                    <Text style={[styles.monthYearText, isSmallScreen && { fontSize: 16 }]}>›</Text>
+                  </Clickable>
+                </View>
+
+                <Text style={[styles.customDeleteLabel, isSmallScreen && { fontSize: 14 }]}>Month</Text>
+                <ScrollView 
+                  style={[styles.monthScrollView, isSmallScreen && { maxHeight: 180 }]}
+                  showsVerticalScrollIndicator={true}
+                >
+                  {monthNames.map((month, index) => (
+                    <Clickable
+                      key={index}
+                      style={[
+                        styles.monthOption,
+                        selectedMonth === index && styles.monthOptionActive,
+                        isSmallScreen && { paddingVertical: 10 }
+                      ]}
+                      onPress={() => setSelectedMonth(index)}
+                    >
+                      <Text
+                        style={[
+                          styles.monthOptionText,
+                          selectedMonth === index && styles.monthOptionTextActive,
+                          isSmallScreen && { fontSize: 14 }
+                        ]}
+                      >
+                        {month}
+                      </Text>
+                    </Clickable>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <Clickable 
+                style={[styles.modalCancelButton, { marginTop: 16 }]} 
+                onPress={() => {
+                  onCustomDelete(selectedMonth, selectedYear);
+                  onClose();
+                }}
+              >
+                <Text style={[styles.modalCancelText, isSmallScreen && { fontSize: 14 }]}>Delete Files</Text>
+              </Clickable>
+              <Clickable 
+                style={styles.modalCancelButton} 
+                onPress={() => setViewMode('menu')}
+              >
+                <Text style={[styles.modalCancelText, isSmallScreen && { fontSize: 14 }]}>Back</Text>
+              </Clickable>
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -1713,6 +1852,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500" as const,
     color: Colors.text,
+  },
+  customDeleteContainer: {
+    marginBottom: 12,
+  },
+  customDeleteLabel: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: Colors.text,
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  monthScrollView: {
+    maxHeight: 240,
+  },
+  monthOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: Colors.background,
+  },
+  monthOptionActive: {
+    backgroundColor: Colors.primaryLight,
+  },
+  monthOptionText: {
+    fontSize: 16,
+    fontWeight: "500" as const,
+    color: Colors.text,
+  },
+  monthOptionTextActive: {
+    color: Colors.white,
   },
 
 });
