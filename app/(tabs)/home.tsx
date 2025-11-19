@@ -48,7 +48,7 @@ export default function HomeScreen() {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false);
-  const [isCelsius, setIsCelsius] = useState<boolean>(true);
+  const [isCelsius, setIsCelsius] = useState<boolean>(false);
   const [speed, setSpeed] = useState<number>(0);
   const [isSpeedKmh, setIsSpeedKmh] = useState<boolean>(false);
   const [lastGeocodeTime, setLastGeocodeTime] = useState<number>(0);
@@ -450,9 +450,9 @@ export default function HomeScreen() {
                   style={styles.tempUnitSwitch}
                   onPress={() => setIsCelsius(!isCelsius)}
                 >
-                  <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
-                  <Text style={styles.tempUnitSeparator}>|</Text>
                   <Text style={[styles.tempUnitText, !isCelsius && styles.tempUnitActive]}>°F</Text>
+                  <Text style={styles.tempUnitSeparator}>|</Text>
+                  <Text style={[styles.tempUnitText, isCelsius && styles.tempUnitActive]}>°C</Text>
                 </Clickable>
               </View>
             </View>

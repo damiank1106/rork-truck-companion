@@ -5,6 +5,13 @@ import { FileDocument } from "@/types";
 
 const FILES_STORAGE_KEY = "files";
 
+/*
+ * DATA PERSISTENCE:
+ * All file data (including text notes and image URIs) is stored locally using AsyncStorage.
+ * AsyncStorage persists data across app restarts and survives Ad Hoc builds with the same bundle identifier.
+ * No cloud services or external servers are used for data storage.
+ */
+
 export const [FilesContext, useFiles] = createContextHook(() => {
   const [files, setFiles] = useState<FileDocument[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);

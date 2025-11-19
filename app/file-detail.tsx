@@ -25,6 +25,8 @@ import {
   Save,
   Download,
   FileText,
+  Calendar,
+  Clock,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
@@ -49,6 +51,9 @@ export default function FileDetailScreen() {
   const [editTripNumber, setEditTripNumber] = useState<string>("");
   const [editDisplayField, setEditDisplayField] = useState<'fileName' | 'tripNumber'>('fileName');
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
+  const [editCreatedAt, setEditCreatedAt] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+  const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
 
   const isSmallScreen = width < 360;
 
@@ -61,6 +66,7 @@ export default function FileDetailScreen() {
       setEditFileName(file.fileName || "");
       setEditTripNumber(file.tripNumber || "");
       setEditDisplayField(file.displayField || 'fileName');
+      setEditCreatedAt(new Date(file.createdAt));
     }
   }, [file]);
 
@@ -104,28 +110,7 @@ export default function FileDetailScreen() {
     );
   };
 
-  const handleShareFile = async () => {
-    try {
-      if (file.scanImages.length === 0) {
-        Alert.alert("No Content", "This file has no pages to share.");
-        return;
-      }
 
-      if (Platform.OS === "web") {
-        Alert.alert("Not Available", "Sharing is not available on web.");
-        return;
-      }
-
-      await Share.share({
-        title: file.fileName,
-        message: `Sharing document: ${file.fileName}`,
-        url: file.scanImages[0],
-      });
-    } catch (error) {
-      console.error("Error sharing file:", error);
-      Alert.alert("Error", "Failed to share file.");
-    }
-  };
 
 
 
@@ -238,6 +223,7 @@ export default function FileDetailScreen() {
         fileName: finalFileName || undefined,
         tripNumber: finalTripNumber || undefined,
         displayField: editDisplayField,
+        createdAt: editCreatedAt.toISOString(),
       });
       setIsEditMode(false);
       Alert.alert("Success", "File updated successfully!");
@@ -251,6 +237,7 @@ export default function FileDetailScreen() {
     setEditFileName(file.fileName || "");
     setEditTripNumber(file.tripNumber || "");
     setEditDisplayField(file.displayField || 'fileName');
+    setEditCreatedAt(new Date(file.createdAt));
     setIsEditMode(false);
   };
 
@@ -375,9 +362,37 @@ export default function FileDetailScreen() {
         {isEditMode ? (
           <View style={styles.editContainer}>
             <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Created:</Text>
-                <Text style={styles.infoValue}>{formatDate(file.createdAt)}</Text>
+              <View style={styles.editSection}>
+                <View style={styles.fieldHeader}>
+                  <Text style={styles.editLabel}>Created Date & Time</Text>
+                </View>
+                <View style={styles.dateTimeControls}>
+                  <Clickable
+                    style={styles.dateTimeButton}
+                    onPress={() => setShowDatePicker(true)}
+                  >
+                    <Calendar color={Colors.primaryLight} size={18} />
+                    <Text style={styles.dateTimeButtonText}>
+                      {editCreatedAt.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </Text>
+                  </Clickable>
+                  <Clickable
+                    style={styles.dateTimeButton}
+                    onPress={() => setShowTimePicker(true)}
+                  >
+                    <Clock color={Colors.primaryLight} size={18} />
+                    <Text style={styles.dateTimeButtonText}>
+                      {editCreatedAt.toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </Clickable>
+                </View>
               </View>
 
               <View style={styles.editSection}>
@@ -658,6 +673,154 @@ export default function FileDetailScreen() {
               style={styles.imageModalImage}
               resizeMode="contain"
             />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showDatePicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.datePickerModalOverlay}>
+          <View style={styles.datePickerModalContent}>
+            <View style={styles.datePickerHeader}>
+              <Text style={styles.datePickerTitle}>Select Date</Text>
+              <Clickable onPress={() => setShowDatePicker(false)}>
+                <X color={Colors.text} size={24} />
+              </Clickable>
+            </View>
+            <View style={styles.datePickerInputs}>
+              <View style={styles.datePickerField}>
+                <Text style={styles.datePickerLabel}>Month</Text>
+                <TextInput
+                  style={styles.datePickerInput}
+                  placeholder="MM"
+                  placeholderTextColor={Colors.textLight}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  value={(editCreatedAt.getMonth() + 1).toString().padStart(2, '0')}
+                  onChangeText={(text) => {
+                    const month = parseInt(text) - 1;
+                    if (month >= 0 && month <= 11) {
+                      const newDate = new Date(editCreatedAt);
+                      newDate.setMonth(month);
+                      setEditCreatedAt(newDate);
+                    }
+                  }}
+                />
+              </View>
+              <View style={styles.datePickerField}>
+                <Text style={styles.datePickerLabel}>Day</Text>
+                <TextInput
+                  style={styles.datePickerInput}
+                  placeholder="DD"
+                  placeholderTextColor={Colors.textLight}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  value={editCreatedAt.getDate().toString().padStart(2, '0')}
+                  onChangeText={(text) => {
+                    const day = parseInt(text);
+                    if (day >= 1 && day <= 31) {
+                      const newDate = new Date(editCreatedAt);
+                      newDate.setDate(day);
+                      setEditCreatedAt(newDate);
+                    }
+                  }}
+                />
+              </View>
+              <View style={styles.datePickerField}>
+                <Text style={styles.datePickerLabel}>Year</Text>
+                <TextInput
+                  style={styles.datePickerInput}
+                  placeholder="YYYY"
+                  placeholderTextColor={Colors.textLight}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  value={editCreatedAt.getFullYear().toString()}
+                  onChangeText={(text) => {
+                    const year = parseInt(text);
+                    if (year >= 1900 && year <= 2100) {
+                      const newDate = new Date(editCreatedAt);
+                      newDate.setFullYear(year);
+                      setEditCreatedAt(newDate);
+                    }
+                  }}
+                />
+              </View>
+            </View>
+            <Clickable
+              style={styles.datePickerDoneButton}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={styles.datePickerDoneText}>Done</Text>
+            </Clickable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showTimePicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowTimePicker(false)}
+      >
+        <View style={styles.datePickerModalOverlay}>
+          <View style={styles.datePickerModalContent}>
+            <View style={styles.datePickerHeader}>
+              <Text style={styles.datePickerTitle}>Select Time</Text>
+              <Clickable onPress={() => setShowTimePicker(false)}>
+                <X color={Colors.text} size={24} />
+              </Clickable>
+            </View>
+            <View style={styles.timePickerInputs}>
+              <View style={styles.datePickerField}>
+                <Text style={styles.datePickerLabel}>Hour</Text>
+                <TextInput
+                  style={styles.datePickerInput}
+                  placeholder="HH"
+                  placeholderTextColor={Colors.textLight}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  value={editCreatedAt.getHours().toString().padStart(2, '0')}
+                  onChangeText={(text) => {
+                    const hour = parseInt(text);
+                    if (hour >= 0 && hour <= 23) {
+                      const newDate = new Date(editCreatedAt);
+                      newDate.setHours(hour);
+                      setEditCreatedAt(newDate);
+                    }
+                  }}
+                />
+              </View>
+              <Text style={styles.timePickerSeparator}>:</Text>
+              <View style={styles.datePickerField}>
+                <Text style={styles.datePickerLabel}>Minute</Text>
+                <TextInput
+                  style={styles.datePickerInput}
+                  placeholder="MM"
+                  placeholderTextColor={Colors.textLight}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  value={editCreatedAt.getMinutes().toString().padStart(2, '0')}
+                  onChangeText={(text) => {
+                    const minute = parseInt(text);
+                    if (minute >= 0 && minute <= 59) {
+                      const newDate = new Date(editCreatedAt);
+                      newDate.setMinutes(minute);
+                      setEditCreatedAt(newDate);
+                    }
+                  }}
+                />
+              </View>
+            </View>
+            <Clickable
+              style={styles.datePickerDoneButton}
+              onPress={() => setShowTimePicker(false)}
+            >
+              <Text style={styles.datePickerDoneText}>Done</Text>
+            </Clickable>
           </View>
         </View>
       </Modal>
@@ -1016,5 +1179,101 @@ const styles = StyleSheet.create({
   imageModalImage: {
     width: "100%" as const,
     height: "100%" as const,
+  },
+  dateTimeControls: {
+    flexDirection: "row" as const,
+    gap: 8,
+  },
+  dateTimeButton: {
+    flex: 1,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  dateTimeButtonText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.text,
+  },
+  datePickerModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  datePickerModalContent: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  datePickerHeader: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginBottom: 24,
+  },
+  datePickerTitle: {
+    fontSize: 24,
+    fontWeight: "700" as const,
+    color: Colors.text,
+  },
+  datePickerInputs: {
+    flexDirection: "row" as const,
+    gap: 12,
+    marginBottom: 24,
+  },
+  timePickerInputs: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: 12,
+    marginBottom: 24,
+  },
+  timePickerSeparator: {
+    fontSize: 32,
+    fontWeight: "700" as const,
+    color: Colors.text,
+    marginTop: 20,
+  },
+  datePickerField: {
+    flex: 1,
+  },
+  datePickerLabel: {
+    fontSize: 12,
+    fontWeight: "600" as const,
+    color: Colors.textLight,
+    marginBottom: 6,
+  },
+  datePickerInput: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    textAlign: "center" as const,
+  },
+  datePickerDoneButton: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    ...standardShadow,
+  },
+  datePickerDoneText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.white,
   },
 });
