@@ -12,6 +12,7 @@ export function Clickable(props: ClickableProps) {
 
   const handlePress: TouchableOpacityProps["onPress"] = (event) => {
     if (clickSoundEnabled) {
+      console.log("Playing click sound...");
       void playClickSound();
     }
     if (onPress) {

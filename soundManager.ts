@@ -60,12 +60,17 @@ async function loadClickSound() {
 
 export async function playStartupSound() {
   if (Platform.OS === "web") {
+    console.log("Startup sound skipped: Web platform");
     return;
   }
   try {
+    console.log("Attempting to play startup sound...");
     const sound = await loadStartupSound();
     if (sound) {
       await sound.replayAsync();
+      console.log("Startup sound played successfully");
+    } else {
+      console.log("Startup sound not loaded");
     }
   } catch (error) {
     console.log("Failed to play startup sound:", error);

@@ -1,6 +1,6 @@
 import { Truck } from "lucide-react-native";
 import React, { useEffect, useRef } from "react";
-import { Animated, Dimensions, Platform, StyleSheet, Text, View } from "react-native";
+import { Animated, Dimensions, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,7 +9,7 @@ import { Clickable } from "@/components/Clickable";
 import { playStartupSound } from "@/soundManager";
 import { useSoundSettings } from "@/contexts/SoundSettingsContext";
 
-const { width, height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -23,26 +23,20 @@ export default function WelcomeScreen() {
   const bgAnim1 = useRef(new Animated.Value(0)).current;
   const bgAnim2 = useRef(new Animated.Value(0)).current;
   const bgAnim3 = useRef(new Animated.Value(0)).current;
-  const blurAnim = useRef(new Animated.Value(20)).current;
-  const contentBlurAnim = useRef(new Animated.Value(20)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    console.log("Welcome screen loaded. Startup sound enabled:", startupSoundEnabled);
     if (startupSoundEnabled) {
       void playStartupSound();
     }
   }, [startupSoundEnabled]);
 
   useEffect(() => {
-    Animated.timing(blurAnim, {
-      toValue: 0,
+    Animated.timing(contentOpacity, {
+      toValue: 1,
       duration: 3500,
-      useNativeDriver: false,
-    }).start();
-
-    Animated.timing(contentBlurAnim, {
-      toValue: 0,
-      duration: 3500,
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start();
 
     Animated.parallel([
@@ -132,28 +126,24 @@ export default function WelcomeScreen() {
         }),
       ])
     ).start();
-  }, [fadeAnim, scaleAnim, slideAnim, rotateAnim, floatAnim, bgAnim1, bgAnim2, bgAnim3, blurAnim, contentBlurAnim]);
+  }, [fadeAnim, scaleAnim, slideAnim, rotateAnim, floatAnim, bgAnim1, bgAnim2, bgAnim3, contentOpacity]);
 
   const handleGetStarted = () => {
-    Animated.timing(contentBlurAnim, {
-      toValue: 20,
-      duration: 800,
-      useNativeDriver: false,
-    }).start();
-
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 800,
-      useNativeDriver: true,
-    }).start(() => {
+    Animated.parallel([
+      Animated.timing(contentOpacity, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       router.replace("/(tabs)/home");
     });
   };
-
-  const contentBlurRadius = contentBlurAnim.interpolate({
-    inputRange: [0, 20],
-    outputRange: [0, 20],
-  });
 
   return (
     <View style={styles.container}>
@@ -234,24 +224,12 @@ export default function WelcomeScreen() {
           },
         ]}
       >
-        {Platform.OS !== 'web' && (
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: 'rgba(255, 255, 255, 0.01)' },
-            ]}
-            blurRadius={contentBlurRadius}
-          />
-        )}
         <Animated.View
           style={[
             styles.contentInner,
             {
-              opacity: fadeAnim,
+              opacity: contentOpacity,
             },
-            Platform.OS === 'web' ? {
-              filter: `blur(${contentBlurRadius}px)`,
-            } : {},
           ]}
         >
           <Animated.View

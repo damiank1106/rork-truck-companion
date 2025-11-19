@@ -1205,14 +1205,16 @@ const styles = StyleSheet.create({
   datePickerModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    paddingHorizontal: 20,
   },
   datePickerModalContent: {
     backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
     padding: 24,
-    paddingBottom: 40,
+    maxWidth: 400,
+    alignSelf: "center" as const,
+    width: "100%" as const,
   },
   datePickerHeader: {
     flexDirection: "row" as const,
