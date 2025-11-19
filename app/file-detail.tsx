@@ -54,6 +54,11 @@ export default function FileDetailScreen() {
   const [editCreatedAt, setEditCreatedAt] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
+  const [tempMonth, setTempMonth] = useState<string>("");
+  const [tempDay, setTempDay] = useState<string>("");
+  const [tempYear, setTempYear] = useState<string>("");
+  const [tempHour, setTempHour] = useState<string>("");
+  const [tempMinute, setTempMinute] = useState<string>("");
 
   const isSmallScreen = width < 360;
 
@@ -66,7 +71,13 @@ export default function FileDetailScreen() {
       setEditFileName(file.fileName || "");
       setEditTripNumber(file.tripNumber || "");
       setEditDisplayField(file.displayField || 'fileName');
-      setEditCreatedAt(new Date(file.createdAt));
+      const date = new Date(file.createdAt);
+      setEditCreatedAt(date);
+      setTempMonth((date.getMonth() + 1).toString().padStart(2, '0'));
+      setTempDay(date.getDate().toString().padStart(2, '0'));
+      setTempYear(date.getFullYear().toString());
+      setTempHour(date.getHours().toString().padStart(2, '0'));
+      setTempMinute(date.getMinutes().toString().padStart(2, '0'));
     }
   }, [file]);
 
@@ -687,7 +698,13 @@ export default function FileDetailScreen() {
           <View style={styles.datePickerModalContent}>
             <View style={styles.datePickerHeader}>
               <Text style={styles.datePickerTitle}>Select Date</Text>
-              <Clickable onPress={() => setShowDatePicker(false)}>
+              <Clickable onPress={() => {
+                const date = new Date(file?.createdAt || new Date());
+                setTempMonth((date.getMonth() + 1).toString().padStart(2, '0'));
+                setTempDay(date.getDate().toString().padStart(2, '0'));
+                setTempYear(date.getFullYear().toString());
+                setShowDatePicker(false);
+              }}>
                 <X color={Colors.text} size={24} />
               </Clickable>
             </View>
@@ -700,14 +717,9 @@ export default function FileDetailScreen() {
                   placeholderTextColor={Colors.textLight}
                   keyboardType="numeric"
                   maxLength={2}
-                  value={(editCreatedAt.getMonth() + 1).toString().padStart(2, '0')}
+                  value={tempMonth}
                   onChangeText={(text) => {
-                    const month = parseInt(text) - 1;
-                    if (month >= 0 && month <= 11) {
-                      const newDate = new Date(editCreatedAt);
-                      newDate.setMonth(month);
-                      setEditCreatedAt(newDate);
-                    }
+                    setTempMonth(text);
                   }}
                 />
               </View>
@@ -719,14 +731,9 @@ export default function FileDetailScreen() {
                   placeholderTextColor={Colors.textLight}
                   keyboardType="numeric"
                   maxLength={2}
-                  value={editCreatedAt.getDate().toString().padStart(2, '0')}
+                  value={tempDay}
                   onChangeText={(text) => {
-                    const day = parseInt(text);
-                    if (day >= 1 && day <= 31) {
-                      const newDate = new Date(editCreatedAt);
-                      newDate.setDate(day);
-                      setEditCreatedAt(newDate);
-                    }
+                    setTempDay(text);
                   }}
                 />
               </View>
@@ -738,21 +745,35 @@ export default function FileDetailScreen() {
                   placeholderTextColor={Colors.textLight}
                   keyboardType="numeric"
                   maxLength={4}
-                  value={editCreatedAt.getFullYear().toString()}
+                  value={tempYear}
                   onChangeText={(text) => {
-                    const year = parseInt(text);
-                    if (year >= 1900 && year <= 2100) {
-                      const newDate = new Date(editCreatedAt);
-                      newDate.setFullYear(year);
-                      setEditCreatedAt(newDate);
-                    }
+                    setTempYear(text);
                   }}
                 />
               </View>
             </View>
             <Clickable
               style={styles.datePickerDoneButton}
-              onPress={() => setShowDatePicker(false)}
+              onPress={() => {
+                const month = parseInt(tempMonth) || 1;
+                const day = parseInt(tempDay) || 1;
+                const year = parseInt(tempYear) || new Date().getFullYear();
+                
+                const validMonth = Math.max(1, Math.min(12, month));
+                const validDay = Math.max(1, Math.min(31, day));
+                const validYear = Math.max(1900, Math.min(2100, year));
+                
+                const newDate = new Date(editCreatedAt);
+                newDate.setFullYear(validYear);
+                newDate.setMonth(validMonth - 1);
+                newDate.setDate(validDay);
+                
+                setEditCreatedAt(newDate);
+                setTempMonth(validMonth.toString().padStart(2, '0'));
+                setTempDay(validDay.toString().padStart(2, '0'));
+                setTempYear(validYear.toString());
+                setShowDatePicker(false);
+              }}
             >
               <Text style={styles.datePickerDoneText}>Done</Text>
             </Clickable>
@@ -770,7 +791,12 @@ export default function FileDetailScreen() {
           <View style={styles.datePickerModalContent}>
             <View style={styles.datePickerHeader}>
               <Text style={styles.datePickerTitle}>Select Time</Text>
-              <Clickable onPress={() => setShowTimePicker(false)}>
+              <Clickable onPress={() => {
+                const date = new Date(file?.createdAt || new Date());
+                setTempHour(date.getHours().toString().padStart(2, '0'));
+                setTempMinute(date.getMinutes().toString().padStart(2, '0'));
+                setShowTimePicker(false);
+              }}>
                 <X color={Colors.text} size={24} />
               </Clickable>
             </View>
@@ -783,14 +809,9 @@ export default function FileDetailScreen() {
                   placeholderTextColor={Colors.textLight}
                   keyboardType="numeric"
                   maxLength={2}
-                  value={editCreatedAt.getHours().toString().padStart(2, '0')}
+                  value={tempHour}
                   onChangeText={(text) => {
-                    const hour = parseInt(text);
-                    if (hour >= 0 && hour <= 23) {
-                      const newDate = new Date(editCreatedAt);
-                      newDate.setHours(hour);
-                      setEditCreatedAt(newDate);
-                    }
+                    setTempHour(text);
                   }}
                 />
               </View>
@@ -803,21 +824,31 @@ export default function FileDetailScreen() {
                   placeholderTextColor={Colors.textLight}
                   keyboardType="numeric"
                   maxLength={2}
-                  value={editCreatedAt.getMinutes().toString().padStart(2, '0')}
+                  value={tempMinute}
                   onChangeText={(text) => {
-                    const minute = parseInt(text);
-                    if (minute >= 0 && minute <= 59) {
-                      const newDate = new Date(editCreatedAt);
-                      newDate.setMinutes(minute);
-                      setEditCreatedAt(newDate);
-                    }
+                    setTempMinute(text);
                   }}
                 />
               </View>
             </View>
             <Clickable
               style={styles.datePickerDoneButton}
-              onPress={() => setShowTimePicker(false)}
+              onPress={() => {
+                const hour = parseInt(tempHour) || 0;
+                const minute = parseInt(tempMinute) || 0;
+                
+                const validHour = Math.max(0, Math.min(23, hour));
+                const validMinute = Math.max(0, Math.min(59, minute));
+                
+                const newDate = new Date(editCreatedAt);
+                newDate.setHours(validHour);
+                newDate.setMinutes(validMinute);
+                
+                setEditCreatedAt(newDate);
+                setTempHour(validHour.toString().padStart(2, '0'));
+                setTempMinute(validMinute.toString().padStart(2, '0'));
+                setShowTimePicker(false);
+              }}
             >
               <Text style={styles.datePickerDoneText}>Done</Text>
             </Clickable>
