@@ -5,6 +5,7 @@ export interface TruckProfile {
   model: string;
   year: string;
   truckNumber: string;
+  vinNumber: string;
   tripNumber: string;
   driverId: string;
   mcn: string;

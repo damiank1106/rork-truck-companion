@@ -230,6 +230,13 @@ export default function TruckScreen() {
               placeholder="Enter Truck Number"
             />
             <InputField
+              label="VIN Number"
+              value={profile.vinNumber}
+              onChangeText={(text) => updateField("vinNumber", text)}
+              editable={isEditing}
+              placeholder="Enter VIN Number"
+            />
+            <InputField
               label="Make"
               value={profile.make}
               onChangeText={(text) => updateField("make", text)}

@@ -13,6 +13,7 @@ const defaultTruckProfile: TruckProfile = {
   model: '',
   year: '',
   truckNumber: '',
+  vinNumber: '',
   tripNumber: '',
   driverId: '',
   mcn: '',
