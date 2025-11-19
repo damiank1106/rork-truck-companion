@@ -54,6 +54,7 @@ export default function HomeScreen() {
   const [lastGeocodeTime, setLastGeocodeTime] = useState<number>(0);
   const [cachedLocation, setCachedLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
   const geocodeAttemptRef = useRef<number>(0);
+  const lastGeocodeAttemptRef = useRef<number>(0);
   const [isTrailerModalVisible, setIsTrailerModalVisible] = useState<boolean>(false);
   const [trailerNumberInput, setTrailerNumberInput] = useState<string>("");
   const [isTruckModalVisible, setIsTruckModalVisible] = useState<boolean>(false);
@@ -156,7 +157,9 @@ export default function HomeScreen() {
       const loc = await Location.getCurrentPositionAsync({});
       const currentTime = Date.now();
       const timeSinceLastGeocode = currentTime - lastGeocodeTime;
+      const timeSinceLastAttempt = currentTime - lastGeocodeAttemptRef.current;
       const GEOCODE_COOLDOWN = 120000;
+      const MIN_ATTEMPT_INTERVAL = 5000;
 
       if (cachedLocation && !forceRefresh) {
         const distance = Math.sqrt(
@@ -186,10 +189,24 @@ export default function HomeScreen() {
         }
       }
 
-      const MAX_GEOCODE_ATTEMPTS = 3;
-      geocodeAttemptRef.current += 1;
-      
-      if (geocodeAttemptRef.current > MAX_GEOCODE_ATTEMPTS) {
+      if (timeSinceLastAttempt < MIN_ATTEMPT_INTERVAL) {
+        console.log('Skipping geocode - too soon since last attempt');
+        const coordsLocation = cachedLocation?.name || `${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`;
+        setLocation(coordsLocation);
+        if (!cachedLocation) {
+          setCachedLocation({
+            lat: loc.coords.latitude,
+            lon: loc.coords.longitude,
+            name: coordsLocation
+          });
+        }
+        await fetchWeather(loc.coords.latitude, loc.coords.longitude);
+        setIsLoadingLocation(false);
+        return;
+      }
+
+      const MAX_GEOCODE_ATTEMPTS = 2;
+      if (geocodeAttemptRef.current >= MAX_GEOCODE_ATTEMPTS) {
         console.log(`Geocoding limit reached (${MAX_GEOCODE_ATTEMPTS} attempts), using coordinates`);
         const coordsLocation = `${loc.coords.latitude.toFixed(2)}°, ${loc.coords.longitude.toFixed(2)}°`;
         setLocation(coordsLocation);
@@ -204,6 +221,9 @@ export default function HomeScreen() {
         setIsLoadingLocation(false);
         return;
       }
+
+      lastGeocodeAttemptRef.current = currentTime;
+      geocodeAttemptRef.current += 1;
 
       try {
         const addresses = await Location.reverseGeocodeAsync({
