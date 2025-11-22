@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale, Volume2, VolumeX } from "lucide-react-native";
+import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale, Volume2, VolumeX, Keyboard } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 
@@ -36,8 +36,10 @@ export default function SettingsScreen() {
   const {
     startupSoundEnabled,
     clickSoundEnabled,
+    keyboardClickEnabled,
     setStartupSoundEnabled,
     setClickSoundEnabled,
+    setKeyboardClickEnabled,
   } = useSoundSettings();
 
   const [storageSize, setStorageSize] = useState<string>("0 KB");
@@ -237,6 +239,23 @@ export default function SettingsScreen() {
                 value={clickSoundEnabled}
                 onValueChange={setClickSoundEnabled}
                 trackColor={{ false: "#D1D5DB", true: Colors.primaryLight }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: `${Colors.secondary}15` }]}>
+                  {keyboardClickEnabled ? <Keyboard color={Colors.secondary} size={20} /> : <Keyboard color={Colors.secondary} size={20} opacity={0.5} />}
+                </View>
+                <Text style={styles.menuItemText}>Keyboard Click</Text>
+              </View>
+              <Switch
+                value={keyboardClickEnabled}
+                onValueChange={setKeyboardClickEnabled}
+                trackColor={{ false: "#D1D5DB", true: Colors.secondary }}
                 thumbColor="#FFFFFF"
               />
             </View>
