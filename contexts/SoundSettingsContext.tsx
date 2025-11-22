@@ -4,13 +4,11 @@ import { createContext, useContext, useState, useEffect, useMemo, ReactNode } fr
 interface SoundSettings {
   startupSoundEnabled: boolean;
   clickSoundEnabled: boolean;
-  keyboardClickEnabled: boolean;
 }
 
 interface SoundSettingsContextType extends SoundSettings {
   setStartupSoundEnabled: (enabled: boolean) => Promise<void>;
   setClickSoundEnabled: (enabled: boolean) => Promise<void>;
-  setKeyboardClickEnabled: (enabled: boolean) => Promise<void>;
 }
 
 const SoundSettingsContext = createContext<SoundSettingsContextType | undefined>(undefined);
@@ -20,7 +18,6 @@ const SOUND_SETTINGS_KEY = "sound_settings";
 export function SoundSettingsProvider({ children }: { children: ReactNode }) {
   const [startupSoundEnabled, setStartupSoundEnabledState] = useState<boolean>(true);
   const [clickSoundEnabled, setClickSoundEnabledState] = useState<boolean>(true);
-  const [keyboardClickEnabled, setKeyboardClickEnabledState] = useState<boolean>(true);
 
   useEffect(() => {
     loadSettings();
@@ -33,7 +30,6 @@ export function SoundSettingsProvider({ children }: { children: ReactNode }) {
         const settings: SoundSettings = JSON.parse(stored);
         setStartupSoundEnabledState(settings.startupSoundEnabled ?? true);
         setClickSoundEnabledState(settings.clickSoundEnabled ?? true);
-        setKeyboardClickEnabledState(settings.keyboardClickEnabled ?? true);
       }
     } catch (error) {
       console.error("Error loading sound settings:", error);
@@ -44,7 +40,7 @@ export function SoundSettingsProvider({ children }: { children: ReactNode }) {
     try {
       setStartupSoundEnabledState(enabled);
       const stored = await AsyncStorage.getItem(SOUND_SETTINGS_KEY);
-      const settings: SoundSettings = stored ? JSON.parse(stored) : { startupSoundEnabled: true, clickSoundEnabled: true, keyboardClickEnabled: true };
+      const settings: SoundSettings = stored ? JSON.parse(stored) : { startupSoundEnabled: true, clickSoundEnabled: true };
       settings.startupSoundEnabled = enabled;
       await AsyncStorage.setItem(SOUND_SETTINGS_KEY, JSON.stringify(settings));
     } catch (error) {
@@ -56,7 +52,7 @@ export function SoundSettingsProvider({ children }: { children: ReactNode }) {
     try {
       setClickSoundEnabledState(enabled);
       const stored = await AsyncStorage.getItem(SOUND_SETTINGS_KEY);
-      const settings: SoundSettings = stored ? JSON.parse(stored) : { startupSoundEnabled: true, clickSoundEnabled: true, keyboardClickEnabled: true };
+      const settings: SoundSettings = stored ? JSON.parse(stored) : { startupSoundEnabled: true, clickSoundEnabled: true };
       settings.clickSoundEnabled = enabled;
       await AsyncStorage.setItem(SOUND_SETTINGS_KEY, JSON.stringify(settings));
     } catch (error) {
@@ -64,28 +60,14 @@ export function SoundSettingsProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const setKeyboardClickEnabled = async (enabled: boolean) => {
-    try {
-      setKeyboardClickEnabledState(enabled);
-      const stored = await AsyncStorage.getItem(SOUND_SETTINGS_KEY);
-      const settings: SoundSettings = stored ? JSON.parse(stored) : { startupSoundEnabled: true, clickSoundEnabled: true, keyboardClickEnabled: true };
-      settings.keyboardClickEnabled = enabled;
-      await AsyncStorage.setItem(SOUND_SETTINGS_KEY, JSON.stringify(settings));
-    } catch (error) {
-      console.error("Error saving keyboard click sound setting:", error);
-    }
-  };
-
   const value = useMemo(
     () => ({
       startupSoundEnabled,
       clickSoundEnabled,
-      keyboardClickEnabled,
       setStartupSoundEnabled,
       setClickSoundEnabled,
-      setKeyboardClickEnabled,
     }),
-    [startupSoundEnabled, clickSoundEnabled, keyboardClickEnabled]
+    [startupSoundEnabled, clickSoundEnabled]
   );
 
   return (

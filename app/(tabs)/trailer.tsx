@@ -6,13 +6,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
-import { TextInputWithSound } from "@/components/TextInputWithSound";
 import standardShadow from "@/constants/shadows";
 import { Clickable } from "@/components/Clickable";
 import { useTrailers } from "@/contexts/TrailerContext";
@@ -80,7 +80,7 @@ export default function TrailerScreen() {
 
       <View style={styles.searchContainer}>
         <Search color={Colors.textLight} size={20} />
-        <TextInputWithSound
+        <TextInput
           style={styles.searchInput}
           placeholder="Search trailers..."
           placeholderTextColor={Colors.textLight}
@@ -263,35 +263,35 @@ function TrailerFormModal({ visible, onClose, onAdd, onUpdate, trailer, isEditMo
           </View>
 
           <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Trailer Number *"
               placeholderTextColor={Colors.textLight}
               value={formData.trailerNumber}
               onChangeText={(text) => setFormData({ ...formData, trailerNumber: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Trailer Type * (e.g., 53 ft Dry Van)"
               placeholderTextColor={Colors.textLight}
               value={formData.trailerType}
               onChangeText={(text) => setFormData({ ...formData, trailerType: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Make"
               placeholderTextColor={Colors.textLight}
               value={formData.make}
               onChangeText={(text) => setFormData({ ...formData, make: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Model"
               placeholderTextColor={Colors.textLight}
               value={formData.model}
               onChangeText={(text) => setFormData({ ...formData, model: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Year"
               placeholderTextColor={Colors.textLight}
@@ -299,42 +299,42 @@ function TrailerFormModal({ visible, onClose, onAdd, onUpdate, trailer, isEditMo
               onChangeText={(text) => setFormData({ ...formData, year: text })}
               keyboardType="numeric"
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Length (e.g., 53')"
               placeholderTextColor={Colors.textLight}
               value={formData.length}
               onChangeText={(text) => setFormData({ ...formData, length: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Width (e.g., 8'6&quot;)"
               placeholderTextColor={Colors.textLight}
               value={formData.width}
               onChangeText={(text) => setFormData({ ...formData, width: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Height (e.g., 13'6&quot;)"
               placeholderTextColor={Colors.textLight}
               value={formData.height}
               onChangeText={(text) => setFormData({ ...formData, height: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Max Load Weight (e.g., 45,000 lbs)"
               placeholderTextColor={Colors.textLight}
               value={formData.maxLoadWeight}
               onChangeText={(text) => setFormData({ ...formData, maxLoadWeight: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Axle Weight (e.g., 34,000 lbs)"
               placeholderTextColor={Colors.textLight}
               value={formData.axleWeight}
               onChangeText={(text) => setFormData({ ...formData, axleWeight: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Tire PSI (e.g., 100 PSI)"
               placeholderTextColor={Colors.textLight}
@@ -342,28 +342,28 @@ function TrailerFormModal({ visible, onClose, onAdd, onUpdate, trailer, isEditMo
               onChangeText={(text) => setFormData({ ...formData, tirePSI: text })}
               keyboardType="numeric"
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Tire Size (e.g., 11R22.5)"
               placeholderTextColor={Colors.textLight}
               value={formData.tireSize}
               onChangeText={(text) => setFormData({ ...formData, tireSize: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Registration Number"
               placeholderTextColor={Colors.textLight}
               value={formData.registrationNumber}
               onChangeText={(text) => setFormData({ ...formData, registrationNumber: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Last Inspection Date (e.g., 2024-01-15)"
               placeholderTextColor={Colors.textLight}
               value={formData.inspectionDate}
               onChangeText={(text) => setFormData({ ...formData, inspectionDate: text })}
             />
-            <TextInputWithSound
+            <TextInput
               style={[styles.modalInput, styles.modalTextArea]}
               placeholder="Notes"
               placeholderTextColor={Colors.textLight}

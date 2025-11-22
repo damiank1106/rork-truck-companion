@@ -3,7 +3,6 @@ import { Platform } from "react-native";
 
 let startupSound: Audio.Sound | null = null;
 let clickSound: Audio.Sound | null = null;
-let keyboardClickSound: Audio.Sound | null = null;
 let isInitialized = false;
 
 async function initializeAudio() {
@@ -59,25 +58,6 @@ async function loadClickSound() {
   return clickSound;
 }
 
-async function loadKeyboardClickSound() {
-  if (Platform.OS === "web") {
-    return null;
-  }
-  if (!keyboardClickSound) {
-    try {
-      await initializeAudio();
-      const { sound } = await Audio.Sound.createAsync(
-        require("./assets/sounds/clickechosound.mp3")
-      );
-      keyboardClickSound = sound;
-    } catch (error) {
-      console.log("Failed to load keyboard click sound:", error);
-      return null;
-    }
-  }
-  return keyboardClickSound;
-}
-
 export async function playStartupSound() {
   if (Platform.OS === "web") {
     console.log("Startup sound skipped: Web platform");
@@ -108,19 +88,5 @@ export async function playClickSound() {
     }
   } catch (error) {
     console.log("Failed to play click sound:", error);
-  }
-}
-
-export async function playKeyboardClickSound() {
-  if (Platform.OS === "web") {
-    return;
-  }
-  try {
-    const sound = await loadKeyboardClickSound();
-    if (sound) {
-      await sound.replayAsync();
-    }
-  } catch (error) {
-    console.log("Failed to play keyboard click sound:", error);
   }
 }

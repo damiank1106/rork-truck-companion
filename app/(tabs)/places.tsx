@@ -15,6 +15,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   Image,
   Alert,
@@ -26,7 +27,6 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import Colors from "@/constants/colors";
-import { TextInputWithSound } from "@/components/TextInputWithSound";
 import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
 import { Clickable } from "@/components/Clickable";
@@ -221,7 +221,7 @@ export default function PlacesScreen() {
 
       <View style={styles.searchContainer}>
         <Search color={Colors.textLight} size={20} />
-        <TextInputWithSound
+        <TextInput
           style={styles.searchInput}
           placeholder="Search places..."
           placeholderTextColor={Colors.textLight}
@@ -487,13 +487,13 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
       formData.notes,
     ];
 
-    const hasTextInputWithSound = textFields.some((field) => field.trim().length > 0);
+    const hasTextInput = textFields.some((field) => field.trim().length > 0);
     const hasCheckboxInput = formData.hasRestroom || formData.overnightParking;
     const hasPhotos = formData.photos.length > 0;
     const hasParkingSelection =
       formData.parkingAvailability !== DEFAULT_PLACE_FORM.parkingAvailability;
 
-    if (!hasTextInputWithSound && !hasCheckboxInput && !hasPhotos && !hasParkingSelection) {
+    if (!hasTextInput && !hasCheckboxInput && !hasPhotos && !hasParkingSelection) {
       Alert.alert("Add Details", "Please fill in at least one field before adding a place.");
       return;
     }
@@ -528,7 +528,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
           </View>
 
           <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Company Name"
               placeholderTextColor={Colors.textLight}
@@ -540,7 +540,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 }))
               }
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="User Name"
               placeholderTextColor={Colors.textLight}
@@ -552,7 +552,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 }))
               }
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="City"
               placeholderTextColor={Colors.textLight}
@@ -564,7 +564,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 }))
               }
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="State"
               placeholderTextColor={Colors.textLight}
@@ -576,7 +576,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 }))
               }
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Address"
               placeholderTextColor={Colors.textLight}
@@ -588,7 +588,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 }))
               }
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Contact Number"
               placeholderTextColor={Colors.textLight}
@@ -601,7 +601,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
               }
               keyboardType="phone-pad"
             />
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Dispatch Info"
               placeholderTextColor={Colors.textLight}
@@ -637,7 +637,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 ))}
               </View>
               {categorySelection === "Other" && (
-                <TextInputWithSound
+                <TextInput
                   style={styles.modalInput}
                   placeholder="Enter category"
                   placeholderTextColor={Colors.textLight}
@@ -652,7 +652,7 @@ function AddPlaceModal({ visible, onClose, onAdd }: AddPlaceModalProps) {
                 />
               )}
             </View>
-            <TextInputWithSound
+            <TextInput
               style={[styles.modalInput, styles.modalTextArea]}
               placeholder="Notes"
               placeholderTextColor={Colors.textLight}

@@ -10,9 +10,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
-import { TextInputWithSound } from "@/components/TextInputWithSound";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
@@ -333,7 +333,7 @@ function AddPhotoModal({ visible, onClose, onAdd }: AddPhotoModalProps) {
                   )}
                 </View>
 
-                <TextInputWithSound
+                <TextInput
                   style={styles.modalInput}
                   placeholder="Location (optional)"
                   placeholderTextColor={Colors.textLight}
@@ -341,7 +341,7 @@ function AddPhotoModal({ visible, onClose, onAdd }: AddPhotoModalProps) {
                   onChangeText={setLocation}
                 />
 
-                <TextInputWithSound
+                <TextInput
                   style={[styles.modalInput, styles.modalTextArea]}
                   placeholder="Notes (optional)"
                   placeholderTextColor={Colors.textLight}
@@ -527,7 +527,7 @@ function EditPhotoModal({ photo, visible, onClose, onUpdate }: EditPhotoModalPro
               )}
             </View>
 
-            <TextInputWithSound
+            <TextInput
               style={styles.modalInput}
               placeholder="Location (optional)"
               placeholderTextColor={Colors.textLight}
@@ -535,7 +535,7 @@ function EditPhotoModal({ photo, visible, onClose, onUpdate }: EditPhotoModalPro
               onChangeText={setLocation}
             />
 
-            <TextInputWithSound
+            <TextInput
               style={[styles.modalInput, styles.modalTextArea]}
               placeholder="Notes (optional)"
               placeholderTextColor={Colors.textLight}

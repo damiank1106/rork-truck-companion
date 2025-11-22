@@ -8,12 +8,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
-import { TextInputWithSound } from "@/components/TextInputWithSound";
 import standardShadow from "@/constants/shadows";
 import PageHeader from "@/components/PageHeader";
 import { Clickable } from "@/components/Clickable";
@@ -560,7 +560,7 @@ function InputField({
   return (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
-      <TextInputWithSound
+      <TextInput
         style={[styles.input, !editable && styles.inputDisabled]}
         value={value}
         onChangeText={onChangeText}
