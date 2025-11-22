@@ -15,7 +15,8 @@ import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 import { useHealthInsurance } from "@/contexts/HealthInsuranceContext";
 import { usePlaces } from "@/contexts/PlacesContext";
 import { useTruck } from "@/contexts/TruckContext";
-import { Modal, TextInput as RNTextInput } from "react-native";
+import { Modal } from "react-native";
+import { TextInputWithSound } from "@/components/TextInputWithSound";
 import { useTrailers } from "@/contexts/TrailerContext";
 
 interface WeatherData {
@@ -611,7 +612,7 @@ export default function HomeScreen() {
         <View style={styles.trailerModalOverlay}>
           <View style={styles.trailerModalContent}>
             <Text style={styles.trailerModalTitle}>Update Trailer Number</Text>
-            <RNTextInput
+            <TextInputWithSound
               style={styles.trailerModalInput}
               placeholder="Enter trailer number"
               placeholderTextColor={Colors.textLight}
@@ -650,7 +651,7 @@ export default function HomeScreen() {
           <View style={styles.trailerModalContent}>
             <Text style={styles.trailerModalTitle}>Update Truck Info</Text>
             <Text style={styles.modalFieldLabel}>Truck Number</Text>
-            <RNTextInput
+            <TextInputWithSound
               style={styles.trailerModalInput}
               placeholder="Enter truck number"
               placeholderTextColor={Colors.textLight}
