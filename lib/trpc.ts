@@ -15,10 +15,9 @@ const resolveBaseUrl = () => {
     return envUrl;
   }
 
-  const extra =
+  const extra: any =
     Constants?.expoConfig?.extra ??
-    Constants?.manifest2?.extra ??
-    Constants?.manifest?.extra;
+    Constants?.manifest2?.extra;
 
   const extraUrl = typeof extra?.rorkApiBaseUrl === "string" ? extra.rorkApiBaseUrl.trim() : undefined;
   if (extraUrl) {

@@ -343,7 +343,7 @@ export default function FilesScreen() {
 
   const handleNavigate = (path: string) => {
     closeMenu(() => {
-      router.push(path);
+      router.push(path as any);
     });
   };
 
