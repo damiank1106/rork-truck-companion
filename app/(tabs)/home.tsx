@@ -507,7 +507,7 @@ export default function HomeScreen() {
             title="My Truck"
             value={truckProfile.truckNumber ? `Truck #${truckProfile.truckNumber}` : "Not set"}
             color={Colors.primaryLight}
-            onPress={() => router.push("/(tabs)/truck")}
+            onPress={() => {}}
             showPlusIcon
             onPlusPress={() => {
               setTruckNumberInput(truckProfile.truckNumber || "");
@@ -520,7 +520,7 @@ export default function HomeScreen() {
             title="Trailer"
             value={firstTrailer?.trailerNumber ? `#${firstTrailer.trailerNumber}` : (truckProfile.trailerNumber ? `#${truckProfile.trailerNumber}` : "Not set")}
             color={Colors.secondary}
-            onPress={() => router.push("/(tabs)/trailer")}
+            onPress={() => {}}
             showPlusIcon
             onPlusPress={() => {
               setTrailerNumberInput(truckProfile.trailerNumber || "");

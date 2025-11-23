@@ -14,15 +14,12 @@ import {
   FileText,
   HeartHandshake,
   Home as HomeIcon,
-  Image as ImageIcon,
   MapPin,
   Menu,
-  Newspaper,
   Settings as SettingsIcon,
   Shield,
   Truck,
   X,
-
 } from "lucide-react-native";
 
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -45,7 +42,6 @@ const MENU_ITEMS = [
   { label: "My Truck", path: "/(tabs)/truck", icon: Truck },
   { label: "Places", path: "/(tabs)/places", icon: MapPin },
   { label: "Files", path: "/files", icon: FileText },
-  { label: "News", path: "/daily-news", icon: Newspaper },
   { label: "Safety Information", path: "/safety-information", icon: Shield },
   { label: "Settings", path: "/(tabs)/settings", icon: SettingsIcon },
   { label: "Donations", path: "/donations", icon: HeartHandshake },
