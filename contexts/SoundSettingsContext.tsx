@@ -7,6 +7,7 @@ interface SoundSettings {
 }
 
 interface SoundSettingsContextType extends SoundSettings {
+  isLoading: boolean;
   setStartupSoundEnabled: (enabled: boolean) => Promise<void>;
   setClickSoundEnabled: (enabled: boolean) => Promise<void>;
 }
@@ -18,6 +19,7 @@ const SOUND_SETTINGS_KEY = "sound_settings";
 export function SoundSettingsProvider({ children }: { children: ReactNode }) {
   const [startupSoundEnabled, setStartupSoundEnabledState] = useState<boolean>(true);
   const [clickSoundEnabled, setClickSoundEnabledState] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     loadSettings();
@@ -33,6 +35,8 @@ export function SoundSettingsProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error loading sound settings:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -64,10 +68,11 @@ export function SoundSettingsProvider({ children }: { children: ReactNode }) {
     () => ({
       startupSoundEnabled,
       clickSoundEnabled,
+      isLoading,
       setStartupSoundEnabled,
       setClickSoundEnabled,
     }),
-    [startupSoundEnabled, clickSoundEnabled]
+    [startupSoundEnabled, clickSoundEnabled, isLoading]
   );
 
   return (

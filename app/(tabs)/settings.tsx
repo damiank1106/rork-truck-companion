@@ -327,7 +327,7 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
             <Text style={styles.modalText}>
               <Text style={styles.modalBoldText}>Version:</Text> 1.0.0{"\n"}
               <Text style={styles.modalBoldText}>Created:</Text> October 15, 2025{"\n"}
-              <Text style={styles.modalBoldText}>Last Updated:</Text> November 02, 2025
+              <Text style={styles.modalBoldText}>Last Updated:</Text> November 24, 2025
             </Text>
 
             <Text style={styles.modalSectionTitle}>Core Features</Text>
@@ -399,10 +399,6 @@ function AboutModal({ visible, onClose, storageSize }: AboutModalProps) {
               • Tap the + icon on truck or trailer containers{"\n"}
               • Enter the new number in the popup{"\n"}
               • Changes update instantly on home and detail pages{"\n\n"}
-
-              <Text style={styles.modalBoldText}>📰 Daily News</Text>{"\n"}
-              • Fresh stories post every day at 6:30 AM Central Time{"\n"}
-              • Find the latest headlines on the Home dashboard{"\n\n"}
 
               <Text style={styles.modalBoldText}>📇 Emergency Contacts</Text>{"\n"}
               • Tap “View All” to see all contacts{"\n"}

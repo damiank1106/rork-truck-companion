@@ -14,7 +14,7 @@ const { height } = Dimensions.get("window");
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { startupSoundEnabled } = useSoundSettings();
+  const { startupSoundEnabled, isLoading } = useSoundSettings();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -26,11 +26,11 @@ export default function WelcomeScreen() {
   const contentOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    console.log("Welcome screen loaded. Startup sound enabled:", startupSoundEnabled);
-    if (startupSoundEnabled) {
+    console.log("Welcome screen loaded. Startup sound enabled:", startupSoundEnabled, "isLoading:", isLoading);
+    if (!isLoading && startupSoundEnabled) {
       void playStartupSound();
     }
-  }, [startupSoundEnabled]);
+  }, [startupSoundEnabled, isLoading]);
 
   useEffect(() => {
     Animated.timing(contentOpacity, {

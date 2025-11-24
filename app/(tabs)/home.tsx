@@ -37,7 +37,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { truckProfile, updateTruckProfile } = useTruck();
   const { places } = usePlaces();
-  const { trailers } = useTrailers();
+  const { trailers, updateTrailer } = useTrailers();
   const { contacts } = useEmergencyContacts();
   const { insurance } = useHealthInsurance();
   const { driverID } = useDriverID();
@@ -523,7 +523,7 @@ export default function HomeScreen() {
             onPress={() => {}}
             showPlusIcon
             onPlusPress={() => {
-              setTrailerNumberInput(truckProfile.trailerNumber || "");
+              setTrailerNumberInput(firstTrailer?.trailerNumber || truckProfile.trailerNumber || "");
               setIsTrailerModalVisible(true);
             }}
             compact={isSmallScreen}
@@ -629,7 +629,11 @@ export default function HomeScreen() {
               <Clickable
                 style={styles.trailerModalConfirmButton}
                 onPress={async () => {
-                  await updateTruckProfile({ trailerNumber: trailerNumberInput });
+                  if (trailers.length > 0) {
+                    await updateTrailer(trailers[0].id, { trailerNumber: trailerNumberInput });
+                  } else {
+                    await updateTruckProfile({ trailerNumber: trailerNumberInput });
+                  }
                   setIsTrailerModalVisible(false);
                 }}
               >
