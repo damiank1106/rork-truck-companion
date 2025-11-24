@@ -3,6 +3,12 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Place } from '@/types';
+import { 
+  resolveFileUri, 
+  convertToRelativePath, 
+  saveToLibrary, 
+  deleteFromLibrary 
+} from '@/lib/file-storage';
 
 const PLACES_STORAGE_KEY = '@trucker_app:places';
 
@@ -10,11 +16,7 @@ export const [PlacesProvider, usePlaces] = createContextHook(() => {
   const [places, setPlaces] = useState<Place[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    loadPlaces();
-  }, []);
-
-  const loadPlaces = async () => {
+  const loadPlaces = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(PLACES_STORAGE_KEY);
       if (stored && stored !== 'undefined' && stored !== 'null' && stored.trim() !== '') {
@@ -30,6 +32,7 @@ export const [PlacesProvider, usePlaces] = createContextHook(() => {
             const migratedPlaces = parsedPlaces.map((place: Place) => ({
               ...place,
               overnightParking: place.overnightParking ?? false,
+              photos: place.photos ? place.photos.map(resolveFileUri) : []
             }));
             setPlaces(migratedPlaces);
           } else {
@@ -49,47 +52,81 @@ export const [PlacesProvider, usePlaces] = createContextHook(() => {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadPlaces();
+  }, [loadPlaces]);
+
+  const savePlacesToStorage = async (updatedPlaces: Place[]) => {
+     try {
+       const placesToSave = updatedPlaces.map(p => ({
+         ...p,
+         photos: p.photos ? p.photos.map(convertToRelativePath) : []
+       }));
+       
+       const jsonString = JSON.stringify(placesToSave);
+       const sizeInMB = new Blob([jsonString]).size / (1024 * 1024);
+       console.log(`Places storage size: ${sizeInMB.toFixed(2)} MB`);
+       
+       if (sizeInMB > 5) {
+         throw new Error('Storage quota exceeded. Please delete some old places to free up space.');
+       }
+       
+       if (jsonString && jsonString.length > 0) {
+         await AsyncStorage.setItem(PLACES_STORAGE_KEY, jsonString);
+       }
+     } catch (error: any) {
+        console.error('Error saving places to storage:', error);
+        if (error?.message?.includes('quota') || error?.message?.includes('QuotaExceededError') || error?.code === 'E_ASYNC_STORAGE_QUOTA_EXCEEDED') {
+           throw new Error('Storage quota exceeded. Please delete some old places to free up space.');
+        }
+        throw error;
+     }
   };
 
   const addPlace = useCallback(async (place: Omit<Place, 'id' | 'createdAt'>) => {
     try {
+      const processedPhotos = await Promise.all(
+        (place.photos || []).map(async (uri) => {
+          const relative = await saveToLibrary(uri);
+          return resolveFileUri(relative);
+        })
+      );
+
       const newPlace: Place = {
         ...place,
+        photos: processedPhotos,
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
       };
       const updated = [...places, newPlace];
-      const jsonString = JSON.stringify(updated);
-      
-      const sizeInMB = new Blob([jsonString]).size / (1024 * 1024);
-      console.log(`Places storage size: ${sizeInMB.toFixed(2)} MB`);
-      
-      if (sizeInMB > 5) {
-        throw new Error('Storage quota exceeded. Please delete some old places to free up space.');
-      }
-      
-      if (jsonString && jsonString.length > 0) {
-        await AsyncStorage.setItem(PLACES_STORAGE_KEY, jsonString);
-      }
       setPlaces(updated);
+      await savePlacesToStorage(updated);
       return newPlace;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding place:', error);
-      if (error?.message?.includes('quota') || error?.message?.includes('QuotaExceededError') || error?.code === 'E_ASYNC_STORAGE_QUOTA_EXCEEDED') {
-        throw new Error('Storage quota exceeded. Please delete some old places to free up space.');
-      }
       throw error;
     }
   }, [places]);
 
   const updatePlace = useCallback(async (id: string, updates: Partial<Place>) => {
     try {
-      const updated = places.map((p) => (p.id === id ? { ...p, ...updates } : p));
-      setPlaces(updated);
-      const jsonString = JSON.stringify(updated);
-      if (jsonString && jsonString.length > 0) {
-        await AsyncStorage.setItem(PLACES_STORAGE_KEY, jsonString);
+      let processedUpdates = { ...updates };
+      
+      if (updates.photos) {
+        const processedPhotos = await Promise.all(
+          updates.photos.map(async (uri) => {
+            const relative = await saveToLibrary(uri);
+            return resolveFileUri(relative);
+          })
+        );
+        processedUpdates.photos = processedPhotos;
       }
+
+      const updated = places.map((p) => (p.id === id ? { ...p, ...processedUpdates } : p));
+      setPlaces(updated);
+      await savePlacesToStorage(updated);
     } catch (error) {
       console.error('Error updating place:', error);
       throw error;
@@ -98,12 +135,16 @@ export const [PlacesProvider, usePlaces] = createContextHook(() => {
 
   const deletePlace = useCallback(async (id: string) => {
     try {
+      const placeToDelete = places.find(p => p.id === id);
+      if (placeToDelete && placeToDelete.photos) {
+        for (const photoUri of placeToDelete.photos) {
+          await deleteFromLibrary(photoUri);
+        }
+      }
+
       const updated = places.filter((p) => p.id !== id);
       setPlaces(updated);
-      const jsonString = JSON.stringify(updated);
-      if (jsonString && jsonString.length > 0) {
-        await AsyncStorage.setItem(PLACES_STORAGE_KEY, jsonString);
-      }
+      await savePlacesToStorage(updated);
     } catch (error) {
       console.error('Error deleting place:', error);
       throw error;

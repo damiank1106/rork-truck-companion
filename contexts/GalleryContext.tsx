@@ -3,6 +3,12 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { GalleryPhoto } from '@/types';
+import { 
+  resolveFileUri, 
+  convertToRelativePath, 
+  saveToLibrary, 
+  deleteFromLibrary 
+} from '@/lib/file-storage';
 
 const GALLERY_STORAGE_KEY = '@trucker_app:gallery';
 
@@ -10,11 +16,7 @@ export const [GalleryProvider, useGallery] = createContextHook(() => {
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    loadPhotos();
-  }, []);
-
-  const loadPhotos = async () => {
+  const loadPhotos = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(GALLERY_STORAGE_KEY);
       if (stored && stored !== 'undefined' && stored !== 'null' && stored.trim() !== '') {
@@ -25,9 +27,14 @@ export const [GalleryProvider, useGallery] = createContextHook(() => {
             setPhotos([]);
             return;
           }
-          const parsed = JSON.parse(stored);
+          const parsed: GalleryPhoto[] = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            setPhotos(parsed);
+            // Resolve URIs
+            const resolvedPhotos = parsed.map(p => ({
+              ...p,
+              uri: resolveFileUri(p.uri)
+            }));
+            setPhotos(resolvedPhotos);
           } else {
             console.warn('Invalid gallery data, resetting to empty array');
             await AsyncStorage.removeItem(GALLERY_STORAGE_KEY);
@@ -45,17 +52,20 @@ export const [GalleryProvider, useGallery] = createContextHook(() => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const addPhoto = useCallback(async (photo: Omit<GalleryPhoto, 'id' | 'createdAt'>) => {
-    try {
-      const newPhoto: GalleryPhoto = {
-        ...photo,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-      const updated = [newPhoto, ...photos];
-      const jsonString = JSON.stringify(updated);
+  useEffect(() => {
+    loadPhotos();
+  }, [loadPhotos]);
+
+  const savePhotos = useCallback(async (updatedPhotos: GalleryPhoto[]) => {
+      // Convert to relative paths
+      const photosToSave = updatedPhotos.map(p => ({
+        ...p,
+        uri: convertToRelativePath(p.uri)
+      }));
+
+      const jsonString = JSON.stringify(photosToSave);
       
       const sizeInMB = new Blob([jsonString]).size / (1024 * 1024);
       console.log(`Gallery storage size: ${sizeInMB.toFixed(2)} MB`);
@@ -67,7 +77,24 @@ export const [GalleryProvider, useGallery] = createContextHook(() => {
       if (jsonString && jsonString.length > 0) {
         await AsyncStorage.setItem(GALLERY_STORAGE_KEY, jsonString);
       }
-      setPhotos(updated);
+      setPhotos(updatedPhotos);
+  }, []);
+
+  const addPhoto = useCallback(async (photo: Omit<GalleryPhoto, 'id' | 'createdAt'>) => {
+    try {
+      // Save image to library
+      const relativePath = await saveToLibrary(photo.uri);
+      const resolvedUri = resolveFileUri(relativePath);
+
+      const newPhoto: GalleryPhoto = {
+        ...photo,
+        uri: resolvedUri,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+      
+      const updated = [newPhoto, ...photos];
+      await savePhotos(updated);
       return newPhoto;
     } catch (error: any) {
       console.error('Error adding photo:', error);
@@ -76,35 +103,39 @@ export const [GalleryProvider, useGallery] = createContextHook(() => {
       }
       throw error;
     }
-  }, [photos]);
+  }, [photos, savePhotos]);
 
   const updatePhoto = useCallback(async (id: string, updates: Partial<GalleryPhoto>) => {
     try {
-      const updated = photos.map((p) => (p.id === id ? { ...p, ...updates } : p));
-      setPhotos(updated);
-      const jsonString = JSON.stringify(updated);
-      if (jsonString && jsonString.length > 0) {
-        await AsyncStorage.setItem(GALLERY_STORAGE_KEY, jsonString);
+      let processedUpdates = { ...updates };
+      
+      if (updates.uri) {
+        const relativePath = await saveToLibrary(updates.uri);
+        processedUpdates.uri = resolveFileUri(relativePath);
       }
+
+      const updated = photos.map((p) => (p.id === id ? { ...p, ...processedUpdates } : p));
+      await savePhotos(updated);
     } catch (error) {
       console.error('Error updating photo:', error);
       throw error;
     }
-  }, [photos]);
+  }, [photos, savePhotos]);
 
   const deletePhoto = useCallback(async (id: string) => {
     try {
-      const updated = photos.filter((p) => p.id !== id);
-      setPhotos(updated);
-      const jsonString = JSON.stringify(updated);
-      if (jsonString && jsonString.length > 0) {
-        await AsyncStorage.setItem(GALLERY_STORAGE_KEY, jsonString);
+      const photoToDelete = photos.find(p => p.id === id);
+      if (photoToDelete) {
+        await deleteFromLibrary(photoToDelete.uri);
       }
+
+      const updated = photos.filter((p) => p.id !== id);
+      await savePhotos(updated);
     } catch (error) {
       console.error('Error deleting photo:', error);
       throw error;
     }
-  }, [photos]);
+  }, [photos, savePhotos]);
 
   return useMemo(() => ({
     photos,

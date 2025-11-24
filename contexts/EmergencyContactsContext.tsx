@@ -3,6 +3,12 @@ import createContextHook from "@nkzw/create-context-hook";
 import { useState, useEffect } from "react";
 
 import { EmergencyContact } from "@/types";
+import { 
+  resolveFileUri, 
+  convertToRelativePath, 
+  saveToLibrary, 
+  deleteFromLibrary 
+} from '@/lib/file-storage';
 
 const STORAGE_KEY = "emergency_contacts";
 
@@ -18,7 +24,12 @@ export const [EmergencyContactsContext, useEmergencyContacts] = createContextHoo
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setContacts(JSON.parse(stored));
+        const parsed: EmergencyContact[] = JSON.parse(stored);
+        const resolved = parsed.map(c => ({
+          ...c,
+          photoUri: c.photoUri ? resolveFileUri(c.photoUri) : undefined
+        }));
+        setContacts(resolved);
       }
     } catch (error) {
       console.error("Error loading emergency contacts:", error);
@@ -27,10 +38,13 @@ export const [EmergencyContactsContext, useEmergencyContacts] = createContextHoo
     }
   };
 
-  const saveContacts = async (newContacts: EmergencyContact[]) => {
+  const saveContactsToStorage = async (newContacts: EmergencyContact[]) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newContacts));
-      setContacts(newContacts);
+      const contactsToSave = newContacts.map(c => ({
+        ...c,
+        photoUri: c.photoUri ? convertToRelativePath(c.photoUri) : undefined
+      }));
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(contactsToSave));
     } catch (error) {
       console.error("Error saving emergency contacts:", error);
       throw error;
@@ -38,24 +52,46 @@ export const [EmergencyContactsContext, useEmergencyContacts] = createContextHoo
   };
 
   const addContact = async (contact: Omit<EmergencyContact, "id" | "createdAt">) => {
+    let photoUri = contact.photoUri;
+    if (photoUri) {
+      const relative = await saveToLibrary(photoUri);
+      photoUri = resolveFileUri(relative);
+    }
+
     const newContact: EmergencyContact = {
       ...contact,
+      photoUri,
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
     };
-    await saveContacts([...contacts, newContact]);
+    const updated = [...contacts, newContact];
+    setContacts(updated);
+    await saveContactsToStorage(updated);
   };
 
   const updateContact = async (id: string, updates: Partial<EmergencyContact>) => {
+    let processedUpdates = { ...updates };
+    if (updates.photoUri) {
+       const relative = await saveToLibrary(updates.photoUri);
+       processedUpdates.photoUri = resolveFileUri(relative);
+    }
+
     const updatedContacts = contacts.map((contact) =>
-      contact.id === id ? { ...contact, ...updates } : contact
+      contact.id === id ? { ...contact, ...processedUpdates } : contact
     );
-    await saveContacts(updatedContacts);
+    setContacts(updatedContacts);
+    await saveContactsToStorage(updatedContacts);
   };
 
   const deleteContact = async (id: string) => {
+    const contactToDelete = contacts.find(c => c.id === id);
+    if (contactToDelete?.photoUri) {
+      await deleteFromLibrary(contactToDelete.photoUri);
+    }
+
     const filteredContacts = contacts.filter((contact) => contact.id !== id);
-    await saveContacts(filteredContacts);
+    setContacts(filteredContacts);
+    await saveContactsToStorage(filteredContacts);
   };
 
   return {
