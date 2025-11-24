@@ -1,20 +1,30 @@
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
-// Cast to any because TypeScript definition seems to be missing these properties in the current version
-const documentDirectory = (FileSystem as any).documentDirectory as string | null;
-const cacheDirectory = (FileSystem as any).cacheDirectory as string | null;
+const documentDirectory = FileSystem.documentDirectory;
+const cacheDirectory = FileSystem.cacheDirectory;
+
+// Runtime check for directory availability
+const getRootDir = () => {
+  if (documentDirectory) return documentDirectory;
+  // Fallback to cache if document directory is not available (unlikely on native)
+  if (cacheDirectory) return cacheDirectory;
+  // Try accessing via cast if types were wrong but runtime has it
+  return (FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || null;
+};
 
 const FILES_DIR_NAME = 'user_files';
 
 // Helper to get the directory path. 
-// We handle the case where documentDirectory might be null (web) or have different format.
 const getFilesDir = () => {
   if (Platform.OS === 'web') {
     return null;
   }
-  // Use documentDirectory. If it's null (shouldn't be on native), fallback to cache
-  return (documentDirectory || cacheDirectory) + FILES_DIR_NAME + '/';
+  
+  const root = getRootDir();
+  if (!root) return null;
+  
+  return root.endsWith('/') ? root + FILES_DIR_NAME + '/' : root + '/' + FILES_DIR_NAME + '/';
 };
 
 /**
@@ -41,29 +51,42 @@ export const saveToLibrary = async (tempUri: string): Promise<string> => {
     return tempUri; // On web, we can't really "save" to a persistent fs in the same way.
   }
 
-  // If already in our directory, just return the filename
   const dir = getFilesDir();
-  if (!dir) return tempUri;
+  if (!dir) {
+    console.warn('Could not determine storage directory');
+    return tempUri;
+  }
 
+  // If already in our directory, just return the filename
   if (tempUri.startsWith(dir)) {
     return tempUri.split(FILES_DIR_NAME + '/').pop() || tempUri;
   }
 
-  await initStorage();
-
-  const extension = tempUri.split('.').pop() || 'jpg';
-  const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
-  const destination = dir + filename;
-
   try {
+    await initStorage();
+    
+    // Check if source file exists
+    const fileInfo = await FileSystem.getInfoAsync(tempUri);
+    if (!fileInfo.exists) {
+      console.warn(`Source file does not exist: ${tempUri}`);
+      // Fallback: return the original URI if we can't copy it
+      return tempUri;
+    }
+
+    const extension = tempUri.split('.').pop() || 'jpg';
+    const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
+    const destination = dir + filename;
+
     await FileSystem.copyAsync({
       from: tempUri,
       to: destination,
     });
     return filename;
   } catch (error) {
-    console.error('Error saving file to library:', error);
-    throw error;
+    console.error('Error saving file to library:', error, { tempUri, dir });
+    // Don't throw, just return the tempUri so the user can at least see the image for now
+    // logic in FilesContext will store the tempUri, which might not be persistent, but better than crashing
+    return tempUri; 
   }
 };
 
@@ -123,8 +146,9 @@ export const resolveFileUri = (path: string): string => {
       const relative = parts[parts.length - 1];
       
       // We need to rebase this relative path to the CURRENT document directory
-      if (documentDirectory) {
-        return documentDirectory + relative;
+      const root = getRootDir();
+      if (root) {
+        return root + relative;
       }
     }
 

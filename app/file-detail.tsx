@@ -163,9 +163,9 @@ export default function FileDetailScreen() {
         setShowAddPhotoModal(false);
         Alert.alert("Success", "Photos added successfully!");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding from camera:", error);
-      Alert.alert("Error", "Failed to add photos from camera.");
+      Alert.alert("Error", `Failed to add photos. ${error?.message || "Please try again."}`);
     }
   };
 
@@ -185,9 +185,9 @@ export default function FileDetailScreen() {
         setShowAddPhotoModal(false);
         Alert.alert("Success", "Photos added successfully!");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding from device:", error);
-      Alert.alert("Error", "Failed to add photos from device.");
+      Alert.alert("Error", `Failed to add photos. ${error?.message || "Please try again."}`);
     }
   };
 

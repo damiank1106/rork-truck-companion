@@ -160,9 +160,9 @@ export default function ScanDocumentScreen() {
           onPress: () => router.back(),
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving document:", error);
-      Alert.alert("Error", "Failed to save document. Please try again.");
+      Alert.alert("Error", `Failed to save document. ${error?.message || "Please try again."}`);
     } finally {
       setIsSaving(false);
     }
