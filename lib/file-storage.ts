@@ -1,8 +1,8 @@
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
-const documentDirectory = FileSystem.documentDirectory;
-const cacheDirectory = FileSystem.cacheDirectory;
+const documentDirectory = (FileSystem as any).documentDirectory;
+const cacheDirectory = (FileSystem as any).cacheDirectory;
 
 // Runtime check for directory availability
 const getRootDir = () => {
