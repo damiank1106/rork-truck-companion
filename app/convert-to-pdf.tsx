@@ -33,6 +33,8 @@ import { Clickable } from "@/components/Clickable";
 import Colors from "@/constants/colors";
 import standardShadow from "@/constants/shadows";
 
+import { resolveFileUri, convertToRelativePath, saveToLibrary, deleteFromLibrary } from "@/lib/file-storage";
+
 interface ConvertedPDF {
   id: string;
   name: string;
@@ -62,7 +64,13 @@ export default function ConvertToPDFScreen() {
     try {
       const stored = await AsyncStorage.getItem(PDFS_STORAGE_KEY);
       if (stored) {
-        setConvertedPDFs(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        const resolvedPDFs = parsed.map((pdf: ConvertedPDF) => ({
+          ...pdf,
+          originalImage: resolveFileUri(pdf.originalImage),
+          images: pdf.images.map(resolveFileUri),
+        }));
+        setConvertedPDFs(resolvedPDFs);
       }
     } catch (error) {
       console.error("Error loading PDFs:", error);
@@ -71,7 +79,12 @@ export default function ConvertToPDFScreen() {
 
   const savePDFs = async (pdfs: ConvertedPDF[]) => {
     try {
-      await AsyncStorage.setItem(PDFS_STORAGE_KEY, JSON.stringify(pdfs));
+      const pdfsToSave = pdfs.map((pdf) => ({
+        ...pdf,
+        originalImage: convertToRelativePath(pdf.originalImage),
+        images: pdf.images.map(convertToRelativePath),
+      }));
+      await AsyncStorage.setItem(PDFS_STORAGE_KEY, JSON.stringify(pdfsToSave));
       setConvertedPDFs(pdfs);
     } catch (error) {
       console.error("Error saving PDFs:", error);
@@ -89,6 +102,13 @@ export default function ConvertToPDFScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            const pdfToDelete = convertedPDFs.find(p => p.id === id);
+            if (pdfToDelete) {
+              // Delete images from storage
+              for (const img of pdfToDelete.images) {
+                 await deleteFromLibrary(img);
+              }
+            }
             const updatedPDFs = convertedPDFs.filter((pdf) => pdf.id !== id);
             await savePDFs(updatedPDFs);
           },
@@ -287,15 +307,23 @@ function CreatePDFModal({ visible, onClose, onSave }: CreatePDFModalProps) {
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
+      // Save images to persistent library
+      const savedImagePaths = await Promise.all(
+        uploadedImages.map(async (uri) => {
+          const relativePath = await saveToLibrary(uri);
+          return resolveFileUri(relativePath);
+        })
+      );
+
       const pdfDataSimulated = `data:application/pdf;base64,${Date.now()}`;
 
       const newPDF: ConvertedPDF = {
         id: Date.now().toString(),
         name: fileName.trim(),
-        originalImage: uploadedImages[0],
+        originalImage: savedImagePaths[0],
         pdfData: pdfDataSimulated,
         createdAt: new Date().toISOString(),
-        images: uploadedImages,
+        images: savedImagePaths,
       };
 
       setIsScanning(false);

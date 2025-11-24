@@ -1,4 +1,11 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import { 
+  documentDirectory, 
+  cacheDirectory, 
+  getInfoAsync, 
+  makeDirectoryAsync, 
+  copyAsync, 
+  deleteAsync 
+} from 'expo-file-system';
 import { Platform } from 'react-native';
 
 const FILES_DIR_NAME = 'user_files';
@@ -10,7 +17,7 @@ const getFilesDir = () => {
     return null;
   }
   // Use documentDirectory. If it's null (shouldn't be on native), fallback to cache
-  return (FileSystem.documentDirectory || FileSystem.cacheDirectory) + FILES_DIR_NAME + '/';
+  return (documentDirectory || cacheDirectory) + FILES_DIR_NAME + '/';
 };
 
 /**
@@ -22,9 +29,9 @@ export const initStorage = async () => {
   const dir = getFilesDir();
   if (!dir) return;
 
-  const dirInfo = await FileSystem.getInfoAsync(dir);
+  const dirInfo = await getInfoAsync(dir);
   if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+    await makeDirectoryAsync(dir, { intermediates: true });
   }
 };
 
@@ -52,7 +59,7 @@ export const saveToLibrary = async (tempUri: string): Promise<string> => {
   const destination = dir + filename;
 
   try {
-    await FileSystem.copyAsync({
+    await copyAsync({
       from: tempUri,
       to: destination,
     });
@@ -79,9 +86,9 @@ export const deleteFromLibrary = async (filename: string) => {
   }
 
   try {
-    const info = await FileSystem.getInfoAsync(targetPath);
+    const info = await getInfoAsync(targetPath);
     if (info.exists) {
-      await FileSystem.deleteAsync(targetPath);
+      await deleteAsync(targetPath);
     }
   } catch (error) {
     console.error('Error deleting file:', error);
@@ -102,9 +109,7 @@ export const resolveFileUri = (path: string): string => {
 
   // If it's already a file URI
   if (path.startsWith('file://')) {
-    // If it points to our storage directory pattern, we might want to "fix" it if UUID changed?
-    // But checking UUID is hard.
-    // Heuristic: check if it contains FILES_DIR_NAME
+    // 1. Try to match specific storage directory first
     if (path.includes(FILES_DIR_NAME)) {
       // Extract filename and re-resolve to current documentDirectory
       const parts = path.split(FILES_DIR_NAME + '/');
@@ -112,6 +117,20 @@ export const resolveFileUri = (path: string): string => {
       const dir = getFilesDir();
       if (dir) return dir + filename;
     }
+
+    // 2. Handle files in Documents directory (iOS UUID change support)
+    // This catches files that might be in root Documents or if FILES_DIR_NAME check failed
+    // It is critical for maintaining access to files after app updates on iOS
+    if (path.includes('/Documents/')) {
+      const parts = path.split('/Documents/');
+      const relative = parts[parts.length - 1];
+      
+      // We need to rebase this relative path to the CURRENT document directory
+      if (documentDirectory) {
+        return documentDirectory + relative;
+      }
+    }
+
     // Otherwise return as is (maybe it's in bundle or elsewhere)
     return path;
   }
