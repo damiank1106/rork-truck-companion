@@ -1,12 +1,9 @@
-import { 
-  documentDirectory, 
-  cacheDirectory, 
-  getInfoAsync, 
-  makeDirectoryAsync, 
-  copyAsync, 
-  deleteAsync 
-} from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
+
+// Cast to any because TypeScript definition seems to be missing these properties in the current version
+const documentDirectory = (FileSystem as any).documentDirectory as string | null;
+const cacheDirectory = (FileSystem as any).cacheDirectory as string | null;
 
 const FILES_DIR_NAME = 'user_files';
 
@@ -29,9 +26,9 @@ export const initStorage = async () => {
   const dir = getFilesDir();
   if (!dir) return;
 
-  const dirInfo = await getInfoAsync(dir);
+  const dirInfo = await FileSystem.getInfoAsync(dir);
   if (!dirInfo.exists) {
-    await makeDirectoryAsync(dir, { intermediates: true });
+    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
   }
 };
 
@@ -59,7 +56,7 @@ export const saveToLibrary = async (tempUri: string): Promise<string> => {
   const destination = dir + filename;
 
   try {
-    await copyAsync({
+    await FileSystem.copyAsync({
       from: tempUri,
       to: destination,
     });
@@ -86,9 +83,9 @@ export const deleteFromLibrary = async (filename: string) => {
   }
 
   try {
-    const info = await getInfoAsync(targetPath);
+    const info = await FileSystem.getInfoAsync(targetPath);
     if (info.exists) {
-      await deleteAsync(targetPath);
+      await FileSystem.deleteAsync(targetPath);
     }
   } catch (error) {
     console.error('Error deleting file:', error);
