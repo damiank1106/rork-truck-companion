@@ -15,6 +15,7 @@ import { PlacesProvider } from "@/contexts/PlacesContext";
 import { SoundSettingsProvider } from "@/contexts/SoundSettingsContext";
 import { TrailerProvider } from "@/contexts/TrailerContext";
 import { TruckProvider } from "@/contexts/TruckContext";
+import { VoiceAIProvider } from "@/contexts/VoiceAIContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 if (Platform.OS === 'ios') {
@@ -120,6 +121,14 @@ function RootLayoutNav() {
           animationDuration: 450,
         }}
       />
+      <Stack.Screen
+        name="ai-notes"
+        options={{
+          headerShown: false,
+          animation: "fade",
+          animationDuration: 450,
+        }}
+      />
     </Stack>
   );
 }
@@ -149,11 +158,13 @@ export default function RootLayout() {
                 <HealthInsuranceProvider>
                   <DriverIDContext>
                     <FilesContext>
-                      <GestureHandlerRootView style={{ flex: 1 }}>
-                        <SafeAreaProvider>
-                          <RootLayoutNav />
-                        </SafeAreaProvider>
-                      </GestureHandlerRootView>
+                      <VoiceAIProvider>
+                        <GestureHandlerRootView style={{ flex: 1 }}>
+                          <SafeAreaProvider>
+                            <RootLayoutNav />
+                          </SafeAreaProvider>
+                        </GestureHandlerRootView>
+                      </VoiceAIProvider>
                     </FilesContext>
                   </DriverIDContext>
                 </HealthInsuranceProvider>

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale, Volume2, VolumeX } from "lucide-react-native";
+import { ChevronRight, Info, FileText, Shield, RefreshCw, Scale, Volume2, VolumeX, Bot, Key, Eye, EyeOff, Trash2 } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 
@@ -14,6 +14,7 @@ import {
   View,
   Animated,
   Platform,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -26,6 +27,7 @@ import { usePlaces } from "@/contexts/PlacesContext";
 import { useSoundSettings } from "@/contexts/SoundSettingsContext";
 import { useTruck } from "@/contexts/TruckContext";
 import { useFiles } from "@/contexts/FilesContext";
+import { useVoiceAI } from "@/contexts/VoiceAIContext";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -48,6 +50,9 @@ export default function SettingsScreen() {
   const [showAbout, setShowAbout] = useState<boolean>(false);
   const [showPolicy, setShowPolicy] = useState<boolean>(false);
   const [showLegal, setShowLegal] = useState<boolean>(false);
+  const [showAISettings, setShowAISettings] = useState<boolean>(false);
+
+  const { isApiKeySet, setApiKey, clearApiKey } = useVoiceAI();
 
   const calculateStorageSize = async () => {
     try {
@@ -207,6 +212,26 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>AI Assistant</Text>
+          <View style={styles.card}>
+            <Clickable style={styles.menuItem} onPress={() => setShowAISettings(true)}>
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: `${Colors.secondary}15` }]}>
+                  <Bot color={Colors.secondary} size={20} />
+                </View>
+                <View style={styles.menuItemTextContainer}>
+                  <Text style={styles.menuItemText}>Voice AI Settings</Text>
+                  <Text style={styles.menuItemSubtext}>
+                    {isApiKeySet ? "API Key configured" : "Configure API Key"}
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight color={Colors.textLight} size={20} />
+            </Clickable>
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sounds</Text>
           <View style={styles.card}>
             <View style={styles.menuItem}>
@@ -269,6 +294,13 @@ export default function SettingsScreen() {
       <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} storageSize={storageSize} />
       <PolicyModal visible={showPolicy} onClose={() => setShowPolicy(false)} />
       <LegalModal visible={showLegal} onClose={() => setShowLegal(false)} />
+      <AISettingsModal 
+        visible={showAISettings} 
+        onClose={() => setShowAISettings(false)} 
+        isApiKeySet={isApiKeySet}
+        onSaveKey={setApiKey}
+        onClearKey={clearApiKey}
+      />
     </View>
   );
 }
@@ -592,6 +624,188 @@ function PolicyModal({ visible, onClose }: PolicyModalProps) {
   );
 }
 
+interface AISettingsModalProps {
+  visible: boolean;
+  onClose: () => void;
+  isApiKeySet: boolean;
+  onSaveKey: (key: string) => Promise<boolean>;
+  onClearKey: () => Promise<boolean>;
+}
+
+function AISettingsModal({ visible, onClose, isApiKeySet, onSaveKey, onClearKey }: AISettingsModalProps) {
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const [apiKeyInput, setApiKeyInput] = useState<string>("");
+  const [showKey, setShowKey] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (visible) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
+
+  const handleClose = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setApiKeyInput("");
+      setShowKey(false);
+      onClose();
+    });
+  };
+
+  const handleSaveKey = async () => {
+    if (!apiKeyInput.trim()) {
+      Alert.alert("Error", "Please enter an API key");
+      return;
+    }
+    setIsSaving(true);
+    const success = await onSaveKey(apiKeyInput.trim());
+    setIsSaving(false);
+    if (success) {
+      Alert.alert("Success", "API key saved successfully");
+      setApiKeyInput("");
+      handleClose();
+    } else {
+      Alert.alert("Error", "Failed to save API key");
+    }
+  };
+
+  const handleClearKey = () => {
+    Alert.alert(
+      "Clear API Key",
+      "Are you sure you want to remove your API key?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            const success = await onClearKey();
+            if (success) {
+              Alert.alert("Success", "API key removed");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  return (
+    <Modal visible={visible} animationType="none" transparent>
+      <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
+        <Animated.View 
+          style={[
+            styles.modalContent,
+            styles.aiSettingsModalContent,
+            { opacity: fadeAnim }
+          ]}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Voice AI Settings</Text>
+            <Clickable onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.closeButton}>✕</Text>
+            </Clickable>
+          </View>
+
+          <ScrollView 
+            style={styles.modalScroll} 
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.aiSettingsInfo}>
+              <Bot color={Colors.secondary} size={48} />
+              <Text style={styles.aiSettingsTitle}>OpenAI GPT-4o-mini</Text>
+              <Text style={styles.aiSettingsDescription}>
+                Enable voice AI assistant by entering your OpenAI API key. The assistant can help you with all app features.
+              </Text>
+            </View>
+
+            <View style={styles.aiKeyStatusContainer}>
+              <View style={[styles.aiKeyStatusBadge, isApiKeySet ? styles.aiKeyStatusActive : styles.aiKeyStatusInactive]}>
+                <Key color={isApiKeySet ? Colors.success : Colors.textLight} size={16} />
+                <Text style={[styles.aiKeyStatusText, isApiKeySet && styles.aiKeyStatusTextActive]}>
+                  {isApiKeySet ? "API Key Configured" : "No API Key"}
+                </Text>
+              </View>
+            </View>
+
+            {!isApiKeySet && (
+              <View style={styles.aiKeyInputContainer}>
+                <Text style={styles.aiKeyLabel}>OpenAI API Key</Text>
+                <View style={styles.aiKeyInputWrapper}>
+                  <TextInput
+                    style={styles.aiKeyInput}
+                    placeholder="sk-..."
+                    placeholderTextColor={Colors.textLight}
+                    value={apiKeyInput}
+                    onChangeText={setApiKeyInput}
+                    secureTextEntry={!showKey}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <Clickable
+                    style={styles.aiKeyToggle}
+                    onPress={() => setShowKey(!showKey)}
+                  >
+                    {showKey ? (
+                      <EyeOff color={Colors.textLight} size={20} />
+                    ) : (
+                      <Eye color={Colors.textLight} size={20} />
+                    )}
+                  </Clickable>
+                </View>
+                <Text style={styles.aiKeyHint}>
+                  Get your API key from platform.openai.com
+                </Text>
+                <Clickable
+                  style={[styles.aiKeySaveButton, isSaving && styles.aiKeySaveButtonDisabled]}
+                  onPress={handleSaveKey}
+                  disabled={isSaving}
+                >
+                  <Text style={styles.aiKeySaveButtonText}>
+                    {isSaving ? "Saving..." : "Save API Key"}
+                  </Text>
+                </Clickable>
+              </View>
+            )}
+
+            {isApiKeySet && (
+              <View style={styles.aiKeyActionsContainer}>
+                <Text style={styles.aiKeyActionsInfo}>
+                  Your API key is securely stored on your device. Tap the microphone icon in the header to activate voice AI.
+                </Text>
+                <Clickable
+                  style={styles.aiKeyClearButton}
+                  onPress={handleClearKey}
+                >
+                  <Trash2 color={Colors.error} size={18} />
+                  <Text style={styles.aiKeyClearButtonText}>Remove API Key</Text>
+                </Clickable>
+              </View>
+            )}
+
+            <View style={styles.aiSettingsFeatures}>
+              <Text style={styles.aiSettingsFeaturesTitle}>What AI Assistant Can Do:</Text>
+              <Text style={styles.aiSettingsFeatureItem}>• Answer questions about your truck and trailer</Text>
+              <Text style={styles.aiSettingsFeatureItem}>• Help navigate the app features</Text>
+              <Text style={styles.aiSettingsFeatureItem}>• Provide safety tips and information</Text>
+              <Text style={styles.aiSettingsFeatureItem}>• Save conversations as notes</Text>
+              <Text style={styles.aiSettingsFeatureItem}>• Assist with files and documents</Text>
+            </View>
+          </ScrollView>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
+}
+
 interface LegalModalProps {
   visible: boolean;
   onClose: () => void;
@@ -839,6 +1053,14 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontWeight: "500" as const,
   },
+  menuItemTextContainer: {
+    flex: 1,
+  },
+  menuItemSubtext: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
   footer: {
     alignItems: "center",
     marginTop: 32,
@@ -924,5 +1146,145 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
     fontStyle: "italic" as const,
+  },
+  aiSettingsModalContent: {
+    marginTop: "20%",
+  },
+  aiSettingsInfo: {
+    alignItems: "center",
+    paddingVertical: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    marginBottom: 20,
+  },
+  aiSettingsTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: "#000000",
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  aiSettingsDescription: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: 20,
+  },
+  aiKeyStatusContainer: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  aiKeyStatusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  aiKeyStatusActive: {
+    backgroundColor: `${Colors.success}15`,
+  },
+  aiKeyStatusInactive: {
+    backgroundColor: `${Colors.textLight}15`,
+  },
+  aiKeyStatusText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.textLight,
+  },
+  aiKeyStatusTextActive: {
+    color: Colors.success,
+  },
+  aiKeyInputContainer: {
+    marginBottom: 24,
+  },
+  aiKeyLabel: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: "#000000",
+    marginBottom: 8,
+  },
+  aiKeyInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  aiKeyInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#000000",
+  },
+  aiKeyToggle: {
+    padding: 12,
+  },
+  aiKeyHint: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginTop: 8,
+  },
+  aiKeySaveButton: {
+    backgroundColor: Colors.secondary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  aiKeySaveButtonDisabled: {
+    opacity: 0.6,
+  },
+  aiKeySaveButtonText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: "600" as const,
+  },
+  aiKeyActionsContainer: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  aiKeyActionsInfo: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  aiKeyClearButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.error,
+  },
+  aiKeyClearButtonText: {
+    color: Colors.error,
+    fontSize: 14,
+    fontWeight: "600" as const,
+  },
+  aiSettingsFeatures: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+  },
+  aiSettingsFeaturesTitle: {
+    fontSize: 14,
+    fontWeight: "700" as const,
+    color: "#000000",
+    marginBottom: 12,
+  },
+  aiSettingsFeatureItem: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 22,
   },
 });
