@@ -17,7 +17,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
 } from "react-native";
-import React, { useMemo, useRef, useState, useCallback } from "react";
+import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import {
   FileText,
   HeartHandshake,
@@ -31,8 +31,17 @@ import {
   Mic,
   MicOff,
   MessageSquare,
+  Send,
+  Volume2,
+  VolumeX,
+  Navigation,
 } from "lucide-react-native";
-import { useVoiceAI } from "@/contexts/VoiceAIContext";
+import { useVoiceAI, AIResponse } from "@/contexts/VoiceAIContext";
+import { useTruck } from "@/contexts/TruckContext";
+import { useTrailers } from "@/contexts/TrailerContext";
+import { usePlaces } from "@/contexts/PlacesContext";
+import { useFiles } from "@/contexts/FilesContext";
+import { useEmergencyContacts } from "@/contexts/EmergencyContactsContext";
 
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Clickable } from "@/components/Clickable";
@@ -60,6 +69,27 @@ const MENU_ITEMS = [
   { label: "Donations", path: "/donations", icon: HeartHandshake },
 ] as const;
 
+const SCREEN_ROUTES: Record<string, string> = {
+  "home": "/(tabs)/home",
+  "truck": "/(tabs)/truck",
+  "trailer": "/(tabs)/trailer",
+  "places": "/(tabs)/places",
+  "files": "/files",
+  "settings": "/(tabs)/settings",
+  "health-insurance": "/health-insurance",
+  "driver-id": "/driver-id",
+  "safety-information": "/safety-information",
+  "safety": "/safety-information",
+  "donations": "/donations",
+  "ai-notes": "/ai-notes",
+  "notes": "/ai-notes",
+  "emergency-contacts": "/emergency-contacts-list",
+  "contacts": "/emergency-contacts-list",
+  "scan": "/scan-document",
+  "scan-document": "/scan-document",
+  "camera": "/scan-document",
+};
+
 export default function PageHeader({
   title,
   subtitle,
@@ -77,10 +107,19 @@ export default function PageHeader({
   const [headerHeight, setHeaderHeight] = useState(0);
   const menuAnimation = useRef(new Animated.Value(0)).current;
   const headerAnimation = useRef(new Animated.Value(0)).current;
+  const pulseAnimation = useRef(new Animated.Value(1)).current;
   
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [voiceInput, setVoiceInput] = useState("");
-  const [aiResponse, setAiResponse] = useState("");
+  const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
+  const [isSpeakingEnabled, setIsSpeakingEnabled] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  
+  const { truckProfile, updateTruckProfile } = useTruck();
+  const { trailers, updateTrailer } = useTrailers();
+  const { places } = usePlaces();
+  const { files } = useFiles();
+  const { contacts } = useEmergencyContacts();
   
   const {
     isApiKeySet,
@@ -92,18 +131,41 @@ export default function PageHeader({
     stopSpeaking,
     saveNote,
     cancelRequest,
+    clearConversation,
   } = useVoiceAI();
   
   const isSmallScreen = width < 360;
   const adjustedTopInset = topInset;
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(headerAnimation, {
       toValue: 1,
       duration: 500,
       useNativeDriver: true,
     }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (isRecording) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnimation, {
+            toValue: 1.2,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnimation, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnimation.setValue(1);
+    }
+  }, [isRecording, pulseAnimation]);
 
   const menuIconOpacity = useMemo(
     () =>
@@ -204,6 +266,84 @@ export default function PageHeader({
     });
   };
 
+  const executeCommand = useCallback(async (response: AIResponse) => {
+    if (!response.command || response.command.action === "none") {
+      return;
+    }
+
+    const { action, params } = response.command;
+    console.log("VoiceAI: Executing command:", action, params);
+
+    try {
+      switch (action) {
+        case "navigate": {
+          const screen = params.screen as string;
+          const route = SCREEN_ROUTES[screen.toLowerCase()];
+          if (route) {
+            setShowVoiceModal(false);
+            setTimeout(() => {
+              router.push(route as Href);
+            }, 300);
+          }
+          break;
+        }
+        
+        case "update_truck_number": {
+          const number = params.number as string;
+          if (number) {
+            await updateTruckProfile({ truckNumber: number });
+            console.log("VoiceAI: Truck number updated to:", number);
+          }
+          break;
+        }
+        
+        case "update_trailer_number": {
+          const number = params.number as string;
+          if (number) {
+            const firstTrailer = trailers[0];
+            if (firstTrailer) {
+              await updateTrailer(firstTrailer.id, { trailerNumber: number });
+            } else {
+              await updateTruckProfile({ trailerNumber: number });
+            }
+            console.log("VoiceAI: Trailer number updated to:", number);
+          }
+          break;
+        }
+        
+        case "open_camera":
+        case "create_file": {
+          setShowVoiceModal(false);
+          setTimeout(() => {
+            router.push("/scan-document" as Href);
+          }, 300);
+          break;
+        }
+        
+        case "show_truck_info": {
+          setShowVoiceModal(false);
+          setTimeout(() => {
+            router.push("/(tabs)/truck" as Href);
+          }, 300);
+          break;
+        }
+        
+        case "show_trailer_info": {
+          setShowVoiceModal(false);
+          setTimeout(() => {
+            router.push("/(tabs)/trailer" as Href);
+          }, 300);
+          break;
+        }
+        
+        default:
+          console.log("VoiceAI: Unknown action:", action);
+      }
+    } catch (error) {
+      console.error("VoiceAI: Error executing command:", error);
+    }
+  }, [router, updateTruckProfile, trailers, updateTrailer]);
+
   const handleMicPress = useCallback(() => {
     if (!isApiKeySet) {
       Alert.alert(
@@ -223,14 +363,17 @@ export default function PageHeader({
       cancelRequest();
       setShowVoiceModal(false);
       setVoiceInput("");
-      setAiResponse("");
+      setAiResponse(null);
+      setIsRecording(false);
+      clearConversation();
     } else {
       setListening(true);
       setShowVoiceModal(true);
       setVoiceInput("");
-      setAiResponse("");
+      setAiResponse(null);
+      setIsRecording(false);
     }
-  }, [isApiKeySet, isListening, setListening, stopSpeaking, cancelRequest, router]);
+  }, [isApiKeySet, isListening, setListening, stopSpeaking, cancelRequest, router, clearConversation]);
 
   const handleSendMessage = useCallback(async () => {
     if (!voiceInput.trim()) return;
@@ -238,14 +381,30 @@ export default function PageHeader({
     Keyboard.dismiss();
     const message = voiceInput.trim();
     setVoiceInput("");
+    setAiResponse(null);
     
-    const response = await sendToAI(message, { screen: title });
+    const context = {
+      screen: title,
+      truckData: truckProfile as unknown as Record<string, unknown>,
+      trailerData: trailers[0] as unknown as Record<string, unknown>,
+      placesCount: places.length,
+      filesCount: files.length,
+      contactsCount: contacts.length,
+    };
+    
+    const response = await sendToAI(message, context);
     setAiResponse(response);
     
-    if (Platform.OS !== 'web') {
-      speakResponse(response);
+    if (isSpeakingEnabled && response.message) {
+      speakResponse(response.message);
     }
-  }, [voiceInput, sendToAI, title, speakResponse]);
+    
+    if (response.command && response.command.action !== "none") {
+      setTimeout(() => {
+        executeCommand(response);
+      }, isSpeakingEnabled ? 1500 : 500);
+    }
+  }, [voiceInput, sendToAI, title, truckProfile, trailers, places, files, contacts, speakResponse, isSpeakingEnabled, executeCommand]);
 
   const handleSaveNote = useCallback(async (noteType: "user" | "assistant", content: string) => {
     const now = new Date();
@@ -266,8 +425,82 @@ export default function PageHeader({
     cancelRequest();
     setShowVoiceModal(false);
     setVoiceInput("");
-    setAiResponse("");
-  }, [setListening, stopSpeaking, cancelRequest]);
+    setAiResponse(null);
+    setIsRecording(false);
+    clearConversation();
+  }, [setListening, stopSpeaking, cancelRequest, clearConversation]);
+
+  const toggleSpeaking = useCallback(() => {
+    if (isSpeakingEnabled) {
+      stopSpeaking();
+    }
+    setIsSpeakingEnabled(!isSpeakingEnabled);
+  }, [isSpeakingEnabled, stopSpeaking]);
+
+  const startVoiceRecording = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      interface WebkitWindow {
+        SpeechRecognition?: new () => WebSpeechRecognition;
+        webkitSpeechRecognition?: new () => WebSpeechRecognition;
+      }
+      
+      interface WebSpeechRecognition {
+        continuous: boolean;
+        interimResults: boolean;
+        lang: string;
+        onresult: (event: { results: { [key: number]: { [key: number]: { transcript: string } }; length: number } }) => void;
+        onerror: (event: { error: string }) => void;
+        onend: () => void;
+        start: () => void;
+      }
+      
+      const webWindow = window as unknown as WebkitWindow;
+      
+      if (!webWindow.webkitSpeechRecognition && !webWindow.SpeechRecognition) {
+        Alert.alert("Not Supported", "Voice recognition is not supported in this browser. Please type your message instead.");
+        return;
+      }
+      
+      try {
+        const SpeechRecognitionAPI = webWindow.SpeechRecognition || webWindow.webkitSpeechRecognition;
+        if (SpeechRecognitionAPI) {
+          const recognition = new SpeechRecognitionAPI();
+          recognition.continuous = false;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+          
+          setIsRecording(true);
+          
+          recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = 0; i < event.results.length; i++) {
+              transcript += event.results[i][0].transcript;
+            }
+            setVoiceInput(transcript);
+          };
+          
+          recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setIsRecording(false);
+          };
+          
+          recognition.onend = () => {
+            setIsRecording(false);
+          };
+          
+          recognition.start();
+        }
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        Alert.alert("Error", "Could not start voice recognition. Please type your message instead.");
+      }
+    } else {
+      Alert.alert(
+        "Voice Input", 
+        "For voice input on mobile, please use your device's built-in keyboard dictation feature (microphone button on keyboard)."
+      );
+    }
+  }, []);
 
   return (
     <>
@@ -431,15 +664,32 @@ export default function PageHeader({
           <View style={styles.voiceModalContent}>
             <View style={styles.voiceModalHeader}>
               <View style={styles.voiceModalTitleContainer}>
-                <Mic color={Colors.secondary} size={24} />
-                <Text style={styles.voiceModalTitle}>AI Assistant</Text>
+                <View style={styles.voiceModalIconContainer}>
+                  <Mic color={Colors.white} size={20} />
+                </View>
+                <View>
+                  <Text style={styles.voiceModalTitle}>AI Assistant</Text>
+                  <Text style={styles.voiceModalSubtitle}>Ask anything or give commands</Text>
+                </View>
               </View>
-              <Clickable
-                style={styles.voiceModalClose}
-                onPress={handleCloseVoiceModal}
-              >
-                <X color={Colors.textSecondary} size={24} />
-              </Clickable>
+              <View style={styles.voiceModalHeaderActions}>
+                <Clickable
+                  style={[styles.speakToggle, !isSpeakingEnabled && styles.speakToggleOff]}
+                  onPress={toggleSpeaking}
+                >
+                  {isSpeakingEnabled ? (
+                    <Volume2 color={Colors.secondary} size={18} />
+                  ) : (
+                    <VolumeX color={Colors.textLight} size={18} />
+                  )}
+                </Clickable>
+                <Clickable
+                  style={styles.voiceModalClose}
+                  onPress={handleCloseVoiceModal}
+                >
+                  <X color={Colors.textSecondary} size={24} />
+                </Clickable>
+              </View>
             </View>
 
             <ScrollView 
@@ -449,12 +699,27 @@ export default function PageHeader({
             >
               {aiResponse ? (
                 <View style={styles.responseContainer}>
-                  <Text style={styles.responseLabel}>AI Response:</Text>
-                  <Text style={styles.responseText}>{aiResponse}</Text>
+                  <View style={styles.responseHeader}>
+                    <View style={styles.responseIconContainer}>
+                      <MessageSquare color={Colors.white} size={16} />
+                    </View>
+                    <Text style={styles.responseLabel}>AI Response</Text>
+                  </View>
+                  <Text style={styles.responseText}>{aiResponse.message}</Text>
+                  
+                  {aiResponse.command && aiResponse.command.action !== "none" && (
+                    <View style={styles.commandIndicator}>
+                      <Navigation color={Colors.primaryLight} size={14} />
+                      <Text style={styles.commandText}>
+                        Executing: {aiResponse.command.action.replace(/_/g, ' ')}
+                      </Text>
+                    </View>
+                  )}
+                  
                   <View style={styles.responseActions}>
                     <Clickable
                       style={styles.saveNoteButton}
-                      onPress={() => handleSaveNote("assistant", aiResponse)}
+                      onPress={() => handleSaveNote("assistant", aiResponse.message)}
                     >
                       <Text style={styles.saveNoteButtonText}>Save to Notes</Text>
                     </Clickable>
@@ -462,39 +727,70 @@ export default function PageHeader({
                 </View>
               ) : isProcessing ? (
                 <View style={styles.processingContainer}>
-                  <ActivityIndicator size="large" color={Colors.secondary} />
-                  <Text style={styles.processingText}>Thinking...</Text>
+                  <View style={styles.processingAnimation}>
+                    <ActivityIndicator size="large" color={Colors.secondary} />
+                  </View>
+                  <Text style={styles.processingText}>Processing your request...</Text>
+                  <Text style={styles.processingSubtext}>Please wait</Text>
                 </View>
               ) : (
                 <View style={styles.voiceInputHint}>
+                  <View style={styles.hintIconContainer}>
+                    <Mic color={Colors.secondary} size={32} />
+                  </View>
+                  <Text style={styles.voiceInputHintTitle}>How can I help?</Text>
                   <Text style={styles.voiceInputHintText}>
-                    Type your message below and tap Send to talk with the AI assistant.
+                    Ask me anything about your truck, trailer, or navigate the app. Try saying:
                   </Text>
+                  <View style={styles.examplesContainer}>
+                    <Text style={styles.exampleItem}>&quot;Open my files&quot;</Text>
+                    <Text style={styles.exampleItem}>&quot;Change truck number to 1234&quot;</Text>
+                    <Text style={styles.exampleItem}>&quot;Scan a document&quot;</Text>
+                    <Text style={styles.exampleItem}>&quot;Show safety tips&quot;</Text>
+                  </View>
                 </View>
               )}
             </ScrollView>
 
             <View style={styles.voiceInputContainer}>
-              <TextInput
-                style={styles.voiceTextInput}
-                placeholder="Type your message..."
-                placeholderTextColor={Colors.textLight}
-                value={voiceInput}
-                onChangeText={setVoiceInput}
-                multiline
-                maxLength={1000}
-                editable={!isProcessing}
-              />
-              <Clickable
-                style={[
-                  styles.sendButton,
-                  (!voiceInput.trim() || isProcessing) && styles.sendButtonDisabled,
-                ]}
-                onPress={handleSendMessage}
-                disabled={!voiceInput.trim() || isProcessing}
-              >
-                <Text style={styles.sendButtonText}>Send</Text>
-              </Clickable>
+              <View style={styles.inputRow}>
+                {Platform.OS === 'web' && (
+                  <Clickable
+                    style={[styles.voiceMicButton, isRecording && styles.voiceMicButtonActive]}
+                    onPress={startVoiceRecording}
+                    disabled={isProcessing}
+                  >
+                    <Animated.View style={{ transform: [{ scale: isRecording ? pulseAnimation : 1 }] }}>
+                      {isRecording ? (
+                        <MicOff color={Colors.white} size={20} />
+                      ) : (
+                        <Mic color={Colors.secondary} size={20} />
+                      )}
+                    </Animated.View>
+                  </Clickable>
+                )}
+                <TextInput
+                  style={styles.voiceTextInput}
+                  placeholder={isRecording ? "Listening..." : "Type or speak your message..."}
+                  placeholderTextColor={Colors.textLight}
+                  value={voiceInput}
+                  onChangeText={setVoiceInput}
+                  multiline
+                  maxLength={1000}
+                  editable={!isProcessing}
+                  onSubmitEditing={handleSendMessage}
+                />
+                <Clickable
+                  style={[
+                    styles.sendButton,
+                    (!voiceInput.trim() || isProcessing) && styles.sendButtonDisabled,
+                  ]}
+                  onPress={handleSendMessage}
+                  disabled={!voiceInput.trim() || isProcessing}
+                >
+                  <Send color={Colors.white} size={18} />
+                </Clickable>
+              </View>
             </View>
 
             {voiceInput.trim() && (
@@ -547,7 +843,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "700" as const,
     color: Colors.text,
     lineHeight: 28,
   },
@@ -649,7 +945,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "600" as const,
     color: Colors.text,
   },
   menuItemTextActive: {
@@ -680,15 +976,15 @@ const styles = StyleSheet.create({
   },
   voiceModalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "flex-end",
   },
   voiceModalContent: {
     backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "80%",
-    minHeight: 300,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: "85%",
+    minHeight: 400,
   },
   voiceModalHeader: {
     flexDirection: "row",
@@ -701,53 +997,137 @@ const styles = StyleSheet.create({
   voiceModalTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
+  },
+  voiceModalIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
   },
   voiceModalTitle: {
     fontSize: 20,
     fontWeight: "700" as const,
     color: "#000000",
   },
+  voiceModalSubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  voiceModalHeaderActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  speakToggle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: `${Colors.secondary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  speakToggleOff: {
+    backgroundColor: `${Colors.textLight}15`,
+  },
   voiceModalClose: {
     padding: 4,
   },
   voiceModalBody: {
     flex: 1,
-    maxHeight: 300,
+    maxHeight: 350,
   },
   voiceModalBodyContent: {
     padding: 20,
   },
   voiceInputHint: {
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: 20,
+  },
+  hintIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: `${Colors.secondary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  voiceInputHintTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: "#000000",
+    marginBottom: 8,
   },
   voiceInputHintText: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.textSecondary,
     textAlign: "center",
     lineHeight: 22,
+    marginBottom: 16,
+  },
+  examplesContainer: {
+    width: "100%",
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    padding: 16,
+    gap: 8,
+  },
+  exampleItem: {
+    fontSize: 14,
+    color: Colors.primaryLight,
+    fontWeight: "500" as const,
   },
   processingContainer: {
     alignItems: "center",
     paddingVertical: 40,
     gap: 16,
   },
+  processingAnimation: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: `${Colors.secondary}10`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   processingText: {
-    fontSize: 16,
+    fontSize: 18,
+    color: "#000000",
+    fontWeight: "600" as const,
+  },
+  processingSubtext: {
+    fontSize: 14,
     color: Colors.textSecondary,
-    fontWeight: "500" as const,
   },
   responseContainer: {
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.secondary,
+  },
+  responseHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  responseIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
   },
   responseLabel: {
-    fontSize: 12,
-    fontWeight: "600" as const,
+    fontSize: 14,
+    fontWeight: "700" as const,
     color: Colors.secondary,
-    marginBottom: 8,
     textTransform: "uppercase" as const,
     letterSpacing: 0.5,
   },
@@ -755,6 +1135,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#000000",
     lineHeight: 24,
+  },
+  commandIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  commandText: {
+    fontSize: 13,
+    color: Colors.primaryLight,
+    fontWeight: "500" as const,
+    textTransform: "capitalize" as const,
   },
   responseActions: {
     flexDirection: "row",
@@ -767,8 +1162,8 @@ const styles = StyleSheet.create({
   saveNoteButton: {
     backgroundColor: Colors.secondary,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
   saveNoteButtonText: {
     color: Colors.white,
@@ -776,41 +1171,53 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
   },
   voiceInputContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
     padding: 16,
-    paddingTop: 8,
-    gap: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 10,
+  },
+  voiceMicButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: `${Colors.secondary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Colors.secondary,
+  },
+  voiceMicButtonActive: {
+    backgroundColor: Colors.secondary,
   },
   voiceTextInput: {
     flex: 1,
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
     color: "#000000",
     maxHeight: 100,
-    minHeight: 44,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   sendButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.secondary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   sendButtonDisabled: {
     backgroundColor: Colors.textLight,
     opacity: 0.5,
-  },
-  sendButtonText: {
-    color: Colors.white,
-    fontSize: 15,
-    fontWeight: "600" as const,
   },
   saveQuestionButton: {
     alignItems: "center",
