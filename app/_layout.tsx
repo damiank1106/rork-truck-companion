@@ -113,14 +113,7 @@ function RootLayoutNav() {
           animation: "slide_from_right",
         }}
       />
-      <Stack.Screen
-        name="convert-to-pdf"
-        options={{
-          headerShown: false,
-          animation: "fade",
-          animationDuration: 450,
-        }}
-      />
+
       <Stack.Screen
         name="ai-notes"
         options={{
