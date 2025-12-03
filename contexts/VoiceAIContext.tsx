@@ -191,6 +191,11 @@ export const [VoiceAIProvider, useVoiceAI] = createContextHook(() => {
   const [state, setState] = useState<VoiceAIState>(initialState);
   const [isLoaded, setIsLoaded] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     loadStoredData();
@@ -257,7 +262,8 @@ export const [VoiceAIProvider, useVoiceAI] = createContextHook(() => {
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
       };
-      const updatedNotes = [newNote, ...state.notes];
+      const currentNotes = stateRef.current.notes;
+      const updatedNotes = [newNote, ...currentNotes];
       await AsyncStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(updatedNotes));
       setState(prev => ({
         ...prev,
@@ -269,11 +275,12 @@ export const [VoiceAIProvider, useVoiceAI] = createContextHook(() => {
       console.error("VoiceAI: Error saving note:", error);
       return null;
     }
-  }, [state.notes]);
+  }, []);
 
   const deleteNote = useCallback(async (noteId: string) => {
     try {
-      const updatedNotes = state.notes.filter(n => n.id !== noteId);
+      const currentNotes = stateRef.current.notes;
+      const updatedNotes = currentNotes.filter(n => n.id !== noteId);
       await AsyncStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(updatedNotes));
       setState(prev => ({
         ...prev,
@@ -285,7 +292,7 @@ export const [VoiceAIProvider, useVoiceAI] = createContextHook(() => {
       console.error("VoiceAI: Error deleting note:", error);
       return false;
     }
-  }, [state.notes]);
+  }, []);
 
   const clearAllNotes = useCallback(async () => {
     try {
@@ -425,7 +432,9 @@ export const [VoiceAIProvider, useVoiceAI] = createContextHook(() => {
       contactsCount?: number;
     }
   ): Promise<AIResponse> => {
-    if (!state.apiKey) {
+    const currentState = stateRef.current;
+    
+    if (!currentState.apiKey) {
       return { message: "Please set your OpenAI API key in Settings first." };
     }
 
@@ -456,9 +465,10 @@ export const [VoiceAIProvider, useVoiceAI] = createContextHook(() => {
         contextInfo = parts.join(". ");
       }
 
+      const latestState = stateRef.current;
       const messages = [
         { role: "system" as const, content: APP_SYSTEM_PROMPT },
-        ...state.conversationHistory.slice(-6),
+        ...latestState.conversationHistory.slice(-6),
         { 
           role: "user" as const, 
           content: contextInfo 
@@ -471,7 +481,7 @@ export const [VoiceAIProvider, useVoiceAI] = createContextHook(() => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${state.apiKey}`,
+          "Authorization": `Bearer ${latestState.apiKey}`,
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",
@@ -514,7 +524,7 @@ export const [VoiceAIProvider, useVoiceAI] = createContextHook(() => {
     } finally {
       setProcessing(false);
     }
-  }, [state.apiKey, state.conversationHistory, setProcessing, setLastResponse, addToConversation, parseAIResponse]);
+  }, [setProcessing, setLastResponse, addToConversation, parseAIResponse]);
 
   const cancelRequest = useCallback(() => {
     if (abortControllerRef.current) {
